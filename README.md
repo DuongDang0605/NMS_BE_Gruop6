@@ -62,6 +62,7 @@ Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Se
 | `NewsArticle` | `NewsArticleID` tự tăng; FK bắt buộc tới category và người tạo; người sửa có thể NULL |
 | `Tag` | `TagID` tự tăng; tên và ghi chú |
 | `NewsTag` | Khóa ghép `(NewsArticleID, TagID)` bằng `NewsTagId`, `@EmbeddedId` và `@MapsId` |
+| `Notification` | `NotificationID` tự tăng; FK bắt buộc tới người nhận; FK bài viết có thể NULL; `IsRead` chỉ nhận `0/1` |
 
 Giữ nguyên tên bảng/cột trong sơ đồ report. Entity dùng `@Column` cho các trường chuỗi; nội dung bài viết chỉ định `nvarchar(max)`. Trạng thái bài/danh mục chỉ nhận `0/1`. ID do SQL Server sinh, không dùng `Date.now()` từ frontend.
 
@@ -71,6 +72,8 @@ Xóa bài qua Hibernate sẽ xóa các `NewsTag` của bài, giữ tag/category/
 
 `CreatedDate` được điền khi tạo và không cập nhật; `ModifiedDate` được điền khi sửa bài. Thời gian do entity tự sinh được lưu theo UTC. `CreatedBy` / `UpdatedBy` phải được service gán từ người đăng nhập. Entity không tự thực hiện phân quyền hoặc hash mật khẩu; khi bổ sung authentication, lưu password hash vào `AccountPassword` và dùng DTO để không trả mật khẩu/đồ thị entity trực tiếp ra API.
 
+`Notification` gồm `NotificationID`, `RecipientID`, `NewsArticleID`, `Title`, `Content`, `IsRead` và `CreatedDate`. Mặc định chưa đọc (`0`); đọc rồi là `1`. Tiêu đề/nội dung dùng `nvarchar` qua `@Column`, không dùng `@Nationalized`. Có index theo người nhận, trạng thái đọc, thời gian tạo và bài viết. Không cascade xóa account hoặc bài viết; FK bảo vệ các tham chiếu, service phải xử lý thông báo liên quan trước khi xóa bài. Thông báo hệ thống có thể để `NewsArticleID` NULL.
+
 ## Kiểm thử
 
 Sau khi tạo database, chạy với JDK 21+:
@@ -79,13 +82,13 @@ Sau khi tạo database, chạy với JDK 21+:
 .\mvnw.cmd test
 ```
 
-Test dùng SQL Server thật, không thay bằng H2. Kiểm tra lưu/đọc cả 5 entity, Unicode và nội dung dài, quan hệ cha–con, tag dùng chung, thời gian tạo/sửa, cascade khi xóa bài, khóa ghép, CHECK role và FK bảo vệ danh mục. Dữ liệu trong từng test được rollback; bảng do Hibernate tạo được giữ lại. Các lỗi SQL trong test kiểm tra ràng buộc là lỗi được kỳ vọng.
+Thư mục `src/test/` được Git ignore và chỉ giữ trên máy local. Các test local dùng SQL Server thật, kiểm tra entity, Unicode và nội dung dài, quan hệ cha–con, tag dùng chung, thời gian tạo/sửa, cascade khi xóa bài, khóa ghép, CHECK và FK. Test thông báo kiểm tra người nhận, bài viết tùy chọn, trạng thái đọc và mapper/repository. Dữ liệu trong từng test được rollback; bảng do Hibernate tạo được giữ lại. Các lỗi SQL trong test kiểm tra ràng buộc là lỗi được kỳ vọng.
 
-Package `com.mvc.nms_be.repository` có 5 interface khung: `SystemAccountRepository`, `CategoryRepository`, `NewsArticleRepository`, `TagRepository` và `NewsTagRepository`. Mỗi interface có `@Repository` và kế thừa `JpaRepository` để Spring tạo bean, hỗ trợ inject vào service qua constructor. Bốn entity có khóa đơn dùng `Integer`; `NewsTagRepository` dùng khóa ghép `NewsTagId`. Chưa khai báo query hoặc method riêng. Backend chưa có API CRUD và frontend vẫn dùng mock data.
+Package `com.mvc.nms_be.repository` có 6 interface khung: `SystemAccountRepository`, `CategoryRepository`, `NewsArticleRepository`, `TagRepository`, `NewsTagRepository` và `NotificationRepository`. Mỗi interface có `@Repository` và kế thừa `JpaRepository` để Spring tạo bean, hỗ trợ inject vào service qua constructor. Năm entity có khóa đơn dùng `Integer`; `NewsTagRepository` dùng khóa ghép `NewsTagId`. Chưa khai báo query hoặc method riêng. Backend chưa có API CRUD và frontend vẫn dùng mock data.
 
 ## Controller
 
-Package `controller` có 5 controller khung, gắn `@RestController`, `@RequestMapping` và Lombok `@RequiredArgsConstructor` để inject service qua constructor:
+Package `controller` có 6 controller khung, gắn `@RestController`, `@RequestMapping` và Lombok `@RequiredArgsConstructor` để inject service qua constructor:
 
 | Controller | Đường dẫn gốc | Service |
 | --- | --- | --- |
@@ -94,18 +97,19 @@ Package `controller` có 5 controller khung, gắn `@RestController`, `@RequestM
 | `NewsArticleController` | `/api/news` | `NewsArticleService` |
 | `TagController` | `/api/tags` | `TagService` |
 | `NewsTagController` | `/api/news-tags` | `NewsTagService` |
+| `NotificationController` | `/api/notifications` | `NotificationService` |
 
 Các controller chưa có handler GET/POST/PUT/DELETE; đường dẫn gốc chuẩn bị cho bước triển khai endpoint sau này. Spring tự quản lý controller/service, không cần thêm cấu hình bean.
 
 ## Service
 
-Package `service` có 5 interface khung: `SystemAccountService`, `CategoryService`, `NewsArticleService`, `TagService` và `NewsTagService`. Package `service/impl` có các class tương ứng với hậu tố `Impl`, implements interface và gắn `@Service`. Spring tự phát hiện các bean trong package gốc `com.mvc.nms_be`, không cần thêm cấu hình component scan hoặc khai báo bean thủ công. Các interface/class hiện để trống, sẵn sàng bổ sung method và inject repository/mapper qua constructor khi triển khai nghiệp vụ.
+Package `service` có 6 interface khung: `SystemAccountService`, `CategoryService`, `NewsArticleService`, `TagService`, `NewsTagService` và `NotificationService`. Package `service/impl` có các class tương ứng với hậu tố `Impl`, implements interface và gắn `@Service`. Spring tự phát hiện các bean trong package gốc `com.mvc.nms_be`, không cần thêm cấu hình component scan hoặc khai báo bean thủ công. Các interface/class hiện để trống, sẵn sàng bổ sung method và inject repository/mapper qua constructor khi triển khai nghiệp vụ.
 
 ## DTO và mapper
 
 Mỗi entity có DTO riêng trong `dto/request` và `dto/response`, dùng Lombok `@Getter`, `@Setter`, `@NoArgsConstructor`, `@AllArgsConstructor`. Các request không chứa ID tự tăng, thời gian tạo/sửa hay người tạo/sửa. `NewsTagRequestDto` chứa hai ID tạo khóa ghép. Response dùng ID cho các quan hệ, không chứa entity hoặc Hibernate proxy; `SystemAccountResponseDto` không chứa mật khẩu.
 
-Package `mapper` gồm 5 mapper viết tay, có `@Component` để inject vào service. `toEntity(...)` tạo entity mới từ request bằng setter; `toResponseDto(...)` tạo response bằng constructor. Không cần MapStruct hoặc thư viện mapping khác.
+Package `mapper` gồm 6 mapper viết tay, có `@Component` để inject vào service. `toEntity(...)` tạo entity mới từ request bằng setter; `toResponseDto(...)` tạo response bằng constructor. Không cần MapStruct hoặc thư viện mapping khác.
 
 Ví dụ map danh sách trong service sau này:
 
@@ -118,6 +122,8 @@ public List<CategoryResponseDto> getAll() {
 ```
 
 Service chịu trách nhiệm validate request, lấy các entity liên quan từ ID trong request rồi truyền vào mapper. `NewsArticleMapper.toEntity` nhận category, người tạo từ phiên đăng nhập và danh sách tag đã lấy từ database. `CategoryMapper.toEntity` nhận category cha, hoặc `null` cho danh mục gốc. `NewsTagMapper.toEntity` nhận bài viết và tag ứng với hai ID trong request. `SystemAccountMapper.toEntity` nhận password hash đã được service tạo, không chép mật khẩu thô từ request vào entity.
+
+`NotificationMapper.toEntity` nhận `NotificationRequestDto`, người nhận tương ứng `recipientId` và bài viết tương ứng `newsArticleId` (hoặc NULL). Response chỉ trả ID quan hệ, tiêu đề, nội dung, trạng thái đọc và thời gian tạo. Chưa triển khai tạo thông báo tự động, đánh dấu đã đọc, realtime hay gửi email; các chức năng đó được bổ sung ở service/controller sau này.
 
 Request DTO hiện dùng cho dữ liệu tạo/cập nhật đầy đủ, không định nghĩa PATCH. `toEntity` tạo entity mới; khi triển khai cập nhật, service phải lấy entity đang có rồi cập nhật các trường được phép, giữ ID và thông tin audit. Map response bài viết trong service có `@Transactional(readOnly = true)` hoặc sau khi đã tải danh sách tag, vì `newsTags` dùng LAZY và `open-in-view=false`.
 
