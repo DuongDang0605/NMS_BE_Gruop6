@@ -18,6 +18,8 @@ public class NewsArticleRequestDto {
     private String newsContent;
     private String newsSource;
     private Integer categoryId;
-    private Integer newsStatus = 1;
-    private List<Integer> tagIds = new ArrayList<>();
+    private Integer newsStatus;
+    private Integer createdById;
+    private Integer updatedById;
+    private List<Integer> tagIds;
 }

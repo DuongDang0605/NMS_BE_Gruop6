@@ -15,6 +15,11 @@ public class TagMapper {
         return tag;
     }
 
+    public void updateEntity(Tag tag, TagRequestDto request) {
+        tag.setTagName(request.getTagName());
+        tag.setNote(request.getNote());
+    }
+
     public TagResponseDto toResponseDto(Tag tag) {
         return new TagResponseDto(tag.getTagId(), tag.getTagName(), tag.getNote());
     }
