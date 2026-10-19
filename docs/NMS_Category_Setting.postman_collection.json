@@ -1,16 +1,35 @@
 {
   "info": {
     "name": "NMS - Category & Setting",
-    "description": "Demo CRUD Category và SystemSetting. Chạy backend trước (http://localhost:8080). Request tạo mới tự lưu ID vào biến collection để các request sau dùng.",
+    "description": "Demo CRUD Category và SystemSetting. Chạy backend trước (http://localhost:8080). Chạy request 'Đăng nhập Admin' đầu tiên để lấy JWT; các request khác tự gửi Bearer token. Request tạo mới tự lưu ID vào biến collection.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
     { "key": "categoryId", "value": "" },
     { "key": "childCategoryId", "value": "" },
     { "key": "settingId", "value": "" }
   ],
   "item": [
+    {
+      "name": "0. Đăng nhập Admin (lấy token)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.collectionVariables.set('token', pm.response.json().token);"
+      ] } }],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": { "mode": "raw", "raw": "{\n  \"accountEmail\": \"admin@fu.edu.vn\",\n  \"accountPassword\": \"Admin@123\"\n}" }
+      }
+    },
     {
       "name": "Category",
       "item": [
@@ -23,7 +42,7 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/categories",
+            "url": "{{baseUrl}}/api/v1/categories",
             "body": { "mode": "raw", "raw": "{\n  \"categoryName\": \"Thể thao\",\n  \"categoryDescription\": \"Tin tức thể thao\",\n  \"parentCategoryId\": null,\n  \"isActive\": 1\n}" }
           }
         },
@@ -36,24 +55,24 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/categories",
+            "url": "{{baseUrl}}/api/v1/categories",
             "body": { "mode": "raw", "raw": "{\n  \"categoryName\": \"Bóng đá\",\n  \"categoryDescription\": \"Tin bóng đá\",\n  \"parentCategoryId\": {{categoryId}},\n  \"isActive\": 1\n}" }
           }
         },
         {
           "name": "3. Lấy tất cả danh mục",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/categories" }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories" }
         },
         {
           "name": "4. Lấy danh mục theo ID",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/categories/{{categoryId}}" }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}" }
         },
         {
           "name": "5. Cập nhật danh mục",
           "request": {
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/categories/{{categoryId}}",
+            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
             "body": { "mode": "raw", "raw": "{\n  \"categoryName\": \"Thể thao 24h\",\n  \"categoryDescription\": \"Đã cập nhật\",\n  \"parentCategoryId\": null,\n  \"isActive\": 1\n}" }
           }
         },
@@ -62,25 +81,25 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/categories",
+            "url": "{{baseUrl}}/api/v1/categories",
             "body": { "mode": "raw", "raw": "{\n  \"categoryName\": \"\",\n  \"isActive\": 1\n}" }
           }
         },
         {
           "name": "7. Lỗi 409 - xóa danh mục còn con",
-          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/categories/{{categoryId}}" }
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}" }
         },
         {
           "name": "8. Xóa danh mục con",
-          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/categories/{{childCategoryId}}" }
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/categories/{{childCategoryId}}" }
         },
         {
           "name": "9. Xóa danh mục gốc",
-          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/categories/{{categoryId}}" }
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}" }
         },
         {
           "name": "10. Lỗi 404 - ID không tồn tại",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/categories/99999" }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories/99999" }
         }
       ]
     },
@@ -96,28 +115,28 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/settings",
+            "url": "{{baseUrl}}/api/v1/settings",
             "body": { "mode": "raw", "raw": "{\n  \"settingKey\": \"SiteName\",\n  \"settingValue\": \"FU News Management\",\n  \"description\": \"Tên hiển thị của website\"\n}" }
           }
         },
         {
           "name": "2. Lấy tất cả cấu hình",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/settings" }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/settings" }
         },
         {
           "name": "3. Lấy cấu hình theo ID",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/settings/{{settingId}}" }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/settings/{{settingId}}" }
         },
         {
           "name": "4. Lấy cấu hình theo key",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/settings/key/SiteName" }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/settings/key/SiteName" }
         },
         {
           "name": "5. Cập nhật cấu hình",
           "request": {
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/settings/{{settingId}}",
+            "url": "{{baseUrl}}/api/v1/settings/{{settingId}}",
             "body": { "mode": "raw", "raw": "{\n  \"settingKey\": \"SiteName\",\n  \"settingValue\": \"Tin tức FPT\",\n  \"description\": \"Đã đổi tên\"\n}" }
           }
         },
@@ -126,13 +145,13 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/settings",
+            "url": "{{baseUrl}}/api/v1/settings",
             "body": { "mode": "raw", "raw": "{\n  \"settingKey\": \"SiteName\",\n  \"settingValue\": \"abc\"\n}" }
           }
         },
         {
           "name": "7. Xóa cấu hình",
-          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/settings/{{settingId}}" }
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/settings/{{settingId}}" }
         }
       ]
     }

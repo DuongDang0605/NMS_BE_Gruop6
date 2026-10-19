@@ -29,7 +29,7 @@ public class SystemAccount {
     @Column(name = "AccountID")
     private Integer accountId;
 
-    @Column(name = "AccountName", nullable = false, length = 100)
+    @Column(name = "AccountName", nullable = false, length = 100, columnDefinition = "nvarchar(100)")
     private String accountName;
 
     @Column(name = "AccountEmail", nullable = false, length = 254)
@@ -38,7 +38,7 @@ public class SystemAccount {
     @Column(name = "AccountRole", nullable = false)
     private Integer accountRole = STAFF_ROLE;
 
-    // Store a password hash when authentication is implemented.
+    // BCrypt hash; raw passwords are never returned by the API.
     @Column(name = "AccountPassword", nullable = false, length = 255)
     private String accountPassword;
 }

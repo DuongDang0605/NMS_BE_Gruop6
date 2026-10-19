@@ -18,38 +18,38 @@ import org.springframework.web.bind.annotation.RestController;
 
 // Controller chỉ nhận request HTTP và gọi service; nghiệp vụ nằm trong CategoryServiceImpl.
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor
 public class CategoryController {
 
     private final CategoryService categoryService;
 
-    // GET /api/categories -> danh sách danh mục (200)
+    // GET /api/v1/categories -> danh sách danh mục (200)
     @GetMapping
     public List<CategoryResponseDto> findAll() {
         return categoryService.findAll();
     }
 
-    // GET /api/categories/{id} -> một danh mục (200) hoặc 404
+    // GET /api/v1/categories/{id} -> một danh mục (200) hoặc 404
     @GetMapping("/{id}")
     public CategoryResponseDto getById(@PathVariable Integer id) {
         return categoryService.getById(id);
     }
 
-    // POST /api/categories -> tạo mới, trả 201 Created kèm header Location
+    // POST /api/v1/categories -> tạo mới, trả 201 Created kèm header Location
     @PostMapping
     public ResponseEntity<CategoryResponseDto> create(@RequestBody CategoryRequestDto request) {
         CategoryResponseDto result = categoryService.create(request);
-        return ResponseEntity.created(URI.create("/api/categories/" + result.getCategoryId())).body(result);
+        return ResponseEntity.created(URI.create("/api/v1/categories/" + result.getCategoryId())).body(result);
     }
 
-    // PUT /api/categories/{id} -> cập nhật toàn bộ thông tin (200)
+    // PUT /api/v1/categories/{id} -> cập nhật toàn bộ thông tin (200)
     @PutMapping("/{id}")
     public CategoryResponseDto update(@PathVariable Integer id, @RequestBody CategoryRequestDto request) {
         return categoryService.update(id, request);
     }
 
-    // DELETE /api/categories/{id} -> 204 No Content; 409 nếu còn danh mục con hoặc bài viết
+    // DELETE /api/v1/categories/{id} -> 204 No Content; 409 nếu còn danh mục con hoặc bài viết
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         categoryService.delete(id);

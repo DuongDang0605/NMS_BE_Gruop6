@@ -31,7 +31,6 @@ public class Category {
     @Column(name = "CategoryID")
     private Integer categoryId;
 
-    // nvarchar để lưu được tiếng Việt có dấu (varchar sẽ biến "Thể thao" thành "Th? thao")
     @Column(name = "CategoryName", nullable = false, length = 100, columnDefinition = "nvarchar(100)")
     private String categoryName;
 
