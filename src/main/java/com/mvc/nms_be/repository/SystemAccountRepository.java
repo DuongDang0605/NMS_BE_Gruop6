@@ -7,5 +7,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SystemAccountRepository extends JpaRepository<SystemAccount, Integer> {
 
+    boolean existsByAccountEmailIgnoreCase(String accountEmail);
+
+    boolean existsByAccountEmailIgnoreCaseAndAccountIdNot(String accountEmail, Integer accountId);
+
     long countByAccountRole(Integer accountRole);
 }
