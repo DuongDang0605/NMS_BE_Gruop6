@@ -127,4 +127,19 @@ Service chịu trách nhiệm validate request, lấy các entity liên quan t�
 
 Request DTO hiện dùng cho dữ liệu tạo/cập nhật đầy đủ, không định nghĩa PATCH. `toEntity` tạo entity mới; khi triển khai cập nhật, service phải lấy entity đang có rồi cập nhật các trường được phép, giữ ID và thông tin audit. Map response bài viết trong service có `@Transactional(readOnly = true)` hoặc sau khi đã tải danh sách tag, vì `newsTags` dùng LAZY và `open-in-view=false`.
 
+## API Category và Setting
+
+| Method | Đường dẫn | Mô tả |
+| --- | --- | --- |
+| GET | `/api/categories`, `/api/categories/{id}` | Danh sách / chi tiết danh mục |
+| POST | `/api/categories` | Tạo danh mục (201); `parentCategoryId = null` là danh mục gốc |
+| PUT | `/api/categories/{id}` | Cập nhật; chặn danh mục cha tạo vòng lặp (400) |
+| DELETE | `/api/categories/{id}` | Xóa (204); còn danh mục con hoặc bài viết thì 409 |
+| GET | `/api/settings`, `/api/settings/{id}`, `/api/settings/key/{key}` | Danh sách / chi tiết cấu hình |
+| POST / PUT / DELETE | `/api/settings`, `/api/settings/{id}` | Tạo (201) / sửa / xóa (204); `settingKey` trùng thì 409 |
+
+`SystemSetting` là bảng cấu hình key/value (`SettingID`, `SettingKey` duy nhất, `SettingValue`, `Description`). Lỗi nghiệp vụ trả qua `ResponseStatusException` dạng JSON `{status, error, message, path}`. Swagger UI: `http://localhost:8080/swagger-ui.html`; Postman collection: `docs/NMS_Category_Setting.postman_collection.json`.
+
+Script `database/create-database.sql` đổi `CategoryName`/`CategoryDescription` từ `varchar` sang `nvarchar` nếu bảng cũ còn `varchar`, vì `ddl-auto=update` không đổi kiểu cột đã có.
+
 Tài liệu: [Spring Boot database initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html), [Hibernate mapping](https://docs.hibernate.org/orm/7.4/userguide/html_single/), [Microsoft JDBC driver](https://github.com/microsoft/mssql-jdbc).
