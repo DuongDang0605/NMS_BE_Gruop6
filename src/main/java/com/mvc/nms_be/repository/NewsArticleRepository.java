@@ -10,6 +10,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NewsArticleRepository extends JpaRepository<NewsArticle, Integer> {
 
+    // Dùng khi xóa category: còn bài viết thuộc danh mục thì không cho xóa.
+    boolean existsByCategory_CategoryId(Integer categoryId);
+
     long countByNewsStatus(Integer newsStatus);
 
     long countByCreatedDateGreaterThanEqual(LocalDateTime start);
