@@ -2,6 +2,26 @@
 
 Spring Boot 4.1.1, Java 21+, Hibernate/JPA và SQL Server.
 
+## Login và phân quyền
+
+Đã triển khai `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, JWT Bearer, BCrypt và phân quyền Admin/Staff. User CRUD chỉ dành cho tài khoản có `AccountRole = 1` trong database. Không có tài khoản Admin mặc định hoặc cơ chế tự tạo Admin khi khởi động; tài khoản quản trị đầu tiên cần được chuẩn bị trong database với mật khẩu BCrypt. Mật khẩu plaintext cũ được chuyển sang BCrypt khi khởi động, không hash lại mật khẩu đã mã hóa.
+
+Chi tiết cấu hình JWT/CORS, ma trận quyền, tích hợp frontend và kiểm thử: [Security implementation](docs/security-implementation.md). Request/response CRUD User: [User API](docs/user-api.md). Kế hoạch gốc: [Security plan](docs/security-plan.md).
+
+## Swagger UI
+
+Dùng `springdoc-openapi` 3.1.1 cho Spring Boot 4; tham khảo [tài liệu chính thức](https://springdoc.org/getting-started.html).
+
+Sau khi khởi động backend:
+
+- Swagger UI: http://localhost:8080/swagger-ui/index.html (hoặc `/swagger-ui.html`).
+- OpenAPI JSON: http://localhost:8080/v3/api-docs; YAML: `/v3/api-docs.yaml`.
+- Tài liệu chỉ hiển thị các API nghiệp vụ `/api/v1/**` đã được triển khai.
+
+Để thử API có bảo vệ, mở `POST /api/v1/auth/login`, chọn **Try it out**, nhập email/mật khẩu của tài khoản trong database và **Execute**. Sao chép trường `token` trong response, bấm **Authorize**, dán token (không thêm `Bearer `) và xác nhận. Swagger tự gửi Bearer header; backend kiểm tra role từ database như các request thông thường. Khi token hết hạn hoặc restart với khóa JWT ngẫu nhiên, đăng nhập và Authorize lại.
+
+Trang tài liệu mở công khai; API nghiệp vụ vẫn yêu cầu xác thực và phân quyền theo cấu hình Security.
+
 ## Chạy trên Windows
 
 Yêu cầu SQL Server đang chạy trên `localhost:1433`, `sqlcmd` có trong PATH và tài khoản Windows có quyền tạo database. Cấu hình mặc định dùng Windows Authentication, không cần ghi mật khẩu vào source.
@@ -66,6 +86,8 @@ Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Se
 
 Giữ nguyên tên bảng/cột trong sơ đồ report. Entity dùng `@Column` cho các trường chuỗi; nội dung bài viết chỉ định `nvarchar(max)`. Trạng thái bài/danh mục chỉ nhận `0/1`. ID do SQL Server sinh, không dùng `Date.now()` từ frontend.
 
+Các cột văn bản đa ngôn ngữ được khai báo `nvarchar` rõ ràng. `Start-Backend.ps1` chạy migration `database/migrations/001-unicode-text-columns.sql` cho database cũ trước khi khởi động; khi chạy IDE/JAR, chạy script này trên database đích trước. Script giữ nguyên bản ghi và bỏ qua cột đã là `nvarchar`.
+
 Quan hệ tag theo sơ đồ nhiều–nhiều: một tag được dùng bởi nhiều bài. Phần chữ trong report nói tag thuộc tối đa một bài và mâu thuẫn với sơ đồ; thiết kế hiện tại ưu tiên sơ đồ.
 
 Xóa bài qua Hibernate sẽ xóa các `NewsTag` của bài, giữ tag/category/account. Xóa category/account/tag đang được tham chiếu bị FK chặn. SQL DELETE trực tiếp không có cascade tự động. `ParentCategoryID` không được bằng chính `CategoryID`; chu trình qua nhiều danh mục phải được kiểm tra ở service khi bổ sung CRUD.
@@ -82,28 +104,30 @@ Sau khi tạo database, chạy với JDK 21+:
 .\mvnw.cmd test
 ```
 
-Thư mục `src/test/` được Git ignore và chỉ giữ trên máy local. Các test local dùng SQL Server thật, kiểm tra entity, Unicode và nội dung dài, quan hệ cha–con, tag dùng chung, thời gian tạo/sửa, cascade khi xóa bài, khóa ghép, CHECK và FK. Test thông báo kiểm tra người nhận, bài viết tùy chọn, trạng thái đọc và mapper/repository. Dữ liệu trong từng test được rollback; bảng do Hibernate tạo được giữ lại. Các lỗi SQL trong test kiểm tra ràng buộc là lỗi được kỳ vọng.
+Toàn bộ `src/test/` được Git ignore và chỉ giữ trên máy local. Test local dùng SQL Server thật và rollback dữ liệu; test error dispatch dùng HTTP thật, test sinh DDL Unicode không cần kết nối database. Các lỗi SQL trong test kiểm tra ràng buộc là lỗi được kỳ vọng. Xem lệnh `clean verify` trong tài liệu Security để kiểm thử với seed/migration tắt và schema ở chế độ validate.
 
-Package `com.mvc.nms_be.repository` có 6 interface khung: `SystemAccountRepository`, `CategoryRepository`, `NewsArticleRepository`, `TagRepository`, `NewsTagRepository` và `NotificationRepository`. Mỗi interface có `@Repository` và kế thừa `JpaRepository` để Spring tạo bean, hỗ trợ inject vào service qua constructor. Năm entity có khóa đơn dùng `Integer`; `NewsTagRepository` dùng khóa ghép `NewsTagId`. Chưa khai báo query hoặc method riêng. Backend chưa có API CRUD và frontend vẫn dùng mock data.
+Package `com.mvc.nms_be.repository` có 6 interface kế thừa `JpaRepository`, cùng các query cho tài khoản, thông báo và Dashboard. Năm entity có khóa đơn dùng `Integer`; `NewsTagRepository` dùng khóa ghép `NewsTagId`. Frontend hiện vẫn dùng mock data.
 
 ## Controller
 
-Package `controller` có 6 controller khung, gắn `@RestController`, `@RequestMapping` và Lombok `@RequiredArgsConstructor` để inject service qua constructor:
+Package `controller` có 8 controller, gắn `@RestController`, `@RequestMapping` và Lombok `@RequiredArgsConstructor` để inject service qua constructor. Tất cả API nghiệp vụ dùng `/api/v1`; không giữ alias URL cũ:
 
 | Controller | Đường dẫn gốc | Service |
 | --- | --- | --- |
-| `UserController` | `/api/users` | `SystemAccountService` |
-| `CategoryController` | `/api/categories` | `CategoryService` |
-| `NewsArticleController` | `/api/news` | `NewsArticleService` |
-| `TagController` | `/api/tags` | `TagService` |
-| `NewsTagController` | `/api/news-tags` | `NewsTagService` |
-| `NotificationController` | `/api/notifications` | `NotificationService` |
+| `UserController` | `/api/v1/users` | `SystemAccountService` |
+| `CategoryController` | `/api/v1/categories` | `CategoryService` |
+| `NewsArticleController` | `/api/v1/news` | `NewsArticleService` |
+| `TagController` | `/api/v1/tags` | `TagService` |
+| `NewsTagController` | `/api/v1/news-tags` | `NewsTagService` |
+| `NotificationController` | `/api/v1/notifications` | `NotificationService` |
+| `DashboardController` | `/api/v1/dashboard` | `DashboardService` |
+| `AuthController` | `/api/v1/auth` | `AuthService` |
 
-Các controller chưa có handler GET/POST/PUT/DELETE; đường dẫn gốc chuẩn bị cho bước triển khai endpoint sau này. Spring tự quản lý controller/service, không cần thêm cấu hình bean.
+Auth, User, Notification và Dashboard đã có handler nghiệp vụ. Category, NewsArticle, Tag và NewsTag hiện vẫn là khung. Spring tự quản lý controller/service, không cần thêm cấu hình bean.
 
 ## Service
 
-Package `service` có 6 interface khung: `SystemAccountService`, `CategoryService`, `NewsArticleService`, `TagService`, `NewsTagService` và `NotificationService`. Package `service/impl` có các class tương ứng với hậu tố `Impl`, implements interface và gắn `@Service`. Spring tự phát hiện các bean trong package gốc `com.mvc.nms_be`, không cần thêm cấu hình component scan hoặc khai báo bean thủ công. Các interface/class hiện để trống, sẵn sàng bổ sung method và inject repository/mapper qua constructor khi triển khai nghiệp vụ.
+Package `service` định nghĩa nghiệp vụ qua interface; `service/impl` chứa implementation gắn `@Service`. Auth, SystemAccount, Notification và Dashboard đã có implementation. Category, NewsArticle, Tag và NewsTag sẵn sàng để các thành viên bổ sung nghiệp vụ.
 
 ## DTO và mapper
 
@@ -126,5 +150,18 @@ Service chịu trách nhiệm validate request, lấy các entity liên quan t�
 `NotificationMapper.toEntity` nhận `NotificationRequestDto`, người nhận tương ứng `recipientId` và bài viết tương ứng `newsArticleId` (hoặc NULL). Response chỉ trả ID quan hệ, tiêu đề, nội dung, trạng thái đọc và thời gian tạo. Chưa triển khai tạo thông báo tự động, đánh dấu đã đọc, realtime hay gửi email; các chức năng đó được bổ sung ở service/controller sau này.
 
 Request DTO hiện dùng cho dữ liệu tạo/cập nhật đầy đủ, không định nghĩa PATCH. `toEntity` tạo entity mới; khi triển khai cập nhật, service phải lấy entity đang có rồi cập nhật các trường được phép, giữ ID và thông tin audit. Map response bài viết trong service có `@Transactional(readOnly = true)` hoặc sau khi đã tải danh sách tag, vì `newsTags` dùng LAZY và `open-in-view=false`.
+
+## API Category và Setting
+
+| Method | Đường dẫn | Mô tả |
+| --- | --- | --- |
+| GET | `/api/v1/categories`, `/api/v1/categories/{id}` | Danh sách / chi tiết danh mục |
+| POST | `/api/v1/categories` | Tạo danh mục (201); `parentCategoryId = null` là danh mục gốc |
+| PUT | `/api/v1/categories/{id}` | Cập nhật; chặn danh mục cha tạo vòng lặp (400) |
+| DELETE | `/api/v1/categories/{id}` | Xóa (204); còn danh mục con hoặc bài viết thì 409 |
+| GET | `/api/v1/settings`, `/api/v1/settings/{id}`, `/api/v1/settings/key/{key}` | Danh sách / chi tiết cấu hình |
+| POST / PUT / DELETE | `/api/v1/settings`, `/api/v1/settings/{id}` | Tạo (201) / sửa / xóa (204); `settingKey` trùng thì 409 |
+
+`SystemSetting` là bảng cấu hình key/value (`SettingID`, `SettingKey` duy nhất, `SettingValue`, `Description`). Lỗi nghiệp vụ trả qua `ResponseStatusException` dạng JSON `{status, error, message, path}`. Swagger UI: `http://localhost:8080/swagger-ui.html`; Postman collection: `docs/NMS_Category_Setting.postman_collection.json`. Category và Setting cần JWT: đăng nhập `POST /api/v1/auth/login`, gửi header `Authorization: Bearer <token>`. Admin được đọc/ghi; Staff chỉ được đọc.
 
 Tài liệu: [Spring Boot database initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html), [Hibernate mapping](https://docs.hibernate.org/orm/7.4/userguide/html_single/), [Microsoft JDBC driver](https://github.com/microsoft/mssql-jdbc).

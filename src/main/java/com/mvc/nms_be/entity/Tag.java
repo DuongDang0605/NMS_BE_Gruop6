@@ -22,9 +22,9 @@ public class Tag {
     @Column(name = "TagID")
     private Integer tagId;
 
-    @Column(name = "TagName", nullable = false, length = 100)
+    @Column(name = "TagName", nullable = false, length = 100, columnDefinition = "nvarchar(100)")
     private String tagName;
 
-    @Column(name = "Note", length = 500)
+    @Column(name = "Note", length = 500, columnDefinition = "nvarchar(500)")
     private String note;
 }

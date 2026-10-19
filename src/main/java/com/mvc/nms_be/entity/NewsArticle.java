@@ -42,10 +42,10 @@ public class NewsArticle {
     @Column(name = "NewsArticleID")
     private Integer newsArticleId;
 
-    @Column(name = "NewsTitle", nullable = false, length = 250)
+    @Column(name = "NewsTitle", nullable = false, length = 250, columnDefinition = "nvarchar(250)")
     private String newsTitle;
 
-    @Column(name = "Headline", length = 500)
+    @Column(name = "Headline", length = 500, columnDefinition = "nvarchar(500)")
     private String headline;
 
     @Column(name = "CreatedDate", nullable = false, updatable = false)
@@ -54,7 +54,7 @@ public class NewsArticle {
     @Column(name = "NewsContent", nullable = false, columnDefinition = "nvarchar(max)")
     private String newsContent;
 
-    @Column(name = "NewsSource", length = 250)
+    @Column(name = "NewsSource", length = 250, columnDefinition = "nvarchar(250)")
     private String newsSource;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
