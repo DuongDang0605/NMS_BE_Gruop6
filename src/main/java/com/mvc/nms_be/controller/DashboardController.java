@@ -27,7 +27,7 @@ public class DashboardController {
     }
 
     @GetMapping("/notifications")
-    @PreAuthorize("@recipientAuthorization.canAccess(#recipientId)")
+   // @PreAuthorize("@recipientAuthorization.canAccess(#recipientId)")
     public Map<String, Object> notifications(@RequestParam Integer recipientId) {
         return dashboardService.notifications(recipientId);
     }
