@@ -6,7 +6,7 @@ Toàn bộ endpoint nghiệp vụ dùng tiền tố `/api/v1/`, gồm Auth, User
 
 ## Chạy local
 
-Chạy BE bằng `Start-Backend.ps1` như README. Khi bảng `SystemAccount` trống, `DataInitializer` tạo Admin `admin@fu.edu.vn` / `Admin@123` với hash BCrypt. Nếu bảng đã có dữ liệu, không thêm tài khoản mặc định và không thay đổi quyền/mật khẩu của Admin đã có.
+Chạy BE bằng `Start-Backend.ps1` như README. Hệ thống không tự tạo Admin hoặc cung cấp thông tin đăng nhập mặc định. Tài khoản phải tồn tại trong `SystemAccount`; quyền quản trị được xác định bằng `AccountRole = 1`, Staff bằng `AccountRole = 2`, không phụ thuộc email, tên hay ID cụ thể. Khi database mới hoàn toàn trống, cần chuẩn bị tài khoản quản trị đầu tiên với mật khẩu BCrypt trước khi sử dụng API quản lý User. `DataInitializer` chỉ chuyển mật khẩu plaintext cũ sang BCrypt khi bật cấu hình migration.
 
 | Biến môi trường | Mặc định / ý nghĩa |
 | --- | --- |
@@ -14,9 +14,6 @@ Chạy BE bằng `Start-Backend.ps1` như README. Khi bảng `SystemAccount` tr�
 | `JWT_EXPIRATION_MS` | `86400000` (24 giờ), phải lớn hơn 0 |
 | `JWT_ISSUER` | `NMS_BE` |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173`; nhiều origin cách nhau bởi dấu phẩy |
-| `SEED_ADMIN_ENABLED` | `true`; chỉ tạo tài khoản khi bảng trống |
-| `SEED_ADMIN_EMAIL` | `admin@fu.edu.vn` |
-| `SEED_ADMIN_PASSWORD` | `Admin@123` |
 | `MIGRATE_PLAINTEXT_PASSWORDS` | `true`; chuyển mật khẩu cũ sang BCrypt khi khởi động |
 
 Khóa JWT không được commit vào source. Ví dụ sinh khóa cho biến môi trường bằng PowerShell:
@@ -33,7 +30,7 @@ BCrypt giới hạn mật khẩu ở 72 byte UTF-8. Mật khẩu mới phải d�
 `POST /api/v1/auth/login` công khai:
 
 ```json
-{"accountEmail":"admin@fu.edu.vn","accountPassword":"Admin@123"}
+{"accountEmail":"user@example.com","accountPassword":"your-password"}
 ```
 
 Email được tìm không phân biệt hoa/thường. Đăng nhập sai email hoặc mật khẩu cùng trả `401` với thông báo chung. Login không bị chặn bởi Bearer token cũ còn trong header.
@@ -46,8 +43,8 @@ Response thành công:
   "tokenType": "Bearer",
   "expiresIn": 86400,
   "accountId": 1,
-  "accountName": "System Administrator",
-  "accountEmail": "admin@fu.edu.vn",
+  "accountName": "Example User",
+  "accountEmail": "user@example.com",
   "accountRole": 1,
   "roleName": "ADMIN"
 }
@@ -111,10 +108,10 @@ Frontend cần gửi body login như trên, lưu token và thông tin user, thê
 | Bước trong plan | Thành phần thực hiện |
 | --- | --- |
 | 1 | `pom.xml`: starter security và JJWT 0.12.6 |
-| 2 | `application.properties`: JWT, CORS, seed và migration |
+| 2 | `application.properties`: JWT, CORS và migration |
 | 3 | `SystemAccountRepository.findByAccountEmailIgnoreCase` |
 | 4 | `SecurityConfig.passwordEncoder`, service create/update, validator UTF-8 |
-| 5 | `DataInitializer`: seed database trống, migrate plaintext, giữ hash cũ |
+| 5 | `DataInitializer`: migrate plaintext, giữ hash cũ; không seed tài khoản |
 | 6 | `CustomUserDetails`, `CustomUserDetailsService` |
 | 7 | `JwtTokenProvider`, `JwtAuthenticationFilter` |
 | 8 | `JwtAuthenticationEntryPoint`, `CustomAccessDeniedHandler`, `SecurityErrorResponseWriter` và handler chung |
@@ -132,13 +129,13 @@ Test local dùng SQL Server thật và rollback dữ liệu, bao gồm login/me,
 Chạy kiểm tra và đóng gói (yêu cầu SQL Server đã có schema):
 
 ```powershell
-.\mvnw.cmd clean verify -Dspring.jpa.hibernate.ddl-auto=validate -Dapp.seed-admin.enabled=false -Dapp.migrate-plaintext-passwords=false
+.\mvnw.cmd clean verify -Dspring.jpa.hibernate.ddl-auto=validate -Dapp.migrate-plaintext-passwords=false
 ```
 
 Smoke test trên server đã khởi động:
 
 ```powershell
-.\scripts\Test-Auth.ps1 -BaseUrl http://localhost:8080 -AdminPassword 'Admin@123'
+.\scripts\Test-Auth.ps1 -BaseUrl http://localhost:8080 -AdminEmail '<email tài khoản có role Admin>' -AdminPassword '<mật khẩu của tài khoản>'
 ```
 
 Script tạo tài khoản Staff tạm, kiểm tra login/quyền/đổi mật khẩu và xóa tài khoản đó trong `finally`. Tài khoản Admin dùng để chạy test phải tồn tại trước.

@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [string]$BaseUrl = 'http://localhost:8080',
-    [string]$AdminEmail = 'admin@fu.edu.vn',
+    [Parameter(Mandatory = $true)][string]$AdminEmail,
     [Parameter(Mandatory = $true)][string]$AdminPassword
 )
 

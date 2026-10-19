@@ -29,8 +29,8 @@ Tài liệu này mô tả chi tiết kế hoạch thiết kế và triển khai 
 4. **Cấu hình CORS & Chuẩn hóa lỗi:**
    * Cho phép kết nối an toàn từ Frontend ReactJS (Vite: `http://localhost:5173`).
    * Chuẩn hóa phản hồi lỗi `401 Unauthorized` và `403 Forbidden` đồng nhất với cấu trúc `ApiErrorResponse` hiện có của dự án.
-5. **Khởi tạo dữ liệu mặc định (Data Seeding):**
-   * Tự động tạo tài khoản Admin mặc định (`admin@fu.edu.vn` / `Admin@123`) có mật khẩu đã được băm khi hệ thống khởi động lần đầu nếu bảng tài khoản chưa có dữ liệu.
+5. **Tài khoản và dữ liệu có sẵn:**
+   * Không tạo Admin mặc định. Đăng nhập dùng tài khoản thật trong database; quyền quản trị chỉ dựa trên `AccountRole = 1`. Chuyển mật khẩu plaintext cũ sang BCrypt khi bật migration.
 
 ---
 
@@ -115,7 +115,7 @@ NMS_BE/
 └── src/main/java/com/mvc/nms_be/
     ├── config/
     │   ├── SecurityConfig.java               <-- [Mới] Cấu hình SecurityFilterChain, CORS, PasswordEncoder Bean
-    │   └── DataInitializer.java              <-- [Mới] Seed tài khoản Admin mặc định có mật khẩu đã hash
+    │   └── DataInitializer.java              <-- Chuyển mật khẩu plaintext cũ sang BCrypt, không seed tài khoản
     ├── controller/
     │   ├── AuthController.java               <-- [Mới] API /api/v1/auth/login, /api/v1/auth/me
     │   └── UserController.java               <-- [Sửa] Thêm @PreAuthorize("hasRole('ADMIN')")
@@ -199,15 +199,11 @@ Xây dựng `SecurityUtils.getCurrentUser()` để lấy tài khoản `SystemAcc
 * Khi tạo bài viết (`NewsArticleService.create`): gán `article.setCreatedBy(currentUser)`.
 * Khi cập nhật bài viết (`NewsArticleService.update`): gán `article.setUpdatedBy(currentUser)` và cập nhật `modifiedDate`.
 
-### 4.7. Khởi tạo dữ liệu mẫu (Data Seeding)
-Tạo `DataInitializer` implements `CommandLineRunner`:
-* Kiểm tra `accountRepository.count() == 0` hoặc kiểm tra xem tài khoản admin đã tồn tại chưa (`existsByAccountEmailIgnoreCase("admin@fu.edu.vn")`).
-* Nếu chưa tồn tại, tự động tạo tài khoản:
-  * `AccountName`: "System Administrator"
-  * `AccountEmail`: "admin@fu.edu.vn"
-  * `AccountRole`: 1 (Admin)
-  * `AccountPassword`: `passwordEncoder.encode("Admin@123")`
-* Giúp hệ thống có sẵn tài khoản quản trị để đăng nhập và test ngay khi khởi động.
+### 4.7. Tài khoản trong database và chuyển mật khẩu cũ
+`DataInitializer` implements `CommandLineRunner` chỉ chuyển mật khẩu plaintext cũ sang BCrypt khi bật cấu hình migration và giữ nguyên mật khẩu đã hash.
+* Không tạo tài khoản Admin mặc định hoặc tự nâng quyền tài khoản.
+* Tài khoản quản trị đầu tiên cần được chuẩn bị trong database với mật khẩu BCrypt.
+* Xác thực bằng email/mật khẩu trong database; phân quyền theo `AccountRole`, không kiểm tra email hay ID cố định.
 
 ---
 
@@ -219,7 +215,7 @@ Tạo `DataInitializer` implements `CommandLineRunner`:
 | **2** | Cấu hình properties | Thêm `jwt.secret` và `jwt.expiration-ms` vào `application.properties`. |
 | **3** | Repository & Entity | Bổ sung phương thức `findByAccountEmailIgnoreCase` vào `SystemAccountRepository`. |
 | **4** | Password Hashing | Định nghĩa Bean `PasswordEncoder` (`BCryptPasswordEncoder`); cập nhật `SystemAccountServiceImpl` để băm mật khẩu khi lưu. |
-| **5** | Data Seeder | Tạo `DataInitializer` tự động sinh tài khoản Admin mặc định (`admin@fu.edu.vn` / `Admin@123`) có mật khẩu đã hash. |
+| **5** | Chuyển mật khẩu cũ | `DataInitializer` chuyển plaintext sang BCrypt khi bật migration, không tự tạo tài khoản. |
 | **6** | UserDetails Service | Tạo `CustomUserDetails` và `CustomUserDetailsService` load tài khoản theo email từ database. |
 | **7** | JWT Component | Xây dựng `JwtTokenProvider` (sinh token, giải mã claims, kiểm tra hạn) và `JwtAuthenticationFilter` (chặn Bearer token). |
 | **8** | Xử lý lỗi bảo mật | Viết `JwtAuthenticationEntryPoint` (401) và `CustomAccessDeniedHandler` (403) trả về format `ApiErrorResponse`. |
@@ -236,7 +232,7 @@ Tạo `DataInitializer` implements `CommandLineRunner`:
    * Gửi request `POST http://localhost:8080/api/v1/auth/login` với body:
      ```json
      {
-       "accountEmail": "admin@fu.edu.vn",
+       "accountEmail": "user@example.com",
        "accountPassword": "password_here"
      }
      ```
