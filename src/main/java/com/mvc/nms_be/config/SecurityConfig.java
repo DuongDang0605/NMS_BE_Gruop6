@@ -59,11 +59,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        // Swagger UI và tài liệu OpenAPI mở công khai để demo; API bên trong vẫn cần JWT.
+                        .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
+                            .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/categories/**")
                             .hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/api/v1/categories", "/api/v1/categories/**").hasRole("ADMIN")
+                        // Cấu hình hệ thống: Admin/Staff được xem, chỉ Admin được thêm/sửa/xóa.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/settings", "/api/v1/settings/**")
+                            .hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/api/v1/settings", "/api/v1/settings/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/news", "/api/v1/news/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/news", "/api/v1/news/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/news", "/api/v1/news/**").hasAnyRole("ADMIN", "STAFF")
