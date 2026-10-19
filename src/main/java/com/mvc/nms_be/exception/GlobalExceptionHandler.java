@@ -1,6 +1,7 @@
 package com.mvc.nms_be.exception;
 
 import com.mvc.nms_be.controller.UserController;
+import com.mvc.nms_be.controller.AuthController;
 import com.mvc.nms_be.dto.response.ApiErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
@@ -15,6 +16,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,9 +29,19 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @Slf4j
-// Keep the shared handler scoped to User until the team adopts it in other modules.
-@RestControllerAdvice(assignableTypes = UserController.class)
+// Business exception handling stays scoped to User and Auth until other modules adopt it.
+@RestControllerAdvice(assignableTypes = {UserController.class, AuthController.class})
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Object> handleAuthentication(AuthenticationException ex, WebRequest request) {
+        return error(HttpStatus.UNAUTHORIZED, "Invalid email or password", Map.of(), request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
+        return error(HttpStatus.FORBIDDEN, "You do not have permission to access this resource", Map.of(), request);
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Object> handleNotFound(ResourceNotFoundException ex, WebRequest request) {

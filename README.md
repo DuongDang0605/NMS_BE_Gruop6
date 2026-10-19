@@ -2,6 +2,12 @@
 
 Spring Boot 4.1.1, Java 21+, Hibernate/JPA và SQL Server.
 
+## Login và phân quyền
+
+Đã triển khai `POST /api/auth/login`, `GET /api/auth/me`, JWT Bearer, BCrypt và phân quyền Admin/Staff. User CRUD chỉ dành cho Admin. Khi database trống, lần khởi động đầu tạo `admin@fu.edu.vn` / `Admin@123`; có thể cấu hình bằng biến môi trường. Mật khẩu plaintext cũ được chuyển sang BCrypt khi khởi động, không hash lại mật khẩu đã mã hóa.
+
+Chi tiết cấu hình JWT/CORS, ma trận quyền, tích hợp frontend và kiểm thử: [Security implementation](docs/security-implementation.md). Request/response CRUD User: [User API](docs/user-api.md). Kế hoạch gốc: [Security plan](docs/security-plan.md).
+
 ## Chạy trên Windows
 
 Yêu cầu SQL Server đang chạy trên `localhost:1433`, `sqlcmd` có trong PATH và tài khoản Windows có quyền tạo database. Cấu hình mặc định dùng Windows Authentication, không cần ghi mật khẩu vào source.

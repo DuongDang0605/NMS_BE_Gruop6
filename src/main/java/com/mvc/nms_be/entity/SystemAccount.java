@@ -38,7 +38,7 @@ public class SystemAccount {
     @Column(name = "AccountRole", nullable = false)
     private Integer accountRole = STAFF_ROLE;
 
-    // Store a password hash when authentication is implemented.
+    // BCrypt hash; raw passwords are never returned by the API.
     @Column(name = "AccountPassword", nullable = false, length = 255)
     private String accountPassword;
 }

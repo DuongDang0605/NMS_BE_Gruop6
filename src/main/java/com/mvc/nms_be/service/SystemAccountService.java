@@ -1,6 +1,7 @@
 package com.mvc.nms_be.service;
 
 import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
+import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +17,7 @@ public interface SystemAccountService {
     SystemAccountResponseDto create(@NotNull @Valid SystemAccountRequestDto request);
 
     SystemAccountResponseDto update(@NotNull @Positive Integer id,
-                                   @NotNull @Valid SystemAccountRequestDto request);
+                                   @NotNull @Valid SystemAccountUpdateRequestDto request);
 
     void delete(@NotNull @Positive Integer id);
 }

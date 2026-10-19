@@ -1,6 +1,7 @@
 package com.mvc.nms_be.service.impl;
 
 import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
+import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
 import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.exception.ResourceConflictException;
@@ -13,6 +14,7 @@ import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
@@ -24,6 +26,7 @@ public class SystemAccountServiceImpl implements SystemAccountService {
 
     private final SystemAccountRepository accountRepository;
     private final SystemAccountMapper accountMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<SystemAccountResponseDto> findAll() {
@@ -44,19 +47,21 @@ public class SystemAccountServiceImpl implements SystemAccountService {
         if (accountRepository.existsByAccountEmailIgnoreCase(email)) {
             throw duplicateEmail();
         }
-        SystemAccount account = accountMapper.toEntity(request, request.getAccountPassword());
+        SystemAccount account = accountMapper.toEntity(request, passwordEncoder.encode(request.getAccountPassword()));
         return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
 
     @Override
     @Transactional
-    public SystemAccountResponseDto update(Integer id, SystemAccountRequestDto request) {
+    public SystemAccountResponseDto update(Integer id, SystemAccountUpdateRequestDto request) {
         SystemAccount account = findAccount(id);
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCaseAndAccountIdNot(email, id)) {
             throw duplicateEmail();
         }
-        accountMapper.updateEntity(account, request, request.getAccountPassword());
+        String password = request.getAccountPassword() == null ? account.getAccountPassword()
+                : passwordEncoder.encode(request.getAccountPassword());
+        accountMapper.updateEntity(account, request, password);
         return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
 

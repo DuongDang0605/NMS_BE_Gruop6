@@ -1,6 +1,6 @@
 # User CRUD
 
-Luồng: `UserController` → `SystemAccountService` → `SystemAccountServiceImpl` → `SystemAccountRepository` → SQL Server. Mapper chuyển đổi request/entity/response; response không chứa mật khẩu.
+Luồng: `UserController` → `SystemAccountService` → `SystemAccountServiceImpl` → `SystemAccountRepository` → SQL Server. Mapper chuyển đổi request/entity/response; response không chứa mật khẩu. Toàn bộ User API yêu cầu JWT Bearer của Admin. Xem [hướng dẫn login và phân quyền](security-implementation.md).
 
 | Method | Endpoint | Kết quả |
 | --- | --- | --- |
@@ -24,18 +24,20 @@ Body POST/PUT:
 - `accountName`: bắt buộc, không chỉ chứa khoảng trắng, tối đa 100 ký tự. Bỏ khoảng trắng đầu/cuối khi lưu.
 - `accountEmail`: bắt buộc, đúng định dạng email, tối đa 254 ký tự. Lưu chữ thường, kiểm tra trùng không phân biệt hoa/thường.
 - `accountRole`: chỉ nhận `1=Admin` hoặc `2=Staff`. Khi bỏ qua thuộc tính, mặc định là `2`; không nhận `null`.
-- `accountPassword`: bắt buộc cho cả POST/PUT, không chỉ chứa khoảng trắng, dài 6–255 ký tự. Hiện lưu nguyên giá trị; hash mật khẩu sẽ triển khai cùng Security sau.
+- `accountPassword`: POST bắt buộc; PUT có thể bỏ qua hoặc truyền `null` để giữ nguyên hash hiện tại. Khi cung cấp mật khẩu mới, không được chỉ chứa khoảng trắng, dài 6–72 ký tự và tối đa 72 byte UTF-8 (giới hạn BCrypt). Service luôn BCrypt encode mật khẩu mới trước khi lưu.
 - ID trong URL phải là số nguyên dương.
 
 DTO dùng constructor không tham số để JSON binding giữ giá trị role mặc định. Validation chạy ở controller qua `@Valid` và ở service qua Spring bean `@Validated`. Các thao tác ghi dùng transaction; PUT lấy entity hiện có rồi cập nhật.
 
-Exception được thiết kế dùng chung: `ResourceNotFoundException`, `ResourceConflictException`, `ApiErrorResponse` và `GlobalExceptionHandler`. Hiện handler tạm giới hạn bằng `@RestControllerAdvice(assignableTypes = UserController.class)`, chỉ áp dụng cho `UserController`. Sau khi nhóm thống nhất, có thể mở rộng hoặc bỏ giới hạn `assignableTypes` để dùng cho các controller khác.
+Exception được thiết kế dùng chung: `ResourceNotFoundException`, `ResourceConflictException`, `ApiErrorResponse` và `GlobalExceptionHandler`. Handler hiện áp dụng cho `UserController` và `AuthController`; các controller nghiệp vụ khác giữ nguyên cách xử lý exception. Lỗi xác thực/phân quyền trong filter được trả cùng cấu trúc JSON.
 
 Các mã lỗi hiện áp dụng cho User:
 
 | Mã HTTP | Trường hợp |
 | --- | --- |
 | 400 | Thuộc tính không hợp lệ, ID sai, thiếu body hoặc JSON sai |
+| 401 | Thiếu JWT, JWT không hợp lệ/hết hạn hoặc tài khoản không còn hợp lệ |
+| 403 | Tài khoản không có role Admin |
 | 404 | User không tồn tại |
 | 409 | Email trùng hoặc xung đột ràng buộc database, gồm xóa user đang được tham chiếu |
 | 500 | Lỗi ngoài dự kiến, trả thông báo chung |
@@ -57,4 +59,4 @@ Ví dụ lỗi validation:
 }
 ```
 
-Lỗi không chứa mật khẩu hoặc giá trị đầu vào bị từ chối. Chưa có phân quyền và hash mật khẩu trong bước CRUD này.
+Lỗi không chứa mật khẩu hoặc giá trị đầu vào bị từ chối. DTO tạo là `SystemAccountRequestDto`; DTO cập nhật là `SystemAccountUpdateRequestDto`, cho phép giữ mật khẩu hiện tại.

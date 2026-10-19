@@ -1,6 +1,7 @@
 package com.mvc.nms_be.controller;
 
 import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
+import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
 import com.mvc.nms_be.service.SystemAccountService;
 import jakarta.validation.Valid;
@@ -9,6 +10,7 @@ import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
     private final SystemAccountService systemAccountService;
@@ -43,7 +46,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public SystemAccountResponseDto update(@PathVariable @Positive Integer id,
-                                          @Valid @RequestBody SystemAccountRequestDto request) {
+                                          @Valid @RequestBody SystemAccountUpdateRequestDto request) {
         return systemAccountService.update(id, request);
     }
 

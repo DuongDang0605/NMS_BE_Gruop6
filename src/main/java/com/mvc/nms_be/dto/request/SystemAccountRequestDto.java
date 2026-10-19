@@ -1,5 +1,6 @@
 package com.mvc.nms_be.dto.request;
 
+import com.mvc.nms_be.validation.Utf8Length;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -30,6 +31,7 @@ public class SystemAccountRequestDto {
     private Integer accountRole = 2;
 
     @NotBlank(message = "Password must not be blank")
-    @Size(min = 6, max = 255, message = "Password must contain between 6 and 255 characters")
+    @Size(min = 6, max = 72, message = "Password must contain between 6 and 72 characters")
+    @Utf8Length
     private String accountPassword;
 }
