@@ -14,5 +14,5 @@ public class CategoryRequestDto {
     private String categoryName;
     private String categoryDescription;
     private Integer parentCategoryId;
-    private Integer isActive = 1;
+    private Integer isActive;
 }
