@@ -1,7 +1,6 @@
 package com.mvc.nms_be.config;
 
 import com.mvc.nms_be.security.CustomAccessDeniedHandler;
-import com.mvc.nms_be.security.CustomUserDetails;
 import com.mvc.nms_be.security.CustomUserDetailsService;
 import com.mvc.nms_be.security.JwtAuthenticationEntryPoint;
 import com.mvc.nms_be.security.JwtAuthenticationFilter;
@@ -15,19 +14,17 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.DispatcherType;
 
 @Configuration
 @EnableMethodSecurity
@@ -60,24 +57,24 @@ public class SecurityConfig {
                 .authenticationManager(authenticationManager)
                 .exceptionHandling(errors -> errors.authenticationEntryPoint(entryPoint).accessDeniedHandler(accessDenied))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
-                        .requestMatchers("/api/users", "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**")
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
+                        .requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/categories/**")
                             .hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/api/categories", "/api/categories/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/news", "/api/news/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/news", "/api/news/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/news", "/api/news/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/news", "/api/news/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.POST, "/api/notifications", "/api/notifications/**").hasRole("ADMIN")
-                        .requestMatchers("/api/notifications", "/api/notifications/**")
-                            .access((authentication, context) -> new AuthorizationDecision(
-                                    canAccessRecipient(authentication.get(), context.getRequest())))
-                        .requestMatchers(HttpMethod.GET, "/api/tags", "/api/tags/**", "/api/news-tags", "/api/news-tags/**")
+                        .requestMatchers("/api/v1/categories", "/api/v1/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/news", "/api/v1/news/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/news", "/api/v1/news/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/news", "/api/v1/news/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/news", "/api/v1/news/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/notifications", "/api/v1/notifications/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/notifications", "/api/v1/notifications/**")
+                            .authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tags", "/api/v1/tags/**", "/api/v1/news-tags", "/api/v1/news-tags/**")
                             .hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/api/tags", "/api/tags/**", "/api/news-tags", "/api/news-tags/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/tags", "/api/v1/tags/**", "/api/v1/news-tags", "/api/v1/news-tags/**").hasRole("ADMIN")
                         .anyRequest().denyAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -98,21 +95,4 @@ public class SecurityConfig {
         return source;
     }
 
-    private static boolean canAccessRecipient(Authentication authentication, HttpServletRequest request) {
-        if (!authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof CustomUserDetails user)) {
-            return false;
-        }
-        if (user.getAccountRole() == 1) {
-            return true;
-        }
-        String recipientId = request.getParameter("recipientId");
-        if (recipientId == null) {
-            return true; // The controller reports its required parameter as HTTP 400.
-        }
-        try {
-            return user.getAccountId().equals(Integer.valueOf(recipientId));
-        } catch (NumberFormatException ex) {
-            return true; // Let MVC report an invalid parameter type instead of exposing data.
-        }
-    }
 }

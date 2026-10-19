@@ -31,10 +31,10 @@ public class Category {
     @Column(name = "CategoryID")
     private Integer categoryId;
 
-    @Column(name = "CategoryName", nullable = false, length = 100)
+    @Column(name = "CategoryName", nullable = false, length = 100, columnDefinition = "nvarchar(100)")
     private String categoryName;
 
-    @Column(name = "CategoryDescription", length = 1000)
+    @Column(name = "CategoryDescription", length = 1000, columnDefinition = "nvarchar(1000)")
     private String categoryDescription;
 
     @ManyToOne(fetch = FetchType.LAZY)

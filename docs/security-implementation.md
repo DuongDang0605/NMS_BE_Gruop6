@@ -2,6 +2,8 @@
 
 Triển khai 12 bước Backend của [security-plan.md](security-plan.md) trên Spring Boot 4.1.1 / Spring Security do Boot quản lý (7.x), JJWT 0.12.6 và BCrypt. Phiên đăng nhập stateless; không dùng form login, HTTP Basic hoặc session cookie.
 
+Toàn bộ endpoint nghiệp vụ dùng tiền tố `/api/v1/`, gồm Auth, User, Category, News, Tag, NewsTag, Notification và Dashboard. URL cũ không có `v1` không được giữ làm alias. Frontend và công cụ gọi API cần cập nhật đường dẫn; các header `Location` cũng trả URL v1.
+
 ## Chạy local
 
 Chạy BE bằng `Start-Backend.ps1` như README. Khi bảng `SystemAccount` trống, `DataInitializer` tạo Admin `admin@fu.edu.vn` / `Admin@123` với hash BCrypt. Nếu bảng đã có dữ liệu, không thêm tài khoản mặc định và không thay đổi quyền/mật khẩu của Admin đã có.
@@ -28,7 +30,7 @@ BCrypt giới hạn mật khẩu ở 72 byte UTF-8. Mật khẩu mới phải d�
 
 ## Authentication API
 
-`POST /api/auth/login` công khai:
+`POST /api/v1/auth/login` công khai:
 
 ```json
 {"accountEmail":"admin@fu.edu.vn","accountPassword":"Admin@123"}
@@ -51,7 +53,7 @@ Response thành công:
 }
 ```
 
-Gọi `GET /api/auth/me` với `Authorization: Bearer <JWT>` để lấy `accountId`, `accountName`, `accountEmail`, `accountRole`. Không endpoint nào trả mật khẩu/hash.
+Gọi `GET /api/v1/auth/me` với `Authorization: Bearer <JWT>` để lấy `accountId`, `accountName`, `accountEmail`, `accountRole`. Không endpoint nào trả mật khẩu/hash.
 
 JWT có chữ ký HS256, issuer, subject là account ID, thời gian hết hạn, email, role và fingerprint của hash mật khẩu. Mỗi request tải lại tài khoản từ database: xóa tài khoản, đổi email hoặc mật khẩu làm token cũ không còn hợp lệ; đổi role áp dụng quyền mới ngay. Authority lấy từ database hiện tại, không tin role do client cung cấp. Không có endpoint refresh token hoặc đăng ký công khai trong kế hoạch này.
 
@@ -59,21 +61,38 @@ JWT có chữ ký HS256, issuer, subject là account ID, thời gian hết hạn
 
 | Endpoint | Quyền |
 | --- | --- |
-| POST `/api/auth/login` | Công khai |
-| GET `/api/auth/me` | Đã đăng nhập |
-| `/api/users`, `/api/users/**` | Admin; thêm `@PreAuthorize` tại UserController |
-| GET `/api/categories/**` | Admin hoặc Staff |
-| Ghi `/api/categories/**` | Admin |
-| GET `/api/news/**` | Đã đăng nhập (chọn phương án authenticated trong plan) |
-| POST/PUT/DELETE `/api/news/**` | Admin hoặc Staff; kiểm tra chủ sở hữu khi tích hợp nghiệp vụ |
-| GET `/api/dashboard/**` | Admin hoặc Staff |
-| POST `/api/notifications/**` | Admin |
-| Các thao tác khác `/api/notifications/**` | Đã đăng nhập; Staff chỉ được dùng recipientId của mình; Admin được thao tác cho người nhận khác |
-| GET `/api/tags/**`, `/api/news-tags/**` | Admin hoặc Staff |
-| Ghi `/api/tags/**`, `/api/news-tags/**` | Admin |
+| POST `/api/v1/auth/login` | Công khai |
+| GET `/api/v1/auth/me` | Đã đăng nhập |
+| `/api/v1/users`, `/api/v1/users/**` | Admin; thêm `@PreAuthorize` tại UserController |
+| GET `/api/v1/categories/**` | Admin hoặc Staff |
+| Ghi `/api/v1/categories/**` | Admin |
+| GET `/api/v1/news/**` | Đã đăng nhập (chọn phương án authenticated trong plan) |
+| POST/PUT/DELETE `/api/v1/news/**` | Admin hoặc Staff; kiểm tra chủ sở hữu khi tích hợp nghiệp vụ |
+| GET `/api/v1/dashboard/**` | Admin hoặc Staff |
+| GET `/api/v1/dashboard/notifications` | Admin hoặc chính người nhận, áp dụng thêm kiểm tra recipientId |
+| POST `/api/v1/notifications/**` | Admin |
+| Các thao tác khác `/api/v1/notifications/**` | Đã đăng nhập; Staff chỉ được dùng recipientId của mình; Admin được thao tác cho người nhận khác |
+| GET `/api/v1/tags/**`, `/api/v1/news-tags/**` | Admin hoặc Staff |
+| Ghi `/api/v1/tags/**`, `/api/v1/news-tags/**` | Admin |
 | Endpoint khác | Từ chối mặc định |
 
 CORS cho phép Authorization/Content-Type và các phương thức GET/POST/PUT/PATCH/DELETE/OPTIONS từ origin cấu hình. Preflight được xử lý trước xác thực. Lỗi authentication và authorization trả `ApiErrorResponse` với `401`/`403`; validation, login, nghiệp vụ User/Auth cùng dùng handler chung. Handler nghiệp vụ vẫn giới hạn cho User và Auth để các thành viên tích hợp sau.
+
+Notification và thống kê thông báo Dashboard dùng chung `RecipientAuthorization` qua `@PreAuthorize`. Quyền được kiểm tra trên tham số `Integer recipientId` đã được MVC chuyển đổi, không tự parse lại query string. Vì thế khoảng trắng/hex không thể làm lệch ID được kiểm tra và ID thực sự dùng để truy vấn. Staff chỉ được thao tác dữ liệu của mình; Admin vẫn truy cập mọi người nhận. Request sai định dạng được MVC xử lý trước khi gọi controller.
+
+Chỉ dispatcher `ERROR` nội bộ được đi qua security để giữ nguyên mã lỗi `400/404/500` từ các controller chưa tích hợp handler chung. Request HTTP trực tiếp vào `/error` vẫn bị chặn; quyền truy cập API nghiệp vụ không được nới lỏng.
+
+## Unicode và database hiện có
+
+Tên User, tên/mô tả Category, tiêu đề/headline/nguồn/nội dung News, tên/ghi chú Tag và văn bản Notification được khai báo `nvarchar` rõ ràng trong entity. Schema mới không phụ thuộc các cột `nvarchar` còn lại từ lần tạo database cũ.
+
+Database hiện có dùng script `database/migrations/001-unicode-text-columns.sql` để chuyển các cột văn bản `varchar` sang `nvarchar`. Script chạy trong transaction, bỏ qua cột đã là `nvarchar` và không xóa bảng hoặc bản ghi. `Start-Backend.ps1` tự chạy script này trước khi khởi động. Nếu chạy bằng IDE/JAR hoặc SQL Authentication, chạy migration trên đúng database trước:
+
+```powershell
+sqlcmd -S 'tcp:localhost,1433' -d FUNewsManagementSystem -E -C -b -i .\database\migrations\001-unicode-text-columns.sql
+```
+
+Email và password hash vẫn dùng `varchar`. Việc đổi kiểu cột bảo vệ dữ liệu Unicode mới; không thể phục hồi dấu đã mất do các lần lưu sai trước đó.
 
 ## Hỗ trợ nghiệp vụ của các thành viên
 
@@ -85,7 +104,7 @@ Hiện NewsArticleController/Service trên nhánh này còn là khung, chưa có
 
 Phần 6 của plan là hướng dẫn tích hợp; thay đổi lần này nằm ở BE. Frontend hiện vẫn có login mock, chưa chuyển sang backend.
 
-Frontend cần gửi body login như trên, lưu token và thông tin user, thêm Bearer header qua Axios interceptor, gọi `/api/auth/me` khi khôi phục phiên, ẩn/bảo vệ trang quản lý User khi `accountRole !== 1`, xóa phiên và về `/login` khi nhận `401`. Với `403`, hiển thị thiếu quyền và giữ phiên. Đăng xuất local xóa token; server không tạo session.
+Frontend cần gửi body login như trên, lưu token và thông tin user, thêm Bearer header qua Axios interceptor, gọi `/api/v1/auth/me` khi khôi phục phiên, ẩn/bảo vệ trang quản lý User khi `accountRole !== 1`, xóa phiên và về `/login` khi nhận `401`. Với `403`, hiển thị thiếu quyền và giữ phiên. Đăng xuất local xóa token; server không tạo session.
 
 ## Kiểm thử và đối chiếu 12 bước
 
@@ -104,7 +123,17 @@ Frontend cần gửi body login như trên, lưu token và thông tin user, thê
 | 11 | `UserController.@PreAuthorize` |
 | 12 | Test local `AuthSecurityTests`, `UserCrudTests` và smoke test HTTP |
 
-Test local dùng SQL Server thật và rollback dữ liệu, bao gồm login/me, BCrypt, giữ/đổi mật khẩu, token giả/hết hạn/khác issuer, xóa tài khoản, đổi quyền, phân quyền endpoint, CORS, migration và audit helper. Các probe chỉ tồn tại trong test để kiểm tra filter chain cho module chưa có CRUD. `src/test` vẫn được Git ignore theo cấu hình có sẵn.
+Test local dùng SQL Server thật và rollback dữ liệu, bao gồm login/me, BCrypt, giữ/đổi mật khẩu, token giả/hết hạn/khác issuer, xóa tài khoản, đổi quyền, phân quyền endpoint, CORS, migration và audit helper. Các probe chỉ tồn tại trong test để kiểm tra filter chain cho module chưa có CRUD. Toàn bộ `src/test/` được Git ignore và chỉ giữ trên máy local, bao gồm ba test hồi quy sau:
+
+- `ApiV1SecurityRegressionTests`: quyền người nhận với ID thường/khoảng trắng/hex, Dashboard, role, URL v1 và header Location.
+- `ApiErrorDispatchRegressionTests`: HTTP thật trên cổng ngẫu nhiên xác nhận giữ đúng `400/404` và không mở công khai `/error`.
+- `UnicodeSchemaRegressionTests`: sinh DDL SQL Server không kết nối database, xác nhận các cột đa ngôn ngữ là `nvarchar` ngay từ schema mới.
+
+Chạy kiểm tra và đóng gói (yêu cầu SQL Server đã có schema):
+
+```powershell
+.\mvnw.cmd clean verify -Dspring.jpa.hibernate.ddl-auto=validate -Dapp.seed-admin.enabled=false -Dapp.migrate-plaintext-passwords=false
+```
 
 Smoke test trên server đã khởi động:
 

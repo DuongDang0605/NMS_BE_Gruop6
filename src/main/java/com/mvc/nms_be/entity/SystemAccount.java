@@ -29,7 +29,7 @@ public class SystemAccount {
     @Column(name = "AccountID")
     private Integer accountId;
 
-    @Column(name = "AccountName", nullable = false, length = 100)
+    @Column(name = "AccountName", nullable = false, length = 100, columnDefinition = "nvarchar(100)")
     private String accountName;
 
     @Column(name = "AccountEmail", nullable = false, length = 254)

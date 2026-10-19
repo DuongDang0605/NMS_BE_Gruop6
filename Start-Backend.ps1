@@ -37,6 +37,11 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw 'Database setup failed. Check SQL Server and Windows account permissions.'
     }
+    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -E -C -b -l 10 `
+        -i (Join-Path $PSScriptRoot 'database\migrations\001-unicode-text-columns.sql')
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unicode schema migration failed.'
+    }
     & .\mvnw.cmd spring-boot:run
     if ($LASTEXITCODE -ne 0) {
         throw "Backend exited with code $LASTEXITCODE."

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class UserController {
@@ -41,7 +41,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<SystemAccountResponseDto> create(@Valid @RequestBody SystemAccountRequestDto request) {
         SystemAccountResponseDto result = systemAccountService.create(request);
-        return ResponseEntity.created(URI.create("/api/users/" + result.getAccountId())).body(result);
+        return ResponseEntity.created(URI.create("/api/v1/users/" + result.getAccountId())).body(result);
     }
 
     @PutMapping("/{id}")

@@ -8,6 +8,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -19,8 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
+@PreAuthorize("@recipientAuthorization.canAccess(#recipientId)")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -40,10 +42,11 @@ public class NotificationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<NotificationResponseDto> create(
             @RequestBody NotificationRequestDto request) {
         NotificationResponseDto result = notificationService.create(request);
-        URI location = URI.create("/api/notifications/" + result.getNotificationId()
+        URI location = URI.create("/api/v1/notifications/" + result.getNotificationId()
                 + "?recipientId=" + result.getRecipientId());
         return ResponseEntity.created(location).body(result);
     }

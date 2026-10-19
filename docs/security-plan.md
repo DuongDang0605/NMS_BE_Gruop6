@@ -1,5 +1,7 @@
 # Kế hoạch Xây dựng Security cho Backend (NMS_BE)
 
+Các API trong kế hoạch hiện dùng tiền tố `/api/v1/`; xem [triển khai và kiểm thử hiện tại](security-implementation.md).
+
 Tài liệu này mô tả chi tiết kế hoạch thiết kế và triển khai hệ thống xác thực (Authentication) & phân quyền (Authorization) cho Backend dự án **FUNewsManagementSystem (NMS_BE)** sử dụng **Spring Security 6+**, **JWT (JSON Web Token)** và băm mật khẩu một chiều bằng **BCrypt**.
 
 ---
@@ -13,7 +15,7 @@ Tài liệu này mô tả chi tiết kế hoạch thiết kế và triển khai 
   * Hiện tại: Mật khẩu đang được lưu dạng văn bản thô (Plain Text) khi tạo/sửa user qua `UserController` và `SystemAccountServiceImpl`.
 * **Bảo mật:**
   * Toàn bộ API hiện chưa có lớp bảo vệ (chưa cài Spring Security).
-  * Chưa có endpoint đăng nhập (`/api/auth/login`) và endpoint lấy thông tin tài khoản hiện tại (`/api/auth/me`).
+  * Chưa có endpoint đăng nhập (`/api/v1/auth/login`) và endpoint lấy thông tin tài khoản hiện tại (`/api/v1/auth/me`).
   * Thực thể `NewsArticle` có các khóa ngoại `CreatedByID` và `UpdatedByID`, nhưng chưa có cơ chế tự động trích xuất thông tin người dùng đang đăng nhập từ Security Context.
 
 ### 1.2. Mục tiêu kỹ thuật
@@ -22,7 +24,7 @@ Tài liệu này mô tả chi tiết kế hoạch thiết kế và triển khai 
    * Cung cấp endpoint đăng nhập trả về Access Token.
    * Client gửi token qua HTTP header: `Authorization: Bearer <token>`.
 3. **Phân quyền theo vai trò (RBAC - Role-Based Access Control):**
-   * `AccountRole = 1` $\rightarrow$ `ROLE_ADMIN`: Toàn quyền quản trị, quản lý tài khoản người dùng (`/api/users/**`), quản lý danh mục, bài viết và xem dashboard.
+   * `AccountRole = 1` $\rightarrow$ `ROLE_ADMIN`: Toàn quyền quản trị, quản lý tài khoản người dùng (`/api/v1/users/**`), quản lý danh mục, bài viết và xem dashboard.
    * `AccountRole = 2` $\rightarrow$ `ROLE_STAFF`: Quản lý bài viết cá nhân, xem danh mục, xem thông báo, không có quyền truy cập CRUD người dùng.
 4. **Cấu hình CORS & Chuẩn hóa lỗi:**
    * Cho phép kết nối an toàn từ Frontend ReactJS (Vite: `http://localhost:5173`).
@@ -47,7 +49,7 @@ sequenceDiagram
     participant JwtProvider as JwtTokenProvider
     participant DB as SQL Server (SystemAccount)
 
-    Client->>AuthCtrl: POST /api/auth/login { accountEmail, accountPassword }
+    Client->>AuthCtrl: POST /api/v1/auth/login { accountEmail, accountPassword }
     AuthCtrl->>AuthMgr: authenticate(UsernamePasswordAuthenticationToken)
     AuthMgr->>UserDetailsSvc: loadUserByUsername(email)
     UserDetailsSvc->>DB: findByAccountEmailIgnoreCase(email)
@@ -92,9 +94,9 @@ sequenceDiagram
             Filter->>SecContext: setAuthentication(UsernamePasswordAuthenticationToken)
             Filter->>Endpoint: Tiếp tục FilterChain
             Endpoint->>SecContext: Kiểm tra vai trò (@PreAuthorize hoặc FilterChain)
-            alt Có đủ quyền (ví dụ Admin gọi /api/users)
+            alt Có đủ quyền (ví dụ Admin gọi /api/v1/users)
                 Endpoint-->>Client: 200 OK + Dữ liệu
-            else Không đủ quyền (ví dụ Staff gọi /api/users)
+            else Không đủ quyền (ví dụ Staff gọi /api/v1/users)
                 Endpoint-->>Client: 403 Forbidden (ApiErrorResponse)
             end
         end
@@ -115,7 +117,7 @@ NMS_BE/
     │   ├── SecurityConfig.java               <-- [Mới] Cấu hình SecurityFilterChain, CORS, PasswordEncoder Bean
     │   └── DataInitializer.java              <-- [Mới] Seed tài khoản Admin mặc định có mật khẩu đã hash
     ├── controller/
-    │   ├── AuthController.java               <-- [Mới] API /api/auth/login, /api/auth/me
+    │   ├── AuthController.java               <-- [Mới] API /api/v1/auth/login, /api/v1/auth/me
     │   └── UserController.java               <-- [Sửa] Thêm @PreAuthorize("hasRole('ADMIN')")
     ├── dto/
     │   ├── request/
@@ -181,15 +183,15 @@ jwt.expiration-ms=${JWT_EXPIRATION_MS:86400000}
 
 | Endpoint | Method | Quyền yêu cầu | Mô tả |
 | :--- | :---: | :---: | :--- |
-| `/api/auth/login` | `POST` | `permitAll()` | Đăng nhập hệ thống |
-| `/api/auth/me` | `GET` | `authenticated()` | Lấy thông tin tài khoản hiện tại |
-| `/api/users/**` | `GET, POST, PUT, DELETE` | `hasRole('ADMIN')` | Quản lý người dùng (chỉ Admin) |
-| `/api/categories/**` | `GET` | `hasAnyRole('ADMIN', 'STAFF')` | Xem danh mục |
-| `/api/categories/**` | `POST, PUT, DELETE` | `hasRole('ADMIN')` | Thêm, sửa, xóa danh mục (Admin) |
-| `/api/news/**` | `GET` | `permitAll()` hoặc `authenticated()` | Xem tin tức |
-| `/api/news/**` | `POST, PUT, DELETE` | `hasAnyRole('ADMIN', 'STAFF')` | Quản lý tin tức (Admin / Staff) |
-| `/api/dashboard/**` | `GET` | `hasAnyRole('ADMIN', 'STAFF')` | Xem thống kê Dashboard |
-| `/api/notifications/**`| `GET, PUT` | `authenticated()` | Xem & cập nhật trạng thái thông báo |
+| `/api/v1/auth/login` | `POST` | `permitAll()` | Đăng nhập hệ thống |
+| `/api/v1/auth/me` | `GET` | `authenticated()` | Lấy thông tin tài khoản hiện tại |
+| `/api/v1/users/**` | `GET, POST, PUT, DELETE` | `hasRole('ADMIN')` | Quản lý người dùng (chỉ Admin) |
+| `/api/v1/categories/**` | `GET` | `hasAnyRole('ADMIN', 'STAFF')` | Xem danh mục |
+| `/api/v1/categories/**` | `POST, PUT, DELETE` | `hasRole('ADMIN')` | Thêm, sửa, xóa danh mục (Admin) |
+| `/api/v1/news/**` | `GET` | `permitAll()` hoặc `authenticated()` | Xem tin tức |
+| `/api/v1/news/**` | `POST, PUT, DELETE` | `hasAnyRole('ADMIN', 'STAFF')` | Quản lý tin tức (Admin / Staff) |
+| `/api/v1/dashboard/**` | `GET` | `hasAnyRole('ADMIN', 'STAFF')` | Xem thống kê Dashboard |
+| `/api/v1/notifications/**`| `GET, PUT` | `authenticated()` | Xem & cập nhật trạng thái thông báo |
 
 ### 4.6. Trợ cấp Kiểm toán Tự động (`SecurityUtils`)
 Thực thể `NewsArticle` có các trường `createdBy` và `updatedBy`.
@@ -222,7 +224,7 @@ Tạo `DataInitializer` implements `CommandLineRunner`:
 | **7** | JWT Component | Xây dựng `JwtTokenProvider` (sinh token, giải mã claims, kiểm tra hạn) và `JwtAuthenticationFilter` (chặn Bearer token). |
 | **8** | Xử lý lỗi bảo mật | Viết `JwtAuthenticationEntryPoint` (401) và `CustomAccessDeniedHandler` (403) trả về format `ApiErrorResponse`. |
 | **9** | Cấu hình Security | Viết `SecurityConfig`: bật CORS, tắt CSRF, cấu hình Stateless Session, phân quyền endpoint, đăng ký JWT filter. |
-| **10** | Authentication API | Viết `LoginRequestDto`, `LoginResponseDto`, `AuthService`, `AuthController` (`POST /api/auth/login`, `GET /api/auth/me`). |
+| **10** | Authentication API | Viết `LoginRequestDto`, `LoginResponseDto`, `AuthService`, `AuthController` (`POST /api/v1/auth/login`, `GET /api/v1/auth/me`). |
 | **11** | Phân quyền Controller | Thêm `@PreAuthorize("hasRole('ADMIN')")` vào `UserController`. |
 | **12** | Kiểm thử & Xác minh | Test đăng nhập thành công/thất bại, test truy cập có/không có token, test phân quyền Admin vs Staff. |
 
@@ -231,7 +233,7 @@ Tạo `DataInitializer` implements `CommandLineRunner`:
 ## 6. Hướng dẫn Tích hợp Phía Frontend (NMS_FE)
 
 1. **Trang Đăng nhập (`Login.jsx`):**
-   * Gửi request `POST http://localhost:8080/api/auth/login` với body:
+   * Gửi request `POST http://localhost:8080/api/v1/auth/login` với body:
      ```json
      {
        "accountEmail": "admin@fu.edu.vn",

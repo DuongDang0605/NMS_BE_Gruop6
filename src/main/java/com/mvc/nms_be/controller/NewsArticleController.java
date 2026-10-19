@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/news")
+@RequestMapping("/api/v1/news")
 @RequiredArgsConstructor
 public class NewsArticleController {
 

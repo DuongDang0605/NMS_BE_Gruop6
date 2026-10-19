@@ -4,11 +4,11 @@ Luồng: `UserController` → `SystemAccountService` → `SystemAccountServiceIm
 
 | Method | Endpoint | Kết quả |
 | --- | --- | --- |
-| GET | `/api/users` | `200`, danh sách user theo ID tăng dần |
-| GET | `/api/users/{id}` | `200`, chi tiết user |
-| POST | `/api/users` | `201`, user mới và header `Location` |
-| PUT | `/api/users/{id}` | `200`, cập nhật đầy đủ user, giữ nguyên ID |
-| DELETE | `/api/users/{id}` | `204`, không có body |
+| GET | `/api/v1/users` | `200`, danh sách user theo ID tăng dần |
+| GET | `/api/v1/users/{id}` | `200`, chi tiết user |
+| POST | `/api/v1/users` | `201`, user mới và header `Location` |
+| PUT | `/api/v1/users/{id}` | `200`, cập nhật đầy đủ user, giữ nguyên ID |
+| DELETE | `/api/v1/users/{id}` | `204`, không có body |
 
 Body POST/PUT:
 
@@ -52,7 +52,7 @@ Ví dụ lỗi validation:
   "status": 400,
   "error": "Bad Request",
   "message": "Validation failed",
-  "path": "/api/users",
+  "path": "/api/v1/users",
   "errors": {
     "accountEmail": "Email must be a valid email address"
   }
