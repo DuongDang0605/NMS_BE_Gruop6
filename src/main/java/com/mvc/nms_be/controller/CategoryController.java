@@ -3,6 +3,7 @@ package com.mvc.nms_be.controller;
 import com.mvc.nms_be.dto.request.CategoryRequestDto;
 import com.mvc.nms_be.dto.response.CategoryResponseDto;
 import com.mvc.nms_be.service.CategoryService;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +17,44 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+// Controller chỉ nhận request HTTP và gọi service; nghiệp vụ nằm trong CategoryServiceImpl
 @RestController
 @RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor
 public class CategoryController {
+
+    private final CategoryService categoryService;
+
+    // GET /api/v1/categories -> danh sách danh mục (200)
+    @GetMapping
+    public List<CategoryResponseDto> findAll() {
+        return categoryService.findAll();
+    }
+
+    // GET /api/v1/categories/{id} -> một danh mục (200) hoặc 404
+    @GetMapping("/{id}")
+    public CategoryResponseDto getById(@PathVariable Integer id) {
+        return categoryService.getById(id);
+    }
+
+    // POST /api/v1/categories -> tạo mới, 201 Created kèm header Location
+    // @Valid: kiểm tra annotation trên DTO, sai thì GlobalExceptionHandler trả 400 "Validation failed"
+    @PostMapping
+    public ResponseEntity<CategoryResponseDto> create(@Valid @RequestBody CategoryRequestDto request) {
+        CategoryResponseDto result = categoryService.create(request);
+        return ResponseEntity.created(URI.create("/api/v1/categories/" + result.getCategoryId())).body(result);
+    }
+
+    // PUT /api/v1/categories/{id} -> cập nhật (200)
+    @PutMapping("/{id}")
+    public CategoryResponseDto update(@PathVariable Integer id, @Valid @RequestBody CategoryRequestDto request) {
+        return categoryService.update(id, request);
+    }
+
+    // DELETE /api/v1/categories/{id} -> 204; còn danh mục con hoặc bài viết thì 409
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        categoryService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

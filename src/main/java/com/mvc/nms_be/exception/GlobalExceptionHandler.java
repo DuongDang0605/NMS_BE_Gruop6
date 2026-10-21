@@ -2,6 +2,8 @@ package com.mvc.nms_be.exception;
 
 import com.mvc.nms_be.controller.UserController;
 import com.mvc.nms_be.controller.AuthController;
+import com.mvc.nms_be.controller.CategoryController;
+import com.mvc.nms_be.controller.SystemSettingController;
 import com.mvc.nms_be.dto.response.ApiErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
@@ -29,8 +31,9 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @Slf4j
-// Business exception handling stays scoped to User and Auth until other modules adopt it.
-@RestControllerAdvice(assignableTypes = {UserController.class, AuthController.class})
+// Business exception handling stays scoped to the modules that have adopted it.
+@RestControllerAdvice(assignableTypes = {UserController.class, AuthController.class,
+        CategoryController.class, SystemSettingController.class})
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
