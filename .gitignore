@@ -1,35 +1,25 @@
-HELP.md
+# Local configuration and credentials for both applications
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Generated dependencies and build output
+node_modules/
+dist/
+dist-ssr/
 target/
-.mvn/wrapper/maven-wrapper.jar
-
-### Tests ###
-/src/test/
-
-!**/src/main/**/target/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
 build/
-!**/src/main/**/build/
+logs/
+*.log
 
-### VS Code ###
+# Local IDE and operating system files
+.idea/
+*.iml
+*.iws
+*.ipr
 .vscode/
+.DS_Store
+Thumbs.db
+HELP.md
