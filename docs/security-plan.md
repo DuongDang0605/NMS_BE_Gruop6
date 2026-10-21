@@ -1,263 +1,408 @@
-# Kế hoạch Xây dựng Security cho Backend (NMS_BE)
+# Kế hoạch Security Tinh Gọn: Cặp Token (Access + Refresh) & Bắt Lỗi 401/403 tại Service (NMS_BE)
 
-Các API trong kế hoạch hiện dùng tiền tố `/api/v1/`; xem [triển khai và kiểm thử hiện tại](security-implementation.md).
-
-Tài liệu này mô tả chi tiết kế hoạch thiết kế và triển khai hệ thống xác thực (Authentication) & phân quyền (Authorization) cho Backend dự án **FUNewsManagementSystem (NMS_BE)** sử dụng **Spring Security 6+**, **JWT (JSON Web Token)** và băm mật khẩu một chiều bằng **BCrypt**.
+Tài liệu này điều chỉnh lại thiết kế hệ thống bảo mật cho dự án **FUNewsManagementSystem (NMS_BE)** theo hướng **thực tế, tinh gọn, dễ hiểu và dễ bảo trì**. Hệ thống giữ nguyên mô hình **Cặp Token (Access Token & Refresh Token)**, nhưng **đơn giản hóa việc phân quyền và bắt lỗi 401/403 trực tiếp tại tầng Service/Controller** thông qua `GlobalExceptionHandler` quen thuộc, không làm phức tạp hóa tầng Filter của Spring Security.
 
 ---
 
-## 1. Mục tiêu & Hiện trạng Hệ thống
+## 1. Tư duy Thiết kế Tinh Gọn (Pragmatic Approach)
 
-### 1.1. Hiện trạng
-* **Nền tảng:** Java 21, Spring Boot, Spring Data JPA, Hibernate, SQL Server.
-* **Tài khoản (`SystemAccount`):** 
-  * Cột: `AccountID`, `AccountName`, `AccountEmail` (UNIQUE), `AccountRole` (`1=Admin`, `2=Staff`), `AccountPassword` (`VARCHAR(255)`).
-  * Hiện tại: Mật khẩu đang được lưu dạng văn bản thô (Plain Text) khi tạo/sửa user qua `UserController` và `SystemAccountServiceImpl`.
-* **Bảo mật:**
-  * Toàn bộ API hiện chưa có lớp bảo vệ (chưa cài Spring Security).
-  * Chưa có endpoint đăng nhập (`/api/v1/auth/login`) và endpoint lấy thông tin tài khoản hiện tại (`/api/v1/auth/me`).
-  * Thực thể `NewsArticle` có các khóa ngoại `CreatedByID` và `UpdatedByID`, nhưng chưa có cơ chế tự động trích xuất thông tin người dùng đang đăng nhập từ Security Context.
+### 1.1. Giữ nguyên mô hình Cặp Token (Dual-Token)
+* **Access Token (Ngắn hạn - 30 phút):** JWT chứa thông tin tài khoản (`email`, `accountId`, `role`). Gửi kèm mỗi request qua header `Authorization: Bearer <accessToken>`.
+* **Refresh Token (Dài hạn - 7 ngày):** Token dùng để cấp lại Access Token mới tại API `POST /api/auth/refresh` khi Access Token hết hạn, giúp người dùng không phải nhập lại mật khẩu liên tục.
+* **Cơ chế sinh token:** Sử dụng thư viện JWT (`jjwt 0.12.6`) ký số bằng Secret Key. Có thể triển khai thuần stateless (Refresh Token dạng JWT có claim `type: "REFRESH"`) hoặc lưu đơn giản trong bảng DB.
 
-### 1.2. Mục tiêu kỹ thuật
-1. **Hash mật khẩu bằng BCrypt:** Mã hóa toàn bộ mật khẩu trước khi lưu vào database; không lưu plain text ở bất kỳ khâu nào.
-2. **Xác thực phi trạng thái (Stateless Authentication) bằng JWT:** 
-   * Cung cấp endpoint đăng nhập trả về Access Token.
-   * Client gửi token qua HTTP header: `Authorization: Bearer <token>`.
-3. **Phân quyền theo vai trò (RBAC - Role-Based Access Control):**
-   * `AccountRole = 1` $\rightarrow$ `ROLE_ADMIN`: Toàn quyền quản trị, quản lý tài khoản người dùng (`/api/v1/users/**`), quản lý danh mục, bài viết và xem dashboard.
-   * `AccountRole = 2` $\rightarrow$ `ROLE_STAFF`: Quản lý bài viết cá nhân, xem danh mục, xem thông báo, không có quyền truy cập CRUD người dùng.
-4. **Cấu hình CORS & Chuẩn hóa lỗi:**
-   * Cho phép kết nối an toàn từ Frontend ReactJS (Vite: `http://localhost:5173`).
-   * Chuẩn hóa phản hồi lỗi `401 Unauthorized` và `403 Forbidden` đồng nhất với cấu trúc `ApiErrorResponse` hiện có của dự án.
-5. **Tài khoản và dữ liệu có sẵn:**
-   * Không tạo Admin mặc định. Đăng nhập dùng tài khoản thật trong database; quyền quản trị chỉ dựa trên `AccountRole = 1`. Chuyển mật khẩu plaintext cũ sang BCrypt khi bật migration.
+### 1.2. Đơn giản hóa Xử lý 401 / 403 tại Tầng Service & Controller
+Thay vì cấu hình phức tạp nhiều lớp `AuthenticationEntryPoint` hay `AccessDeniedHandler` ở Servlet Filter:
+* **Tầng Filter (`JwtFilter`):** Chỉ làm nhiệm vụ giải mã token và trích xuất thông tin người dùng (`SystemAccount`) nạp vào `SecurityContext` (hoặc `request.setAttribute("currentUser", account)`).
+* **Kiểm tra quyền tại Service / Controller:**
+  * Kiểm tra vai trò trực tiếp bằng câu lệnh `if`:
+    ```java
+    // Nếu không phải Admin (role = 1) -> ném ForbiddenException
+    if (currentUser.getAccountRole() != SystemAccount.ADMIN_ROLE) {
+        throw new ForbiddenException("Chỉ tài khoản Quản trị viên (Admin) mới có quyền thực hiện thao tác này");
+    }
+    ```
+* **Bắt lỗi tập trung 100% trong `GlobalExceptionHandler`:**
+  * Bắt `UnauthorizedException` $\rightarrow$ Trả về mã **HTTP 401 Unauthorized**.
+  * Bắt `ForbiddenException` $\rightarrow$ Trả về mã **HTTP 403 Forbidden**.
+  * Cả hai đều tự động trả về định dạng JSON chuẩn `ApiErrorResponse` đã có sẵn của dự án.
 
 ---
 
-## 2. Kiến trúc & Sơ đồ Luồng
+## 2. Bảng Phân Định 401 và 403 tại Service
 
-### 2.1. Luồng Đăng nhập (Login Flow)
+| Mã HTTP | Tên lỗi | Tình huống xảy ra ở Service | Exception ném ra | Phản ứng phía Frontend (ReactJS) |
+| :---: | :--- | :--- | :--- | :--- |
+| **401** | **Unauthorized** *(Chưa xác thực)* | 1. Đăng nhập sai email hoặc sai mật khẩu.<br>2. Gửi request mà không có token hoặc token không hợp lệ.<br>3. Gọi API `/api/auth/refresh` với Refresh Token đã hết hạn/sai. | `UnauthorizedException`<br>(hoặc `BadCredentialsException`) | • Nếu đang gọi API thường bị 401 $\rightarrow$ Tự gọi `/api/auth/refresh` để xin cấp lại token.<br>• Nếu refresh token cũng 401 $\rightarrow$ Chuyển về trang `/login`. |
+| **403** | **Forbidden** *(Không đủ quyền)* | 1. Người dùng Staff (`role = 2`) gọi API User Management ([`/api/users/**`](file:///c:/Fall%202026/SBA301/SBA301_ASS/NMS_BE/src/main/java/com/mvc/nms_be/controller/UserController.java)).<br>2. Staff cố ý tạo/xóa danh mục hoặc thao tác vượt quyền. | `ForbiddenException`<br>(hoặc `AccessDeniedException`) | • **Tuyệt đối không gọi refresh token**.<br>• Hiển thị thông báo Alert/Toast: *"Bạn không có quyền thực hiện chức năng này!"*. Giữ nguyên trang. |
+
+---
+
+## 3. Sơ đồ Luồng Hoạt động Tinh Gọn
+
+### 3.1. Luồng Kiểm tra Quyền & Xử lý 403 tại Service
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Frontend (ReactJS)
+    participant Ctrl as UserController
+    participant Svc as SystemAccountServiceImpl
+    participant SecUtils as SecurityUtils (Lấy user từ Context)
+    participant Handler as GlobalExceptionHandler
+
+    Client->>Ctrl: DELETE /api/users/5 (Kèm Access Token của Staff)
+    Ctrl->>Svc: delete(5)
+    Svc->>SecUtils: getCurrentUser()
+    SecUtils-->>Svc: currentUser (role = 2 / Staff)
+    
+    Note over Svc: Service kiểm tra: if (currentUser.getAccountRole() != 1)
+    Svc-->>Handler: Ném new ForbiddenException("Chỉ Admin mới có quyền xóa User")
+    Handler-->>Client: Trả về HTTP 403 Forbidden { status: 403, error: "Forbidden", message: "..." }
+    Note over Client: Frontend alert thông báo lỗi, không logout
+```
+
+---
+
+### 3.2. Luồng Đăng nhập & Refresh Token (HTTP 401)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Client as Frontend (ReactJS)
     participant AuthCtrl as AuthController
-    participant AuthMgr as AuthenticationManager
-    participant UserDetailsSvc as CustomUserDetailsService
-    participant PasswordEnc as BCryptPasswordEncoder
+    participant AuthSvc as AuthServiceImpl
     participant JwtProvider as JwtTokenProvider
-    participant DB as SQL Server (SystemAccount)
+    participant Handler as GlobalExceptionHandler
 
-    Client->>AuthCtrl: POST /api/v1/auth/login { accountEmail, accountPassword }
-    AuthCtrl->>AuthMgr: authenticate(UsernamePasswordAuthenticationToken)
-    AuthMgr->>UserDetailsSvc: loadUserByUsername(email)
-    UserDetailsSvc->>DB: findByAccountEmailIgnoreCase(email)
-    DB-->>UserDetailsSvc: SystemAccount entity
-    UserDetailsSvc-->>AuthMgr: CustomUserDetails
-    AuthMgr->>PasswordEnc: matches(rawPassword, encodedPassword)
-    alt Mật khẩu không khớp hoặc email không tồn tại
-        PasswordEnc-->>AuthMgr: false
-        AuthMgr-->>AuthCtrl: BadCredentialsException
-        AuthCtrl-->>Client: 401 Unauthorized (ApiErrorResponse)
-    else Mật khẩu hợp lệ
-        PasswordEnc-->>AuthMgr: true
-        AuthMgr-->>AuthCtrl: Authentication Object
-        AuthCtrl->>JwtProvider: generateToken(CustomUserDetails)
-        JwtProvider-->>AuthCtrl: JWT Token String
-        AuthCtrl-->>Client: 200 OK { token, tokenType: "Bearer", accountId, accountName, accountEmail, accountRole, roleName }
+    Note over Client,Handler: 1. Đăng nhập nhận cặp Token
+    Client->>AuthCtrl: POST /api/auth/login { accountEmail, accountPassword }
+    AuthCtrl->>AuthSvc: login(request)
+    alt Sai mật khẩu / Email không tồn tại
+        AuthSvc-->>Handler: Ném new UnauthorizedException("Sai email hoặc mật khẩu")
+        Handler-->>Client: 401 Unauthorized
+    else Hợp lệ
+        AuthSvc->>JwtProvider: generateAccessToken(account) (30 phút)
+        AuthSvc->>JwtProvider: generateRefreshToken(account) (7 ngày)
+        AuthSvc-->>Client: 200 OK { accessToken, refreshToken, accountId, accountName, accountRole }
     end
-```
 
-### 2.2. Luồng Kiểm tra Request có JWT (Authenticated Request Flow)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Client as Frontend (ReactJS)
-    participant Filter as JwtAuthenticationFilter
-    participant JwtProvider as JwtTokenProvider
-    participant SecContext as SecurityContextHolder
-    participant Endpoint as API Controller (e.g. UserController)
-
-    Client->>Filter: Request kèm Header "Authorization: Bearer <token>"
-    alt Không có header hoặc không đúng định dạng "Bearer "
-        Filter->>Endpoint: Tiếp tục FilterChain (Request ở trạng thái Anonymous)
-        Endpoint-->>Client: 401 Unauthorized (nếu endpoint yêu cầu quyền)
-    else Có Bearer token
-        Filter->>JwtProvider: validateToken(token)
-        alt Token không hợp lệ / Hết hạn
-            JwtProvider-->>Filter: Invalid / Expired
-            Filter-->>Client: 401 Unauthorized (ApiErrorResponse)
-        else Token hợp lệ
-            JwtProvider-->>Filter: Trích xuất claims (email, roles, accountId)
-            Filter->>SecContext: setAuthentication(UsernamePasswordAuthenticationToken)
-            Filter->>Endpoint: Tiếp tục FilterChain
-            Endpoint->>SecContext: Kiểm tra vai trò (@PreAuthorize hoặc FilterChain)
-            alt Có đủ quyền (ví dụ Admin gọi /api/v1/users)
-                Endpoint-->>Client: 200 OK + Dữ liệu
-            else Không đủ quyền (ví dụ Staff gọi /api/v1/users)
-                Endpoint-->>Client: 403 Forbidden (ApiErrorResponse)
-            end
-        end
+    Note over Client,Handler: 2. Hết hạn Access Token -> Gọi Refresh Token
+    Client->>AuthCtrl: POST /api/auth/refresh { refreshToken }
+    AuthCtrl->>AuthSvc: refreshToken(refreshToken)
+    alt Refresh Token hết hạn hoặc không hợp lệ
+        AuthSvc-->>Handler: Ném new UnauthorizedException("Refresh token đã hết hạn")
+        Handler-->>Client: 401 Unauthorized -> FE logout về /login
+    else Hợp lệ
+        AuthSvc->>JwtProvider: generateAccessToken(account) (mới)
+        AuthSvc-->>Client: 200 OK { accessToken: "mới", refreshToken: "..." }
     end
 ```
 
 ---
 
-## 3. Cấu trúc File Cần Thêm & Chỉnh Sửa
+## 4. Các File Cần Thêm Mới & Chỉnh Sửa
 
 ```
 NMS_BE/
-├── pom.xml                                   <-- [Sửa] Thêm spring-boot-starter-security, jjwt
+├── pom.xml                                   <-- Thêm spring-boot-starter-security, jjwt
 ├── src/main/resources/
-│   └── application.properties                <-- [Sửa] Thêm cấu hình jwt.secret, jwt.expiration-ms
+│   └── application.properties                <-- Cấu hình secret key và thời hạn 2 token
 └── src/main/java/com/mvc/nms_be/
     ├── config/
-    │   ├── SecurityConfig.java               <-- [Mới] Cấu hình SecurityFilterChain, CORS, PasswordEncoder Bean
-    │   └── DataInitializer.java              <-- Chuyển mật khẩu plaintext cũ sang BCrypt, không seed tài khoản
+    │   ├── SecurityConfig.java               <-- Tắt CSRF, bật CORS, mở permitAll() cho /api/auth/**
+    │   └── DataInitializer.java              <-- Seed tài khoản Admin mặc định (admin@fu.edu.vn / Admin@123)
     ├── controller/
-    │   ├── AuthController.java               <-- [Mới] API /api/v1/auth/login, /api/v1/auth/me
-    │   └── UserController.java               <-- [Sửa] Thêm @PreAuthorize("hasRole('ADMIN')")
+    │   └── AuthController.java               <-- Endpoints: /api/auth/login, /api/auth/refresh, /api/auth/me
     ├── dto/
     │   ├── request/
-    │   │   └── LoginRequestDto.java          <-- [Mới] DTO nhận thông tin đăng nhập
+    │   │   ├── LoginRequestDto.java          <-- Body login (email, password)
+    │   │   └── RefreshTokenRequestDto.java   <-- Body refresh (refreshToken)
     │   └── response/
-    │       └── LoginResponseDto.java         <-- [Mới] DTO trả về token và thông tin user sau khi login
+    │       ├── LoginResponseDto.java         <-- Trả về accessToken, refreshToken, userInfo
+    │       └── TokenRefreshResponseDto.java  <-- Trả về accessToken mới
     ├── exception/
-    │   └── GlobalExceptionHandler.java       <-- [Sửa] Bổ sung xử lý BadCredentialsException, AccessDeniedException
-    ├── repository/
-    │   └── SystemAccountRepository.java      <-- [Sửa] Thêm findByAccountEmailIgnoreCase(String email)
+    │   ├── UnauthorizedException.java        <-- [Mới] Ngoại lệ gây ra lỗi 401
+    │   ├── ForbiddenException.java           <-- [Mới] Ngoại lệ gây ra lỗi 403
+    │   └── GlobalExceptionHandler.java       <-- [Sửa] Bổ sung @ExceptionHandler cho 401 và 403
     ├── security/
-    │   ├── CustomUserDetails.java            <-- [Mới] Triển khai UserDetails bao bọc SystemAccount
-    │   ├── CustomUserDetailsService.java     <-- [Mới] Load user từ database theo email
-    │   ├── JwtAuthenticationEntryPoint.java  <-- [Mới] Xử lý lỗi 401 Unauthorized trả về ApiErrorResponse
-    │   ├── CustomAccessDeniedHandler.java    <-- [Mới] Xử lý lỗi 403 Forbidden trả về ApiErrorResponse
-    │   ├── JwtAuthenticationFilter.java      <-- [Mới] Bộ lọc OncePerRequestFilter xác thực Bearer JWT
-    │   ├── JwtTokenProvider.java             <-- [Mới] Xử lý tạo, parse, kiểm tra hạn và ký số JWT
-    │   └── SecurityUtils.java                <-- [Mới] Tiện ích lấy User hiện tại đang đăng nhập từ Context
+    │   ├── JwtTokenProvider.java             <-- Sinh & xác thực Access Token (30m) và Refresh Token (7d)
+    │   ├── JwtFilter.java                    <-- Đọc Bearer token từ header và nạp vào SecurityContext
+    │   └── SecurityUtils.java                <-- Helper: getCurrentUser(), requireAdmin()
     └── service/
-        ├── AuthService.java                  <-- [Mới] Interface nghiệp vụ đăng nhập
+        ├── AuthService.java                  <-- login, refresh token
         ├── impl/
-        │   ├── AuthServiceImpl.java          <-- [Mới] Cài đặt authenticate và cấp token
-        │   └── SystemAccountServiceImpl.java <-- [Sửa] Hash mật khẩu bằng PasswordEncoder khi tạo/sửa user
+        │   ├── AuthServiceImpl.java          <-- Xử lý đăng nhập, cấp token, băm mật khẩu
+        │   └── SystemAccountServiceImpl.java <-- Băm mật khẩu BCrypt; kiểm tra requireAdmin() khi sửa/xóa
 ```
 
 ---
 
-## 4. Đặc tả Kỹ thuật Từng Thành phần
+## 5. Đặc tả Code Cốt Lõi
 
-### 4.1. Thư viện Dependency (`pom.xml`)
-Cần bổ sung các dependency sau:
-* `org.springframework.boot:spring-boot-starter-security`: Cung cấp bộ khung lọc bảo mật, PasswordEncoder, context.
-* `io.jsonwebtoken:jjwt-api:0.12.6`, `jjwt-impl`, `jjwt-jackson`: Thư viện xử lý JWT hiện đại, bảo mật và hỗ trợ Java 21+.
+### 5.1. Hai Exception Tinh Gọn Cho 401 & 403
 
-### 4.2. Cấu hình Tham số (`application.properties`)
-```properties
-# JWT Configuration
-# Chuỗi secret tối thiểu 256 bits mã hóa hex/base64
-jwt.secret=${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
-# Thời hạn sống của token: 86400000 ms = 24 giờ
-jwt.expiration-ms=${JWT_EXPIRATION_MS:86400000}
-```
-
-### 4.3. Băm mật khẩu (BCrypt)
-* Bean `PasswordEncoder`:
+* **[`UnauthorizedException.java`](file:///c:/Fall%202026/SBA301/SBA301_ASS/NMS_BE/src/main/java/com/mvc/nms_be/exception/UnauthorizedException.java)**:
   ```java
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-      return new BCryptPasswordEncoder();
+  package com.mvc.nms_be.exception;
+
+  public class UnauthorizedException extends RuntimeException {
+      public UnauthorizedException(String message) {
+          super(message);
+      }
   }
   ```
-* Tích hợp vào `SystemAccountServiceImpl`:
-  * Khi tạo tài khoản (`create`): băm mật khẩu `passwordEncoder.encode(request.getAccountPassword())` trước khi đưa vào entity và lưu xuống database.
-  * Khi cập nhật tài khoản (`update`): nếu mật khẩu được cung cấp mới, tiến hành băm mật khẩu mới; nếu giữ nguyên, không mã hóa đè chuỗi hash cũ.
 
-### 4.4. Ánh xạ Vai trò (Role Mapping) & UserDetails
-* Ánh xạ từ cơ sở dữ liệu:
-  * `AccountRole = 1` $\rightarrow$ Authority: `ROLE_ADMIN`
-  * `AccountRole = 2` $\rightarrow$ Authority: `ROLE_STAFF`
-* Lớp `CustomUserDetails` cài đặt `UserDetails`, chứa tham chiếu đến `SystemAccount`, cung cấp ID, email, tên và vai trò.
+* **[`ForbiddenException.java`](file:///c:/Fall%202026/SBA301/SBA301_ASS/NMS_BE/src/main/java/com/mvc/nms_be/exception/ForbiddenException.java)**:
+  ```java
+  package com.mvc.nms_be.exception;
 
-### 4.5. Phân quyền Endpoint (Authorization Matrix)
-
-| Endpoint | Method | Quyền yêu cầu | Mô tả |
-| :--- | :---: | :---: | :--- |
-| `/api/v1/auth/login` | `POST` | `permitAll()` | Đăng nhập hệ thống |
-| `/api/v1/auth/me` | `GET` | `authenticated()` | Lấy thông tin tài khoản hiện tại |
-| `/api/v1/users/**` | `GET, POST, PUT, DELETE` | `hasRole('ADMIN')` | Quản lý người dùng (chỉ Admin) |
-| `/api/v1/categories/**` | `GET` | `hasAnyRole('ADMIN', 'STAFF')` | Xem danh mục |
-| `/api/v1/categories/**` | `POST, PUT, DELETE` | `hasRole('ADMIN')` | Thêm, sửa, xóa danh mục (Admin) |
-| `/api/v1/news/**` | `GET` | `permitAll()` hoặc `authenticated()` | Xem tin tức |
-| `/api/v1/news/**` | `POST, PUT, DELETE` | `hasAnyRole('ADMIN', 'STAFF')` | Quản lý tin tức (Admin / Staff) |
-| `/api/v1/dashboard/**` | `GET` | `hasAnyRole('ADMIN', 'STAFF')` | Xem thống kê Dashboard |
-| `/api/v1/notifications/**`| `GET, PUT` | `authenticated()` | Xem & cập nhật trạng thái thông báo |
-
-### 4.6. Trợ cấp Kiểm toán Tự động (`SecurityUtils`)
-Thực thể `NewsArticle` có các trường `createdBy` và `updatedBy`.
-Xây dựng `SecurityUtils.getCurrentUser()` để lấy tài khoản `SystemAccount` đang thực hiện request từ `SecurityContextHolder`:
-* Khi tạo bài viết (`NewsArticleService.create`): gán `article.setCreatedBy(currentUser)`.
-* Khi cập nhật bài viết (`NewsArticleService.update`): gán `article.setUpdatedBy(currentUser)` và cập nhật `modifiedDate`.
-
-### 4.7. Tài khoản trong database và chuyển mật khẩu cũ
-`DataInitializer` implements `CommandLineRunner` chỉ chuyển mật khẩu plaintext cũ sang BCrypt khi bật cấu hình migration và giữ nguyên mật khẩu đã hash.
-* Không tạo tài khoản Admin mặc định hoặc tự nâng quyền tài khoản.
-* Tài khoản quản trị đầu tiên cần được chuẩn bị trong database với mật khẩu BCrypt.
-* Xác thực bằng email/mật khẩu trong database; phân quyền theo `AccountRole`, không kiểm tra email hay ID cố định.
+  public class ForbiddenException extends RuntimeException {
+      public ForbiddenException(String message) {
+          super(message);
+      }
+  }
+  ```
 
 ---
 
-## 5. Lộ trình Triển khai Chi tiết
+### 5.2. Cập nhật `GlobalExceptionHandler.java`
+Chỉ cần thêm 2 phương thức bắt exception cực kỳ quen thuộc:
 
-| Bước | Nhiệm vụ | Chi tiết thực hiện |
+```java
+@ExceptionHandler(UnauthorizedException.class)
+public ResponseEntity<Object> handleUnauthorized(UnauthorizedException ex, WebRequest request) {
+    return error(HttpStatus.UNAUTHORIZED, ex.getMessage(), Map.of(), request);
+}
+
+@ExceptionHandler(ForbiddenException.class)
+public ResponseEntity<Object> handleForbidden(ForbiddenException ex, WebRequest request) {
+    return error(HttpStatus.FORBIDDEN, ex.getMessage(), Map.of(), request);
+}
+```
+
+---
+
+### 5.3. Kiểm tra Quyền Đơn giản tại Service (`SystemAccountServiceImpl.java`)
+
+```java
+@Override
+@Transactional
+public SystemAccountResponseDto create(SystemAccountRequestDto request) {
+    // 1. Kiểm tra quyền: Chỉ Admin mới được tạo tài khoản
+    SecurityUtils.requireAdmin();
+
+    // 2. Băm mật khẩu BCrypt
+    String encodedPassword = passwordEncoder.encode(request.getAccountPassword());
+    SystemAccount account = accountMapper.toEntity(request, encodedPassword);
+    return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
+}
+
+@Override
+@Transactional
+public void delete(Integer id) {
+    // Chỉ Admin mới được xóa tài khoản
+    SecurityUtils.requireAdmin();
+
+    SystemAccount account = findAccount(id);
+    accountRepository.delete(account);
+    accountRepository.flush();
+}
+```
+
+Với `SecurityUtils.requireAdmin()`:
+```java
+public static void requireAdmin() {
+    SystemAccount current = getCurrentUser();
+    if (current == null || current.getAccountRole() != SystemAccount.ADMIN_ROLE) {
+        throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này. Yêu cầu quyền Quản trị viên (Admin)!");
+    }
+}
+```
+
+---
+
+### 5.4. Cơ chế Cặp Token trong `JwtTokenProvider.java`
+Ký cả 2 token dưới dạng JWT có thời hạn và loại token rõ ràng:
+
+```java
+@Component
+public class JwtTokenProvider {
+
+    @Value("${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    private String jwtSecret;
+
+    private final long ACCESS_TOKEN_VALIDITY = 30 * 60 * 1000L;       // 30 phút
+    private final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60 * 1000L; // 7 ngày
+
+    // Sinh Access Token
+    public String generateAccessToken(SystemAccount account) {
+        return Jwts.builder()
+                .subject(account.getAccountEmail())
+                .claim("accountId", account.getAccountId())
+                .claim("accountRole", account.getAccountRole())
+                .claim("accountName", account.getAccountName())
+                .claim("type", "ACCESS")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    // Sinh Refresh Token
+    public String generateRefreshToken(SystemAccount account) {
+        return Jwts.builder()
+                .subject(account.getAccountEmail())
+                .claim("accountId", account.getAccountId())
+                .claim("type", "REFRESH")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_VALIDITY))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    // Kiểm tra tính hợp lệ của token
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+}
+```
+
+---
+
+### 5.5. Cấu hình Spring Security Tối giản (`SecurityConfig.java`)
+Cấu hình không còn các lớp phức tạp, chỉ cần:
+1. Mở cửa cho `/api/auth/**` (login, refresh).
+2. Tắt CSRF (vì là REST API).
+3. Bật CORS cho Frontend.
+4. Gắn `JwtFilter` để đọc user vào Context.
+
+```java
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtFilter jwtFilter;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**").permitAll()
+                .anyRequest().permitAll() // Quyền chi tiết được kiểm tra chặt chẽ tại Service qua requireAdmin()
+            )
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
+```
+*(Ghi chú: Việc để `.anyRequest().permitAll()` ở Filter và kiểm tra quyền tại Service giúp toàn bộ lỗi 403 đều được ném ra từ Service và bay thẳng vào `GlobalExceptionHandler`, không bao giờ bị Spring Security Filter chặn lén lút).*
+
+---
+
+## 6. Hướng dẫn Tích hợp Frontend Đơn Giản
+
+### 6.1. Trang Login (`Login.jsx`)
+```javascript
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post('http://localhost:8080/api/auth/login', {
+      accountEmail: username,
+      accountPassword: password
+    });
+    localStorage.setItem('accessToken', res.data.accessToken);
+    localStorage.setItem('refreshToken', res.data.refreshToken);
+    localStorage.setItem('user', JSON.stringify({
+      accountId: res.data.accountId,
+      accountName: res.data.accountName,
+      role: res.data.accountRole
+    }));
+    navigate('/dashboard');
+  } catch (err) {
+    setError('Email hoặc mật khẩu không chính xác!');
+  }
+};
+```
+
+### 6.2. Axios Interceptor Xử lý 401 & 403 Cực Gọn
+```javascript
+import axios from 'axios';
+
+const api = axios.create({ baseURL: 'http://localhost:8080/api' });
+
+// 1. Tự đính kèm token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// 2. Xử lý lỗi 401 và 403
+api.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    const originalRequest = err.config;
+
+    // Lỗi 403: Không đủ quyền -> Alert, không logout!
+    if (err.response?.status === 403) {
+      alert(err.response.data?.message || 'Bạn không có quyền thực hiện chức năng này!');
+      return Promise.reject(err);
+    }
+
+    // Lỗi 401: Hết hạn token -> Thử refresh 1 lần
+    if (err.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        try {
+          const res = await axios.post('http://localhost:8080/api/auth/refresh', { refreshToken });
+          localStorage.setItem('accessToken', res.data.accessToken);
+          originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
+          return api(originalRequest); // Thử lại request cũ với token mới
+        } catch (refreshErr) {
+          // Refresh thất bại -> Logout
+          localStorage.clear();
+          window.location.href = '/login';
+        }
+      } else {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(err);
+  }
+);
+
+export default api;
+```
+
+---
+
+## 7. Lộ trình Thực Hiện Tinh Gọn (Chỉ 7 Bước)
+
+| Bước | Công việc | Kết quả |
 | :---: | :--- | :--- |
-| **1** | Bổ sung dependencies | Cập nhật `pom.xml` với `spring-boot-starter-security` và `jjwt 0.12.6`. |
-| **2** | Cấu hình properties | Thêm `jwt.secret` và `jwt.expiration-ms` vào `application.properties`. |
-| **3** | Repository & Entity | Bổ sung phương thức `findByAccountEmailIgnoreCase` vào `SystemAccountRepository`. |
-| **4** | Password Hashing | Định nghĩa Bean `PasswordEncoder` (`BCryptPasswordEncoder`); cập nhật `SystemAccountServiceImpl` để băm mật khẩu khi lưu. |
-| **5** | Chuyển mật khẩu cũ | `DataInitializer` chuyển plaintext sang BCrypt khi bật migration, không tự tạo tài khoản. |
-| **6** | UserDetails Service | Tạo `CustomUserDetails` và `CustomUserDetailsService` load tài khoản theo email từ database. |
-| **7** | JWT Component | Xây dựng `JwtTokenProvider` (sinh token, giải mã claims, kiểm tra hạn) và `JwtAuthenticationFilter` (chặn Bearer token). |
-| **8** | Xử lý lỗi bảo mật | Viết `JwtAuthenticationEntryPoint` (401) và `CustomAccessDeniedHandler` (403) trả về format `ApiErrorResponse`. |
-| **9** | Cấu hình Security | Viết `SecurityConfig`: bật CORS, tắt CSRF, cấu hình Stateless Session, phân quyền endpoint, đăng ký JWT filter. |
-| **10** | Authentication API | Viết `LoginRequestDto`, `LoginResponseDto`, `AuthService`, `AuthController` (`POST /api/v1/auth/login`, `GET /api/v1/auth/me`). |
-| **11** | Phân quyền Controller | Thêm `@PreAuthorize("hasRole('ADMIN')")` vào `UserController`. |
-| **12** | Kiểm thử & Xác minh | Test đăng nhập thành công/thất bại, test truy cập có/không có token, test phân quyền Admin vs Staff. |
-
----
-
-## 6. Hướng dẫn Tích hợp Phía Frontend (NMS_FE)
-
-1. **Trang Đăng nhập (`Login.jsx`):**
-   * Gửi request `POST http://localhost:8080/api/v1/auth/login` với body:
-     ```json
-     {
-       "accountEmail": "user@example.com",
-       "accountPassword": "password_here"
-     }
-     ```
-   * Khi thành công, lưu `token` vào `localStorage`:
-     ```javascript
-     localStorage.setItem('token', response.data.token);
-     localStorage.setItem('user', JSON.stringify({
-       accountId: response.data.accountId,
-       accountName: response.data.accountName,
-       accountRole: response.data.accountRole
-     }));
-     ```
-
-2. **Axios Interceptor tự động gửi Token:**
-   * Cấu hình trong file API client của Frontend:
-     ```javascript
-     axios.interceptors.request.use((config) => {
-       const token = localStorage.getItem('token');
-       if (token) {
-         config.headers.Authorization = `Bearer ${token}`;
-       }
-       return config;
-     });
-     ```
-
-3. **Điều hướng & Bảo vệ Route:**
-   * Ẩn nút/menu Quản lý Người dùng (`UserManager`) đối với tài khoản có `accountRole !== 1`.
-   * Bắt mã phản hồi `401 Unauthorized` để tự động dọn `localStorage` và điều hướng về trang `/login`.
+| **1** | Bổ sung `spring-boot-starter-security` và `jjwt 0.12.6` vào `pom.xml`. | Build thành công thư viện. |
+| **2** | Tạo 2 exception `UnauthorizedException` (401) và `ForbiddenException` (403); thêm `@ExceptionHandler` vào `GlobalExceptionHandler`. | Xử lý lỗi 401 và 403 tập trung tại đúng 1 file. |
+| **3** | Viết `JwtTokenProvider` sinh và kiểm tra cặp token Access/Refresh. | Sẵn sàng bộ công cụ sinh token. |
+| **4** | Viết `JwtFilter` và `SecurityConfig` (bật BCryptPasswordEncoder, nạp user vào Context). | Hệ thống nhận diện được Bearer Token. |
+| **5** | Viết `AuthService` và `AuthController` (`/api/auth/login`, `/api/auth/refresh`, `/api/auth/me`). | API đăng nhập & cấp token hoạt động. |
+| **6** | Băm mật khẩu trong `SystemAccountServiceImpl` & thêm kiểm tra `SecurityUtils.requireAdmin()`. | Mật khẩu được mã hóa an toàn, phân quyền Admin/Staff chặt chẽ. |
+| **7** | Tạo `DataInitializer` tạo sẵn Admin mặc định (`admin@fu.edu.vn` / `Admin@123`) để test ngay. | Hoàn tất 100% hệ thống Security. |

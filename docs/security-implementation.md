@@ -1,47 +1,40 @@
-# Login và phân quyền
+# Security implementation — phạm vi User/Auth
 
-Triển khai 12 bước Backend của [security-plan.md](security-plan.md) trên Spring Boot 4.1.1 / Spring Security do Boot quản lý (7.x), JJWT 0.12.6 và BCrypt. Phiên đăng nhập stateless; không dùng form login, HTTP Basic hoặc session cookie.
+Áp dụng hướng nâng cấp trong `security-plan.md` riêng cho luồng User/Auth. Các module của thành viên khác được giữ nguyên nghiệp vụ và `permitAll()` để demo; việc tích hợp security cho những module đó sẽ thực hiện sau.
 
-Toàn bộ endpoint nghiệp vụ dùng tiền tố `/api/v1/`, gồm Auth, User, Category, News, Tag, NewsTag, Notification và Dashboard. URL cũ không có `v1` không được giữ làm alias. Frontend và công cụ gọi API cần cập nhật đường dẫn; các header `Location` cũng trả URL v1.
+## Phạm vi hiện tại
 
-## Chạy local
-
-Chạy BE bằng `Start-Backend.ps1` như README. Hệ thống không tự tạo Admin hoặc cung cấp thông tin đăng nhập mặc định. Tài khoản phải tồn tại trong `SystemAccount`; quyền quản trị được xác định bằng `AccountRole = 1`, Staff bằng `AccountRole = 2`, không phụ thuộc email, tên hay ID cụ thể. Khi database mới hoàn toàn trống, cần chuẩn bị tài khoản quản trị đầu tiên với mật khẩu BCrypt trước khi sử dụng API quản lý User. `DataInitializer` chỉ chuyển mật khẩu plaintext cũ sang BCrypt khi bật cấu hình migration.
-
-| Biến môi trường | Mặc định / ý nghĩa |
+| API | Quyền |
 | --- | --- |
-| `JWT_SECRET` | Bỏ trống: sinh khóa ngẫu nhiên cho phiên chạy local; token cũ mất hiệu lực sau restart. Khi cần token ổn định giữa các lần chạy, cấu hình Base64 của ít nhất 32 byte ngẫu nhiên hoặc hex của ít nhất 32 byte. Không dùng khóa ví dụ trong plan. |
-| `JWT_EXPIRATION_MS` | `86400000` (24 giờ), phải lớn hơn 0 |
-| `JWT_ISSUER` | `NMS_BE` |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173`; nhiều origin cách nhau bởi dấu phẩy |
-| `MIGRATE_PLAINTEXT_PASSWORDS` | `true`; chuyển mật khẩu cũ sang BCrypt khi khởi động |
+| POST `/api/v1/auth/login` | Công khai |
+| POST `/api/v1/auth/refresh` | Công khai |
+| GET `/api/v1/auth/me` | Đã đăng nhập bằng Access Token |
+| `/api/v1/users`, `/api/v1/users/**` | Admin (`AccountRole = 1`) |
+| Category, Settings, News, Tag, NewsTag, Notification, Dashboard | `permitAll()` để demo |
+| Swagger/OpenAPI | Công khai |
 
-Khóa JWT không được commit vào source. Ví dụ sinh khóa cho biến môi trường bằng PowerShell:
+Controller/service của các module ngoài User/Auth đã được khôi phục về trước lần nâng cấp. Không gắn kiểm tra role, người nhận thông báo hoặc chủ sở hữu bài viết vào những module này. NewsTag giữ đường dẫn sẵn có `/api/news-tags`; không đổi URL của thành viên khác.
 
-```powershell
-$env:JWT_SECRET = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-.\Start-Backend.ps1
-```
+`SecurityConfig` cho request đi qua bằng `permitAll()`. `UserController` và `SystemAccountServiceImpl` gọi `SecurityUtils.requireAdmin()`, còn `AuthService.me()` yêu cầu principal đã đăng nhập. Không có interceptor bắt đăng nhập toàn bộ API. Anonymous trả 401, Staff trả 403, Admin được CRUD User.
 
-BCrypt giới hạn mật khẩu ở 72 byte UTF-8. Mật khẩu mới phải dài ít nhất 6 ký tự; POST/PUT và login từ chối chuỗi vượt giới hạn byte thay vì cắt ngắn. Khi chuyển dữ liệu cũ, hash BCrypt được giữ nguyên; nếu còn plaintext dài hơn 72 byte, startup dừng và chỉ ra ID cần đặt lại mật khẩu trước, không tự cắt hoặc thay mật khẩu.
+`GlobalExceptionHandler` chỉ áp dụng cho `UserController` và `AuthController`: `UnauthorizedException` → 401; `ForbiddenException` → 403; cùng cấu trúc `ApiErrorResponse`. Các module khác giữ cách xử lý lỗi trước đó.
 
-## Authentication API
+## Đăng nhập và cấp lại token
 
-`POST /api/v1/auth/login` công khai:
+`POST /api/v1/auth/login`:
 
 ```json
 {"accountEmail":"user@example.com","accountPassword":"your-password"}
 ```
 
-Email được tìm không phân biệt hoa/thường. Đăng nhập sai email hoặc mật khẩu cùng trả `401` với thông báo chung. Login không bị chặn bởi Bearer token cũ còn trong header.
-
-Response thành công:
+Email không phân biệt hoa/thường; sai email hoặc mật khẩu đều trả 401 với thông báo chung. Response:
 
 ```json
 {
-  "token": "<JWT>",
+  "accessToken": "<JWT ACCESS>",
+  "refreshToken": "<JWT REFRESH>",
   "tokenType": "Bearer",
-  "expiresIn": 86400,
+  "expiresIn": 1800,
   "accountId": 1,
   "accountName": "Example User",
   "accountEmail": "user@example.com",
@@ -50,94 +43,66 @@ Response thành công:
 }
 ```
 
-Gọi `GET /api/v1/auth/me` với `Authorization: Bearer <JWT>` để lấy `accountId`, `accountName`, `accountEmail`, `accountRole`. Không endpoint nào trả mật khẩu/hash.
+Dùng `Authorization: Bearer <accessToken>` cho User và `GET /api/v1/auth/me`. Response không chứa mật khẩu/hash. Trường `token` cũ được thay bằng `accessToken`.
 
-JWT có chữ ký HS256, issuer, subject là account ID, thời gian hết hạn, email, role và fingerprint của hash mật khẩu. Mỗi request tải lại tài khoản từ database: xóa tài khoản, đổi email hoặc mật khẩu làm token cũ không còn hợp lệ; đổi role áp dụng quyền mới ngay. Authority lấy từ database hiện tại, không tin role do client cung cấp. Không có endpoint refresh token hoặc đăng ký công khai trong kế hoạch này.
+`POST /api/v1/auth/refresh` nhận:
 
-## Ma trận quyền
+```json
+{"refreshToken":"<JWT REFRESH>"}
+```
 
-| Endpoint | Quyền |
+Response:
+
+```json
+{"accessToken":"<JWT ACCESS mới>","refreshToken":"<JWT REFRESH ban đầu>","tokenType":"Bearer","expiresIn":1800}
+```
+
+Access Token mặc định 30 phút; Refresh Token 7 ngày. Refresh không gia hạn thời điểm hết hạn 7 ngày ban đầu. Claim `type` ngăn dùng hai loại token thay nhau. Login/refresh bỏ qua Bearer header cũ. Refresh hết hạn/sai chữ ký/issuer/loại trả 401; body thiếu/sai định dạng trả 400.
+
+JWT ký HS256 bằng JJWT 0.12.6. Mỗi request có Access Token hoặc mỗi lần refresh đều tải lại tài khoản từ database: xóa tài khoản, đổi email hoặc mật khẩu vô hiệu cả hai token; role mới có hiệu lực ngay. Refresh là JWT stateless, không có bảng session/rotation. Logout xóa token phía client; token đã cấp vẫn hợp lệ tới khi hết hạn hoặc thông tin tài khoản/khóa ký thay đổi.
+
+## Cấu hình và mật khẩu
+
+| Biến môi trường | Mặc định / ý nghĩa |
 | --- | --- |
-| POST `/api/v1/auth/login` | Công khai |
-| GET `/api/v1/auth/me` | Đã đăng nhập |
-| `/api/v1/users`, `/api/v1/users/**` | Admin; thêm `@PreAuthorize` tại UserController |
-| GET `/api/v1/categories/**` | Admin hoặc Staff |
-| Ghi `/api/v1/categories/**` | Admin |
-| GET `/api/v1/news/**` | Đã đăng nhập (chọn phương án authenticated trong plan) |
-| POST/PUT/DELETE `/api/v1/news/**` | Admin hoặc Staff; kiểm tra chủ sở hữu khi tích hợp nghiệp vụ |
-| GET `/api/v1/dashboard/**` | Admin hoặc Staff |
-| GET `/api/v1/dashboard/notifications` | Admin hoặc chính người nhận, áp dụng thêm kiểm tra recipientId |
-| POST `/api/v1/notifications/**` | Admin |
-| Các thao tác khác `/api/v1/notifications/**` | Đã đăng nhập; Staff chỉ được dùng recipientId của mình; Admin được thao tác cho người nhận khác |
-| GET `/api/v1/tags/**`, `/api/v1/news-tags/**` | Admin hoặc Staff |
-| Ghi `/api/v1/tags/**`, `/api/v1/news-tags/**` | Admin |
-| Endpoint khác | Từ chối mặc định |
+| `JWT_SECRET` | Trống: khóa ngẫu nhiên mỗi lần chạy; hoặc Base64/hex của ít nhất 32 byte ngẫu nhiên |
+| `JWT_ACCESS_EXPIRATION_MS` | `1800000`; fallback `JWT_EXPIRATION_MS` để tương thích cấu hình cũ |
+| `JWT_REFRESH_EXPIRATION_MS` | `604800000` |
+| `JWT_ISSUER` | `NMS_BE` |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173`; nhiều origin cách nhau dấu phẩy |
+| `MIGRATE_PLAINTEXT_PASSWORDS` | `true`; chuyển plaintext cũ sang BCrypt, giữ hash hiện có |
 
-CORS cho phép Authorization/Content-Type và các phương thức GET/POST/PUT/PATCH/DELETE/OPTIONS từ origin cấu hình. Preflight được xử lý trước xác thực. Lỗi authentication và authorization trả `ApiErrorResponse` với `401`/`403`; validation, login, nghiệp vụ User/Auth cùng dùng handler chung. Handler nghiệp vụ vẫn giới hạn cho User và Auth để các thành viên tích hợp sau.
+Không seed Admin, không thêm hoặc ghi đè tài khoản mặc định. Tài khoản quản trị cần tồn tại trong database. Role Admin là 1, Staff là 2; không dựa vào email/ID. User create/update dùng BCrypt; mật khẩu mới tối thiểu 6 ký tự và tối đa 72 byte UTF-8. Migration không cắt ngắn mật khẩu quá dài.
 
-Notification và thống kê thông báo Dashboard dùng chung `RecipientAuthorization` qua `@PreAuthorize`. Quyền được kiểm tra trên tham số `Integer recipientId` đã được MVC chuyển đổi, không tự parse lại query string. Vì thế khoảng trắng/hex không thể làm lệch ID được kiểm tra và ID thực sự dùng để truy vấn. Staff chỉ được thao tác dữ liệu của mình; Admin vẫn truy cập mọi người nhận. Request sai định dạng được MVC xử lý trước khi gọi controller.
+Chạy BE bằng `Start-Backend.ps1` với JDK 21+ và SQL Server như README. Unicode/schema và các migration hiện có được giữ nguyên.
 
-Chỉ dispatcher `ERROR` nội bộ được đi qua security để giữ nguyên mã lỗi `400/404/500` từ các controller chưa tích hợp handler chung. Request HTTP trực tiếp vào `/error` vẫn bị chặn; quyền truy cập API nghiệp vụ không được nới lỏng.
+## Frontend User/Auth
 
-## Unicode và database hiện có
+`session.js` lưu cặp token và thông tin user. Phiên hết hạn Access Token nhưng còn Refresh Token được khôi phục qua `/auth/me`.
 
-Tên User, tên/mô tả Category, tiêu đề/headline/nguồn/nội dung News, tên/ghi chú Tag và văn bản Notification được khai báo `nvarchar` rõ ràng trong entity. Schema mới không phụ thuộc các cột `nvarchar` còn lại từ lần tạo database cũ.
+`api.js` gắn Access Token; 401 tự refresh một lần rồi thử lại. Các request đồng thời dùng chung một refresh. Refresh bị từ chối hoặc request thử lại vẫn 401 thì xóa riêng khóa xác thực và về `/login`. Lỗi mạng khi refresh giữ phiên để thử lại. 403 hiển thị thiếu quyền, không refresh hoặc logout. Response refresh cũ không thể khôi phục phiên sau logout hoặc xóa một phiên đăng nhập mới.
 
-Database hiện có dùng script `database/migrations/001-unicode-text-columns.sql` để chuyển các cột văn bản `varchar` sang `nvarchar`. Script chạy trong transaction, bỏ qua cột đã là `nvarchar` và không xóa bảng hoặc bản ghi. `Start-Backend.ps1` tự chạy script này trước khi khởi động. Nếu chạy bằng IDE/JAR hoặc SQL Authentication, chạy migration trên đúng database trước:
+Sidebar chỉ hiện Users cho Admin; truy cập trực tiếp `/users` của Staff hiển thị thiếu quyền. Các trang quản lý khác giữ nguyên dữ liệu và thao tác demo.
+
+## Kiểm thử theo phạm vi
+
+Test được lưu trong Git: `DualTokenSecurityTests`, bao gồm login/refresh, hết hạn, đổi email/password/role, quyền CRUD User, và xác nhận các API demo ngoài User/Auth vẫn dùng được không cần đăng nhập (cả khi header chứa token sai).
 
 ```powershell
-sqlcmd -S 'tcp:localhost,1433' -d FUNewsManagementSystem -E -C -b -i .\database\migrations\001-unicode-text-columns.sql
+$env:JAVA_HOME = 'C:\path\to\jdk-21'
+.\mvnw.cmd clean verify '-Dtest=DualTokenSecurityTests' '-Dspring.jpa.hibernate.ddl-auto=validate' '-Dapp.migrate-plaintext-passwords=false'
 ```
 
-Email và password hash vẫn dùng `varchar`. Việc đổi kiểu cột bảo vệ dữ liệu Unicode mới; không thể phục hồi dấu đã mất do các lần lưu sai trước đó.
+Các test tích hợp local cũ về User/Auth có thể chạy thêm bằng `-Dtest=DualTokenSecurityTests,AuthSecurityTests,UserCrudTests,DataInitializerTests,SwaggerDocumentationTests`. Những test local cũ yêu cầu security ở module khác không còn phản ánh phạm vi demo hiện tại.
 
-## Hỗ trợ nghiệp vụ của các thành viên
+Frontend: `npm test`, `npm run lint`, `npm run build`.
 
-`SecurityUtils.getCurrentUser()` lấy `SystemAccount` từ principal đã xác thực. `applyCreator(article)` gán người tạo hiện tại. `requireArticleOwnerOrAdmin(article)` kiểm tra Staff chỉ sửa/xóa bài của mình; Admin có quyền với mọi bài. `applyUpdater(article)` kiểm tra quyền rồi gán người sửa và thời gian UTC.
-
-Hiện NewsArticleController/Service trên nhánh này còn là khung, chưa có handler CRUD. Khi thành viên triển khai nghiệp vụ, gọi `applyCreator` trong create, `applyUpdater` trong update và `requireArticleOwnerOrAdmin` trước delete; các trường audit không lấy từ request client. Các helper đã có kiểm thử, nhưng không tuyên bố đã hoàn thành CRUD bài viết hoặc nối chúng vào service đang trống.
-
-## Tích hợp frontend
-
-Phần 6 của plan là hướng dẫn tích hợp; thay đổi lần này nằm ở BE. Frontend hiện vẫn có login mock, chưa chuyển sang backend.
-
-Frontend cần gửi body login như trên, lưu token và thông tin user, thêm Bearer header qua Axios interceptor, gọi `/api/v1/auth/me` khi khôi phục phiên, ẩn/bảo vệ trang quản lý User khi `accountRole !== 1`, xóa phiên và về `/login` khi nhận `401`. Với `403`, hiển thị thiếu quyền và giữ phiên. Đăng xuất local xóa token; server không tạo session.
-
-## Kiểm thử và đối chiếu 12 bước
-
-| Bước trong plan | Thành phần thực hiện |
-| --- | --- |
-| 1 | `pom.xml`: starter security và JJWT 0.12.6 |
-| 2 | `application.properties`: JWT, CORS và migration |
-| 3 | `SystemAccountRepository.findByAccountEmailIgnoreCase` |
-| 4 | `SecurityConfig.passwordEncoder`, service create/update, validator UTF-8 |
-| 5 | `DataInitializer`: migrate plaintext, giữ hash cũ; không seed tài khoản |
-| 6 | `CustomUserDetails`, `CustomUserDetailsService` |
-| 7 | `JwtTokenProvider`, `JwtAuthenticationFilter` |
-| 8 | `JwtAuthenticationEntryPoint`, `CustomAccessDeniedHandler`, `SecurityErrorResponseWriter` và handler chung |
-| 9 | `SecurityConfig`: CORS, stateless, ma trận quyền và filter |
-| 10 | DTO login, `AuthService`, `AuthController` login/me |
-| 11 | `UserController.@PreAuthorize` |
-| 12 | Test local `AuthSecurityTests`, `UserCrudTests` và smoke test HTTP |
-
-Test local dùng SQL Server thật và rollback dữ liệu, bao gồm login/me, BCrypt, giữ/đổi mật khẩu, token giả/hết hạn/khác issuer, xóa tài khoản, đổi quyền, phân quyền endpoint, CORS, migration và audit helper. Các probe chỉ tồn tại trong test để kiểm tra filter chain cho module chưa có CRUD. Toàn bộ `src/test/` được Git ignore và chỉ giữ trên máy local, bao gồm ba test hồi quy sau:
-
-- `ApiV1SecurityRegressionTests`: quyền người nhận với ID thường/khoảng trắng/hex, Dashboard, role, URL v1 và header Location.
-- `ApiErrorDispatchRegressionTests`: HTTP thật trên cổng ngẫu nhiên xác nhận giữ đúng `400/404` và không mở công khai `/error`.
-- `UnicodeSchemaRegressionTests`: sinh DDL SQL Server không kết nối database, xác nhận các cột đa ngôn ngữ là `nvarchar` ngay từ schema mới.
-
-Chạy kiểm tra và đóng gói (yêu cầu SQL Server đã có schema):
+Smoke test server đang chạy (chỉ User/Auth):
 
 ```powershell
-.\mvnw.cmd clean verify -Dspring.jpa.hibernate.ddl-auto=validate -Dapp.migrate-plaintext-passwords=false
+.\scripts\Test-Auth.ps1 -BaseUrl http://localhost:8080 -AdminEmail '<email Admin>' -AdminPassword '<password>'
 ```
 
-Smoke test trên server đã khởi động:
+Script tạo Staff tạm và xóa trong `finally`.
 
-```powershell
-.\scripts\Test-Auth.ps1 -BaseUrl http://localhost:8080 -AdminEmail '<email tài khoản có role Admin>' -AdminPassword '<mật khẩu của tài khoản>'
-```
-
-Script tạo tài khoản Staff tạm, kiểm tra login/quyền/đổi mật khẩu và xóa tài khoản đó trong `finally`. Tài khoản Admin dùng để chạy test phải tồn tại trước.
-
-Tham khảo chính thức: [Spring Security DaoAuthenticationProvider](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/dao-authentication-provider.html), [Spring Security CORS](https://docs.spring.io/spring-security/reference/servlet/integrations/cors.html), [JJWT 0.12.6](https://github.com/jwtk/jjwt/blob/0.12.6/README.adoc).
+Tham khảo: [JJWT 0.12.6](https://github.com/jwtk/jjwt/blob/0.12.6/README.adoc), [Spring Security CORS](https://docs.spring.io/spring-security/reference/servlet/integrations/cors.html).

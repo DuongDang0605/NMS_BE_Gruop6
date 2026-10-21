@@ -51,7 +51,7 @@ try {
     Confirm-Status $response 200 'Admin login'
     $admin = $response.Content | ConvertFrom-Json
     if ($admin.roleName -ne 'ADMIN' -or $admin.tokenType -ne 'Bearer') { throw 'Expected Admin Bearer login' }
-    $adminHeaders = @{ Authorization = "Bearer $($admin.token)" }
+    $adminHeaders = @{ Authorization = "Bearer $($admin.accessToken)" }
     $response = Send-Api GET '/api/v1/auth/me' $adminHeaders
     Confirm-Status $response 200 'Admin me'
     $response = Send-Api GET '/api/v1/users' $adminHeaders
@@ -68,7 +68,16 @@ try {
     Confirm-Status $response 200 'Staff login'
     $staff = $response.Content | ConvertFrom-Json
     if ($staff.roleName -ne 'STAFF') { throw 'Expected Staff role' }
-    $staffHeaders = @{ Authorization = "Bearer $($staff.token)" }
+    $staffHeaders = @{ Authorization = "Bearer $($staff.accessToken)" }
+    $response = Send-Api POST '/api/v1/auth/refresh' -Body @{ refreshToken = $staff.refreshToken }
+    Confirm-Status $response 200 'Staff refresh token'
+    $refreshed = $response.Content | ConvertFrom-Json
+    if (-not $refreshed.accessToken -or $refreshed.expiresIn -le 0) { throw 'Missing refreshed access token' }
+    $staffHeaders = @{ Authorization = "Bearer $($refreshed.accessToken)" }
+    $response = Send-Api POST '/api/v1/auth/refresh' -Body @{ refreshToken = $staff.accessToken }
+    Confirm-Status $response 401 'Access token cannot be used as refresh token'
+    $response = Send-Api GET '/api/v1/auth/me' @{ Authorization = "Bearer $($staff.refreshToken)" }
+    Confirm-Status $response 401 'Refresh token cannot authenticate business requests'
     $response = Send-Api GET '/api/v1/auth/me' $staffHeaders
     Confirm-Status $response 200 'Staff me'
     foreach ($method in @('GET', 'POST')) {
@@ -79,17 +88,6 @@ try {
         $response = Send-Api $method "/api/v1/users/$temporaryId" $staffHeaders
         Confirm-Status $response 403 "Staff $method user denied"
     }
-    foreach ($recipient in @($admin.accountId.ToString(), " $($admin.accountId) ", ('0x{0:x}' -f [int]$admin.accountId))) {
-        $encodedRecipient = [uri]::EscapeDataString($recipient)
-        $response = Send-Api GET "/api/v1/notifications?recipientId=$encodedRecipient" $staffHeaders
-        Confirm-Status $response 403 'Staff cannot read another recipient using alternate integer syntax'
-        $response = Send-Api GET "/api/v1/dashboard/notifications?recipientId=$encodedRecipient" $staffHeaders
-        Confirm-Status $response 403 'Staff cannot read another recipient dashboard'
-    }
-    $response = Send-Api GET "/api/v1/notifications?recipientId=$($admin.accountId)&status=invalid" $adminHeaders
-    Confirm-Status $response 400 'Invalid notification status keeps HTTP 400'
-    $response = Send-Api GET "/api/v1/notifications/2147483647?recipientId=$($admin.accountId)" $adminHeaders
-    Confirm-Status $response 404 'Missing notification keeps HTTP 404'
     $response = Send-Api GET '/api/v1/auth/me' @{ Authorization = 'Bearer invalid-token' }
     Confirm-Status $response 401 'Invalid token rejected'
 
@@ -104,6 +102,8 @@ try {
     Confirm-Status $response 200 'Password change'
     $response = Send-Api GET '/api/v1/auth/me' $staffHeaders
     Confirm-Status $response 401 'Previous token invalidated'
+    $response = Send-Api POST '/api/v1/auth/refresh' -Body @{ refreshToken = $staff.refreshToken }
+    Confirm-Status $response 401 'Previous refresh token invalidated'
     $response = Send-Api POST '/api/v1/auth/login' -Body @{ accountEmail = $staffEmail; accountPassword = $newPassword }
     Confirm-Status $response 200 'New password login'
 

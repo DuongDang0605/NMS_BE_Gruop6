@@ -8,6 +8,7 @@ import com.mvc.nms_be.exception.ResourceConflictException;
 import com.mvc.nms_be.exception.ResourceNotFoundException;
 import com.mvc.nms_be.mapper.SystemAccountMapper;
 import com.mvc.nms_be.repository.SystemAccountRepository;
+import com.mvc.nms_be.security.SecurityUtils;
 import com.mvc.nms_be.service.SystemAccountService;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +31,7 @@ public class SystemAccountServiceImpl implements SystemAccountService {
 
     @Override
     public List<SystemAccountResponseDto> findAll() {
+        SecurityUtils.requireAdmin();
         return accountRepository.findAll(Sort.by("accountId")).stream()
                 .map(accountMapper::toResponseDto)
                 .toList();
@@ -37,12 +39,14 @@ public class SystemAccountServiceImpl implements SystemAccountService {
 
     @Override
     public SystemAccountResponseDto getById(Integer id) {
+        SecurityUtils.requireAdmin();
         return accountMapper.toResponseDto(findAccount(id));
     }
 
     @Override
     @Transactional
     public SystemAccountResponseDto create(SystemAccountRequestDto request) {
+        SecurityUtils.requireAdmin();
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCase(email)) {
             throw duplicateEmail();
@@ -54,6 +58,7 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     @Override
     @Transactional
     public SystemAccountResponseDto update(Integer id, SystemAccountUpdateRequestDto request) {
+        SecurityUtils.requireAdmin();
         SystemAccount account = findAccount(id);
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCaseAndAccountIdNot(email, id)) {
@@ -68,6 +73,7 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     @Override
     @Transactional
     public void delete(Integer id) {
+        SecurityUtils.requireAdmin();
         SystemAccount account = findAccount(id);
         accountRepository.delete(account);
         // Flush inside the request so FK conflicts can be returned as HTTP 409.

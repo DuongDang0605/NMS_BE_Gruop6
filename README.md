@@ -4,7 +4,7 @@ Spring Boot 4.1.1, Java 21+, Hibernate/JPA và SQL Server.
 
 ## Login và phân quyền
 
-Đã triển khai `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, JWT Bearer, BCrypt và phân quyền Admin/Staff. User CRUD chỉ dành cho tài khoản có `AccountRole = 1` trong database. Không có tài khoản Admin mặc định hoặc cơ chế tự tạo Admin khi khởi động; tài khoản quản trị đầu tiên cần được chuẩn bị trong database với mật khẩu BCrypt. Mật khẩu plaintext cũ được chuyển sang BCrypt khi khởi động, không hash lại mật khẩu đã mã hóa.
+Đã nâng cấp riêng luồng User/Auth: login, refresh, me tại `/api/v1/auth`, Access Token 30 phút, Refresh Token 7 ngày, BCrypt và kiểm tra quyền Admin khi CRUD User. Các module khác giữ `permitAll()` để thành viên demo và sẽ tích hợp security sau. Không seed tài khoản Admin; tài khoản quản trị phải tồn tại trong database. Mật khẩu plaintext cũ vẫn được chuyển sang BCrypt khi bật migration.
 
 Chi tiết cấu hình JWT/CORS, ma trận quyền, tích hợp frontend và kiểm thử: [Security implementation](docs/security-implementation.md). Request/response CRUD User: [User API](docs/user-api.md). Kế hoạch gốc: [Security plan](docs/security-plan.md).
 
@@ -18,9 +18,9 @@ Sau khi khởi động backend:
 - OpenAPI JSON: http://localhost:8080/v3/api-docs; YAML: `/v3/api-docs.yaml`.
 - Tài liệu chỉ hiển thị các API nghiệp vụ `/api/v1/**` đã được triển khai.
 
-Để thử API có bảo vệ, mở `POST /api/v1/auth/login`, chọn **Try it out**, nhập email/mật khẩu của tài khoản trong database và **Execute**. Sao chép trường `token` trong response, bấm **Authorize**, dán token (không thêm `Bearer `) và xác nhận. Swagger tự gửi Bearer header; backend kiểm tra role từ database như các request thông thường. Khi token hết hạn hoặc restart với khóa JWT ngẫu nhiên, đăng nhập và Authorize lại.
+Để thử API có bảo vệ, mở `POST /api/v1/auth/login`, chọn **Try it out**, nhập email/mật khẩu của tài khoản trong database và **Execute**. Sao chép trường `accessToken` trong response, bấm **Authorize**, dán token (không thêm `Bearer `) và xác nhận. Swagger tự gửi Bearer header; backend kiểm tra role từ database như các request thông thường. Khi token hết hạn hoặc restart với khóa JWT ngẫu nhiên, đăng nhập và Authorize lại.
 
-Trang tài liệu mở công khai; API nghiệp vụ vẫn yêu cầu xác thực và phân quyền theo cấu hình Security.
+Trang tài liệu mở công khai. Hiện chỉ User/Auth được bảo vệ; các module nghiệp vụ khác giữ `permitAll()` để demo.
 
 ## Chạy trên Windows
 

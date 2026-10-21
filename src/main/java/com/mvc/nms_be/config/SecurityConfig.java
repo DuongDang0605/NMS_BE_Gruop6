@@ -1,8 +1,6 @@
 package com.mvc.nms_be.config;
 
-import com.mvc.nms_be.security.CustomAccessDeniedHandler;
 import com.mvc.nms_be.security.CustomUserDetailsService;
-import com.mvc.nms_be.security.JwtAuthenticationEntryPoint;
 import com.mvc.nms_be.security.JwtAuthenticationFilter;
 import com.mvc.nms_be.security.JwtTokenProvider;
 import java.util.Arrays;
@@ -10,7 +8,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,7 +21,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import jakarta.servlet.DispatcherType;
 
 @Configuration
 @EnableMethodSecurity
@@ -43,10 +39,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager,
-            JwtTokenProvider tokens, CustomUserDetailsService users, JwtAuthenticationEntryPoint entryPoint,
-            CustomAccessDeniedHandler accessDenied, UrlBasedCorsConfigurationSource corsSource) throws Exception {
+            JwtTokenProvider tokens, CustomUserDetailsService users, UrlBasedCorsConfigurationSource corsSource) throws Exception {
         // Construct here so the JWT filter is registered only in Spring Security's chain.
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokens, users, entryPoint);
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokens, users);
         return http.cors(cors -> cors.configurationSource(corsSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -55,35 +50,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authenticationManager(authenticationManager)
-                .exceptionHandling(errors -> errors.authenticationEntryPoint(entryPoint).accessDeniedHandler(accessDenied))
-                .authorizeHttpRequests(auth -> auth
-                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**",
-                                "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        // Swagger UI và tài liệu OpenAPI mở công khai để demo; API bên trong vẫn cần JWT.
-                        .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
-                            .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
-                        .requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/categories/**")
-                            .permitAll()
-                        .requestMatchers("/api/v1/categories", "/api/v1/categories/**").permitAll()
-                        // Cấu hình hệ thống: Admin/Staff được xem, chỉ Admin được thêm/sửa/xóa.
-                        .requestMatchers(HttpMethod.GET, "/api/v1/settings", "/api/v1/settings/**")
-                            .permitAll()
-                        .requestMatchers("/api/v1/settings", "/api/v1/settings/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/news", "/api/v1/news/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/news", "/api/v1/news/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/news", "/api/v1/news/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/news", "/api/v1/news/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/notifications", "/api/v1/notifications/**").permitAll()
-                        .requestMatchers("/api/v1/notifications", "/api/v1/notifications/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/tags", "/api/v1/tags/**", "/api/v1/news-tags", "/api/v1/news-tags/**")
-                            .permitAll()
-                        .requestMatchers("/api/v1/tags", "/api/v1/tags/**", "/api/v1/news-tags", "/api/v1/news-tags/**").permitAll()
-                        .anyRequest().denyAll())
+                // Only User/Auth are guarded in controllers/services; other modules stay public for demos.
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

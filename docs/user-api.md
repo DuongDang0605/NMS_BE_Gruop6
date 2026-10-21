@@ -29,7 +29,7 @@ Body POST/PUT:
 
 DTO dùng constructor không tham số để JSON binding giữ giá trị role mặc định. Validation chạy ở controller qua `@Valid` và ở service qua Spring bean `@Validated`. Các thao tác ghi dùng transaction; PUT lấy entity hiện có rồi cập nhật.
 
-Exception được thiết kế dùng chung: `ResourceNotFoundException`, `ResourceConflictException`, `ApiErrorResponse` và `GlobalExceptionHandler`. Handler hiện áp dụng cho `UserController` và `AuthController`; các controller nghiệp vụ khác giữ nguyên cách xử lý exception. Lỗi xác thực/phân quyền trong filter được trả cùng cấu trúc JSON.
+Exception được thiết kế dùng chung: `ResourceNotFoundException`, `ResourceConflictException`, `ApiErrorResponse` và `GlobalExceptionHandler`. Handler chỉ áp dụng `UserController` và `AuthController`. `UnauthorizedException` (401) và `ForbiddenException` (403) được ném tại MVC/Controller/Service và trả cùng cấu trúc JSON; các module khác giữ nguyên để demo.
 
 Các mã lỗi hiện áp dụng cho User:
 

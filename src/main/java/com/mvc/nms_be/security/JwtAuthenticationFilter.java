@@ -19,12 +19,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService userDetailsService;
-    private final JwtAuthenticationEntryPoint entryPoint;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
         return "POST".equals(request.getMethod())
-                && request.getRequestURI().equals(request.getContextPath() + "/api/v1/auth/login");
+                && (path.equals("/api/v1/auth/login") || path.equals("/api/v1/auth/refresh"));
     }
 
     @Override
@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header != null && header.regionMatches(true, 0, "Bearer ", 0, 7)) {
             try {
-                var claims = tokenProvider.parseToken(header.substring(7).strip());
+                var claims = tokenProvider.parseAccessToken(header.substring(7).strip());
                 int id = Integer.parseInt(claims.getSubject());
                 CustomUserDetails user = userDetailsService.loadUserById(id);
                 if (id <= 0 || !tokenProvider.matchesCurrentAccount(claims, user)) {
@@ -47,8 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.setContext(context);
             } catch (JwtException | IllegalArgumentException | AuthenticationException ex) {
                 SecurityContextHolder.clearContext();
-                entryPoint.commence(request, response, new BadCredentialsException("Invalid token", ex));
-                return;
+                // User/Auth checks raise UnauthorizedException through their shared advice.
             }
         }
         chain.doFilter(request, response);
