@@ -16,10 +16,11 @@ Mở terminal tại thư mục gốc repository:
 
 ```powershell
 cd NMS_BE
+$env:DB_PASSWORD = '<mật khẩu sa trong SQL Server>'
 .\Start-Backend.ps1
 ```
 
-Yêu cầu JDK 21+, SQL Server tại `localhost:1433` và `sqlcmd`. Script tạo database nếu chưa có, chạy migration hiện có và khởi động backend ở `http://localhost:8080`.
+Yêu cầu JDK 21+, SQL Server tại `localhost:1433`, bật SQL Server Authentication cho login `sa` và có `sqlcmd`. Cấu hình mặc định dùng tài khoản `sa`, mật khẩu lấy từ biến môi trường `DB_PASSWORD`; dùng `DB_USERNAME` để chọn login khác. Script tạo database nếu chưa có, chạy migration hiện có và khởi động backend ở `http://localhost:8080`.
 
 Khi mở bằng IDE, import `NMS_BE/pom.xml` và đặt working directory của backend là `NMS_BE/`.
 

@@ -4,6 +4,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+if ([string]::IsNullOrEmpty($env:DB_PASSWORD)) {
+    throw 'Set DB_PASSWORD to the SQL Server login password before starting the backend.'
+}
+$sqlLogin = if ([string]::IsNullOrWhiteSpace($env:DB_USERNAME)) { 'sa' } else { $env:DB_USERNAME }
+
 function Test-Jdk21([string]$Candidate) {
     if (-not $Candidate -or -not (Test-Path -LiteralPath (Join-Path $Candidate 'bin\javac.exe'))) {
         return $false
@@ -29,15 +34,17 @@ if (-not (Test-Jdk21 $JdkHome)) {
 
 Get-Command sqlcmd -ErrorAction Stop | Out-Null
 $previousJavaHome = $env:JAVA_HOME
+$previousSqlcmdPassword = $env:SQLCMDPASSWORD
 Push-Location $PSScriptRoot
 try {
     $env:JAVA_HOME = $JdkHome
+    $env:SQLCMDPASSWORD = $env:DB_PASSWORD
     Write-Host "Using JDK: $JdkHome"
-    & sqlcmd -S 'tcp:localhost,1433' -E -C -b -l 10 -i (Join-Path $PSScriptRoot 'database\create-database.sql')
+    & sqlcmd -S 'tcp:localhost,1433' -U $sqlLogin -C -b -l 10 -i (Join-Path $PSScriptRoot 'database\create-database.sql')
     if ($LASTEXITCODE -ne 0) {
-        throw 'Database setup failed. Check SQL Server and Windows account permissions.'
+        throw 'Database setup failed. Check SQL Server Authentication and SQL login permissions.'
     }
-    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -E -C -b -l 10 `
+    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
         -i (Join-Path $PSScriptRoot 'database\migrations\001-unicode-text-columns.sql')
     if ($LASTEXITCODE -ne 0) {
         throw 'Unicode schema migration failed.'
@@ -49,5 +56,6 @@ try {
 }
 finally {
     $env:JAVA_HOME = $previousJavaHome
+    $env:SQLCMDPASSWORD = $previousSqlcmdPassword
     Pop-Location
 }

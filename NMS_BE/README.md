@@ -24,11 +24,12 @@ Trang tài liệu mở công khai. Hiện chỉ User/Auth được bảo vệ; c
 
 ## Chạy trên Windows
 
-Yêu cầu SQL Server đang chạy trên `localhost:1433`, `sqlcmd` có trong PATH và tài khoản Windows có quyền tạo database. Cấu hình mặc định dùng Windows Authentication, không cần ghi mật khẩu vào source.
+Yêu cầu SQL Server đang chạy trên `localhost:1433`, bật SQL Server Authentication (Mixed Mode), login `sa` được bật và `sqlcmd` có trong PATH. Cấu hình mặc định dùng login `sa`; mật khẩu lấy từ biến môi trường `DB_PASSWORD`. Có thể đặt `DB_USERNAME` để dùng login khác có quyền tạo database và chạy migration.
 
 Tại thư mục `NMS_BE`, chạy:
 
 ```powershell
+$env:DB_PASSWORD = '<mật khẩu sa trong SQL Server>'
 .\Start-Backend.ps1
 ```
 
@@ -44,11 +45,13 @@ Hibernate dùng `ddl-auto=update` để tạo/cập nhật bảng và giữ dữ
 
 ```powershell
 $env:JAVA_HOME = 'C:\path\to\jdk-21'
-sqlcmd -S 'tcp:localhost,1433' -E -C -b -i .\database\create-database.sql
+$env:DB_PASSWORD = '<mật khẩu sa trong SQL Server>'
+$env:SQLCMDPASSWORD = $env:DB_PASSWORD
+sqlcmd -S 'tcp:localhost,1433' -U sa -C -b -i .\database\create-database.sql
 .\mvnw.cmd spring-boot:run
 ```
 
-Maven profile `windows-auth` tự kích hoạt trên Windows, tải DLL Microsoft JDBC tương ứng vào `target/native` và thiết lập `java.library.path` cho Maven run/test. IDE cần chạy `generate-resources` trước và thêm VM option `-Djava.library.path=target/native` với working directory `NMS_BE`.
+Maven profile `windows-auth` hiện vẫn tự kích hoạt trên Windows và tải DLL Microsoft JDBC vào `target/native`; kết nối SQL Authentication không cần DLL này. Khi chạy bằng IDE, đặt biến môi trường `DB_PASSWORD` trong Run Configuration và working directory là `NMS_BE`.
 
 Build và chạy JAR:
 
@@ -59,19 +62,18 @@ java '-Djava.library.path=target/native' -jar .\target\NMS_BE-0.0.1-SNAPSHOT.jar
 
 `java` dùng để chạy JAR cũng phải là Java 21+. Trên máy có Java 17 trong PATH, dùng `& "$env:JAVA_HOME\bin\java.exe"` thay cho `java`.
 
-## SQL Authentication / instance khác
+## Login hoặc instance khác
 
 Sau khi tạo database trên instance đích và cấp quyền cho SQL login, có thể cấu hình qua biến môi trường:
 
 ```powershell
-$env:SPRING_PROFILES_ACTIVE = 'sql-auth'
 $env:DB_URL = 'jdbc:sqlserver://localhost:1433;databaseName=FUNewsManagementSystem;encrypt=true;trustServerCertificate=true'
 $env:DB_USERNAME = '<SQL login>'
 $env:DB_PASSWORD = '<password>'
 .\mvnw.cmd spring-boot:run
 ```
 
-Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Server local có chứng chỉ tự ký. Có thể đổi cổng HTTP bằng `SERVER_PORT` và bật SQL log bằng `SHOW_SQL=true`.
+Không cần bật profile `sql-auth`; profile này vẫn được giữ để tương thích với cấu hình chạy cũ. Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Server local có chứng chỉ tự ký. Có thể đổi cổng HTTP bằng `SERVER_PORT` và bật SQL log bằng `SHOW_SQL=true`. Script `Start-Backend.ps1` chuẩn bị database trên `localhost:1433`; khi dùng instance khác, chạy các SQL script trên instance đích trước rồi chạy Maven như ví dụ trên.
 
 ## Entity và quy tắc
 
