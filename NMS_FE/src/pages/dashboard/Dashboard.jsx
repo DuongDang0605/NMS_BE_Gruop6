@@ -1,7 +1,7 @@
 import { Card, Row, Col } from 'react-bootstrap';
-import { mockNews } from '../mockData/news';
-import { mockCategories } from '../mockData/categories';
-import { mockUsers } from '../mockData/users';
+import { mockNews } from '../../mockData/news';
+import { mockCategories } from '../../mockData/categories';
+import { mockUsers } from '../../mockData/users';
 
 const Dashboard = () => {
   return (

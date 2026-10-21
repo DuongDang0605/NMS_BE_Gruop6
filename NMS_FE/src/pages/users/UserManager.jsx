@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { mockUsers } from '../mockData/users';
+import { mockUsers } from '../../mockData/users';
 
 const UserManager = () => {
   const [users, setUsers] = useState(mockUsers);
