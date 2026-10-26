@@ -52,4 +52,32 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
             "FROM NewsArticle a JOIN a.category c " +
             "GROUP BY c.categoryId, c.categoryName ORDER BY c.categoryName")
     List<Object[]> countArticlesByCategory();
+
+    // Dashboard overview: mỗi bảng tổng hợp thành đúng 1 dòng rồi CROSS JOIN, nên COUNT không bị nhân bản
+    @Query(value = "SELECT a.TotalAccounts, a.TotalAdmins, a.TotalStaff, c.TotalCategories, t.TotalTags, "
+            + "n.TotalArticles, n.ActiveArticles, n.InactiveArticles, nt.TotalNotifications "
+            + "FROM (SELECT COUNT_BIG(*) AS TotalAccounts, "
+            + "        COUNT_BIG(CASE WHEN AccountRole = :adminRole THEN 1 END) AS TotalAdmins, "
+            + "        COUNT_BIG(CASE WHEN AccountRole = :staffRole THEN 1 END) AS TotalStaff "
+            + "      FROM SystemAccount) a "
+            + "CROSS JOIN (SELECT COUNT_BIG(*) AS TotalCategories FROM Category) c "
+            + "CROSS JOIN (SELECT COUNT_BIG(*) AS TotalTags FROM Tag) t "
+            + "CROSS JOIN (SELECT COUNT_BIG(*) AS TotalArticles, "
+            + "        COUNT_BIG(CASE WHEN NewsStatus = 1 THEN 1 END) AS ActiveArticles, "
+            + "        COUNT_BIG(CASE WHEN NewsStatus = 0 THEN 1 END) AS InactiveArticles "
+            + "      FROM NewsArticle) n "
+            + "CROSS JOIN (SELECT COUNT_BIG(*) AS TotalNotifications FROM Notification) nt",
+            nativeQuery = true)
+    List<Object[]> dashboardOverview(@Param("adminRole") Integer adminRole,
+                                     @Param("staffRole") Integer staffRole);
+
+    // Dashboard news: mỗi dòng là 1 ngày UTC (yyyy-MM-dd), kèm số bài trong ngày và số bài thuộc cửa sổ 7 ngày
+    @Query(value = "SELECT CONVERT(char(10), CreatedDate, 23) AS CreatedDay, "
+            + "COUNT_BIG(*) AS DayCount, "
+            + "COUNT_BIG(CASE WHEN CreatedDate >= :since7 THEN 1 END) AS Last7Count "
+            + "FROM NewsArticle WHERE CreatedDate >= :since30 "
+            + "GROUP BY CONVERT(char(10), CreatedDate, 23)",
+            nativeQuery = true)
+    List<Object[]> countArticlesPerDaySince(@Param("since30") LocalDateTime since30,
+                                            @Param("since7") LocalDateTime since7);
 }

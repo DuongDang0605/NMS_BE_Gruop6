@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { mockNews } from '../mockData/news';
-import { mockCategories } from '../mockData/categories';
+import { mockNews } from '../../mockData/news';
+import { mockCategories } from '../../mockData/categories';
 
 const NewsManager = () => {
   const [news, setNews] = useState(mockNews);
