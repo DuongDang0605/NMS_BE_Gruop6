@@ -1,12 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import RequireAdmin from './components/RequireAdmin'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import CategoryManager from './pages/CategoryManager'
-import NewsManager from './pages/NewsManager'
-import UserManager from './pages/UserManager'
-import Settings from './pages/Settings'
+import Login from './pages/auth/Login'
+import Dashboard from './pages/dashboard/Dashboard'
+import CategoryManager from './pages/categories/CategoryManager'
+import NewsManager from './pages/news/NewsManager'
+import UserManager from './pages/users/UserManager'
+import Settings from './pages/setting/Settings'
 
 function App() {
   return (

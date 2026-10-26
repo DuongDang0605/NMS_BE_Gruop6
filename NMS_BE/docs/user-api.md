@@ -4,11 +4,56 @@ Luồng: `UserController` → `SystemAccountService` → `SystemAccountServiceIm
 
 | Method | Endpoint | Kết quả |
 | --- | --- | --- |
-| GET | `/api/v1/users` | `200`, danh sách user theo ID tăng dần |
+| GET | `/api/v1/users` | `200`, danh sách phân trang, tìm kiếm và lọc bằng Pageable |
 | GET | `/api/v1/users/{id}` | `200`, chi tiết user |
 | POST | `/api/v1/users` | `201`, user mới và header `Location` |
 | PUT | `/api/v1/users/{id}` | `200`, cập nhật đầy đủ user, giữ nguyên ID |
 | DELETE | `/api/v1/users/{id}` | `204`, không có body |
+
+## Phân trang, tìm kiếm và lọc
+
+Controller nhận `Pageable`; service dùng `JpaSpecificationExecutor.findAll(specification, pageable)`
+để lọc, sắp xếp, đếm và phân trang ngay trong SQL Server.
+
+Ví dụ: `GET /api/v1/users?page=0&size=10&keyword=nguyen&role=2&sort=accountName,asc`.
+
+| Tham số | Ý nghĩa |
+| --- | --- |
+| `page` | Trang bắt đầu từ 0, mặc định 0 |
+| `size` | Số dòng/trang, từ 1 đến 100, mặc định 10 |
+| `keyword` | Tìm trong tên hoặc email, không phân biệt hoa/thường, tối đa 254 ký tự |
+| `accountId` | Lọc đúng ID nguyên dương |
+| `name` | Tên có chứa chuỗi tìm kiếm, tối đa 100 ký tự |
+| `email` | Email có chứa chuỗi tìm kiếm, tối đa 254 ký tự |
+| `role` | `1=Admin`, `2=Staff`; bỏ qua để lấy tất cả |
+| `sort` | Chuẩn Pageable: `accountId,asc`, `accountName,desc`, `accountEmail,asc` hoặc `accountRole,asc` |
+
+Các điều kiện lọc kết hợp bằng AND; riêng keyword tìm tên OR email. Chuỗi tìm kiếm được bỏ
+khoảng trắng đầu/cuối, các ký tự `%`, `_`, `[` và `!` được tìm theo nghĩa đen.
+Có thể lặp tham số `sort` để sắp xếp nhiều cột. Mặc định ID tăng dần; khi sắp xếp cột khác,
+ID được thêm làm tiêu chí phụ để các trang có thứ tự ổn định. Không cho sắp xếp theo mật khẩu.
+Tham số không hợp lệ trả HTTP 400.
+
+Response luôn là object phân trang (thay cho mảng user trước đây):
+
+```json
+{
+  "content": [
+    { "accountId": 12, "accountName": "Nguyen Van A", "accountEmail": "a@example.com", "accountRole": 2 }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "page": 0,
+  "size": 10,
+  "first": true,
+  "last": true
+}
+```
+
+Trang vượt phạm vi trả `content: []` cùng tổng số kết quả thật. FE tự chuyển về trang cuối hợp lệ
+khi xóa hết dòng trong trang cuối. Đổi bộ lọc, sắp xếp hoặc số dòng/trang sẽ về trang đầu.
+
+## Thêm và sửa User
 
 Body POST/PUT:
 

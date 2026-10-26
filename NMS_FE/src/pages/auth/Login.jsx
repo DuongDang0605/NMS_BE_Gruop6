@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Container, Card, Alert } from 'react-bootstrap';
-import logo from '../assets/fpt-university-logo.png';
-import api from '../services/api';
-import { saveSession } from '../services/session';
+import logo from '../../assets/fpt-university-logo.png';
+import api from '../../services/api';
+import { saveSession } from '../../services/session';
 
 const Login = () => {
   const [email, setEmail] = useState('');

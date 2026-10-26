@@ -8,7 +8,11 @@ Vite forwards `/api` requests to `http://localhost:8080`; restart Vite after cha
 For a different backend, set `VITE_API_BASE_URL` (including `/api/v1`) in `.env.local` before starting/building.
 Production hosting must proxy `/api` to the backend or provide that environment variable with the appropriate backend CORS configuration.
 
-The remaining management pages currently use mock data.
+User Management uses the authenticated `/api/v1/users` API for list/create/update/delete with no mock users or local fallback.
+Use Apply filters (or Enter) to search by keyword, ID, name, email and role; Reset clears the filters.
+Pagination, page sizes (5/10/20/50/100), and sorting by ID/name/email/role run on the backend using Spring Pageable (`page`, `size`, `sort`).
+An empty password on Edit keeps the current password. Validation and API errors stay in the form so failed changes can be corrected.
+The dashboard reads real counts from `/api/v1/dashboard/overview`. Category and News management still use their existing mock data.
 
 ## React + Vite
 

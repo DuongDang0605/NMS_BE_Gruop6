@@ -1,158 +1,180 @@
-import { useState } from 'react';
-import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { mockUsers } from '../mockData/users';
+import { useEffect, useState } from 'react';
+import { Alert, Badge, Button, Col, Collapse, Form, Pagination, Row, Spinner, Table } from 'react-bootstrap';
+import { getUsers } from '../../api/user';
+import { apiErrorMessage } from './userForm';
+import UserModel from './UserModel';
+
+const emptyFilters = () => ({ keyword: '', accountId: '', name: '', email: '', role: '' });
+const initialQuery = () => ({ ...emptyFilters(), page: 0, size: 10, sort: 'accountId,asc' });
+const filterFields = [
+  { key: 'keyword', label: 'Search', placeholder: 'Name or email', maxLength: 254, width: 4 },
+  { key: 'accountId', label: 'User ID', placeholder: 'Any ID', type: 'number', min: 1, max: 2147483647, width: 2 },
+  { key: 'name', label: 'Name contains', placeholder: 'Any name', maxLength: 100, width: 3 },
+  { key: 'email', label: 'Email contains', placeholder: 'e.g. @example.com', maxLength: 254, width: 3 },
+];
 
 const UserManager = () => {
-  const [users, setUsers] = useState(mockUsers);
-  const [showModal, setShowModal] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [currentUser, setCurrentUser] = useState({
-    accountId: '', accountName: '', accountEmail: '', accountRole: 2, accountPassword: ''
-  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState(emptyFilters);
+  const [query, setQuery] = useState(initialQuery);
+  const [revision, setRevision] = useState(0);
+  const [result, setResult] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [notice, setNotice] = useState('');
+  const requestKey = JSON.stringify([query, revision]);
+  const loading = result?.key !== requestKey;
+  const data = loading ? null : result?.data;
+  const listError = loading ? '' : result?.error;
+  const busy = !!modal;
+  const [sortBy, sortDirection] = query.sort.split(',');
 
-  const [deleteId, setDeleteId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = Object.fromEntries(Object.entries(query).filter(([, value]) => value !== ''));
+    getUsers(params, { signal: controller.signal })
+      .then((page) => {
+        if (controller.signal.aborted) return;
+        const lastPage = Math.max(0, page.totalPages - 1);
+        if (query.page > lastPage) {
+          setQuery((previous) => ({ ...previous, page: lastPage }));
+          return;
+        }
+        setResult({ key: requestKey, data: page, error: '' });
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setResult({ key: requestKey, data: null, error: apiErrorMessage(error, 'Unable to load users.') });
+        }
+      });
+    return () => controller.abort();
+  }, [query, requestKey]);
 
-  const handleCloseModal = () => setShowModal(false);
-  const handleShowModal = (u = { accountId: '', accountName: '', accountEmail: '', accountRole: 2, accountPassword: '' }) => {
-    setCurrentUser(u);
-    setShowModal(true);
+  const refresh = () => setRevision((value) => value + 1);
+  const changeQuery = (field, value) => setQuery((previous) => ({ ...previous, [field]: value, page: 0 }));
+  const goToPage = (page) => setQuery((previous) => ({ ...previous, page }));
+  const applyFilters = (event) => {
+    event.preventDefault();
+    setQuery((previous) => ({
+      ...previous, ...Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value.trim()])), page: 0,
+    }));
   };
-  const handleSave = () => {
-    if (currentUser.accountId) {
-      setUsers(users.map(u => u.accountId === currentUser.accountId ? currentUser : u));
-    } else {
-      setUsers([...users, { ...currentUser, accountId: Date.now() }]);
-    }
-    handleCloseModal();
+  const resetFilters = () => { setFilters(emptyFilters()); setQuery(initialQuery()); };
+  const handleSuccess = (message) => {
+    setModal(null);
+    setNotice(message);
+    refresh();
   };
-
-  const handleDeleteConfirm = (id) => {
-    setDeleteId(id);
-    setShowConfirm(true);
-  };
-
-  const deleteUser = () => {
-    setUsers(users.filter(u => u.accountId !== deleteId));
-    setShowConfirm(false);
-  };
-
-  const filteredUsers = users.filter(u =>
-    u.accountName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.accountEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const totalPages = data?.totalPages || 0;
+  const pageNumbers = Array.from({ length: Math.min(5, totalPages) }, (_, index) =>
+    Math.max(0, Math.min(query.page - 2, totalPages - 5)) + index);
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>User Management</h2>
-        <Button variant="primary" onClick={() => handleShowModal()}>
-          <i className="bi bi-plus-circle me-1"></i> Add User
-        </Button>
+      <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+        <h2 className="mb-0">User Management</h2>
+        <div className="d-flex gap-2">
+          <Button variant="outline-secondary" disabled={loading || busy} onClick={refresh}>Refresh</Button>
+          <Button disabled={busy} onClick={() => setModal({ mode: 'create' })}><i className="bi bi-plus-circle me-1" /> Add User</Button>
+        </div>
       </div>
-
-      <InputGroup className="mb-3 w-50">
-        <InputGroup.Text><i className="bi bi-search"></i></InputGroup.Text>
-        <Form.Control
-          placeholder="Search users..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </InputGroup>
-
-      <Table striped bordered hover>
-        <thead className="table-brand">
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+      {notice && <Alert variant="success" dismissible onClose={() => setNotice('')}>{notice}</Alert>}
+      <Button variant="outline-secondary" className="mb-3" onClick={() => setShowFilters((visible) => !visible)}
+        aria-expanded={showFilters} aria-controls="user-search-sort">
+        <i className="bi bi-funnel me-2" aria-hidden="true" />
+        {showFilters ? 'Hide search & sort' : 'Search & sort'}
+        <i className={`bi bi-chevron-${showFilters ? 'up' : 'down'} ms-2`} aria-hidden="true" />
+      </Button>
+      <Collapse in={showFilters}>
+        <div id="user-search-sort">
+          <Form onSubmit={applyFilters} className="border rounded p-3 mb-3" aria-label="User filters">
+            <Row className="g-3">
+              {filterFields.map(({ key, label, width, ...props }) => (
+                <Col md={6} lg={width} key={key}>
+                  <Form.Group controlId={`user-filter-${key}`}>
+                    <Form.Label>{label}</Form.Label>
+                    <Form.Control {...props} value={filters[key]}
+                      onChange={(event) => setFilters((previous) => ({ ...previous, [key]: event.target.value }))} />
+                  </Form.Group>
+                </Col>
+              ))}
+              <Col md={4}>
+                <Form.Group controlId="user-filter-role">
+                  <Form.Label>Role</Form.Label>
+                  <Form.Select value={filters.role} onChange={(event) => setFilters((previous) => ({ ...previous, role: event.target.value }))}>
+                    <option value="">All roles</option><option value="1">Admin</option><option value="2">Staff</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col className="d-flex gap-2 align-items-end">
+                <Button type="submit" disabled={busy}>Apply filters</Button>
+                <Button variant="outline-secondary" onClick={resetFilters} disabled={busy}>Reset</Button>
+              </Col>
+            </Row>
+          </Form>
+          <Row className="g-3 mb-3">
+            <Col sm={5} md={4}>
+              <Form.Group controlId="user-sort-by">
+                <Form.Label>Sort by</Form.Label>
+                <Form.Select value={sortBy} onChange={(event) => changeQuery('sort', `${event.target.value},${sortDirection}`)} disabled={busy}>
+                  <option value="accountId">ID</option><option value="accountName">Name</option>
+                  <option value="accountEmail">Email</option><option value="accountRole">Role</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col sm={4} md={3}>
+              <Form.Group controlId="user-sort-direction">
+                <Form.Label>Order</Form.Label>
+                <Form.Select value={sortDirection} onChange={(event) => changeQuery('sort', `${sortBy},${event.target.value}`)} disabled={busy}>
+                  <option value="asc">Ascending</option><option value="desc">Descending</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col sm={3} md={2}>
+              <Form.Group controlId="user-page-size">
+                <Form.Label>Rows per page</Form.Label>
+                <Form.Select value={query.size} onChange={(event) => changeQuery('size', Number(event.target.value))} disabled={busy}>
+                  {[5, 10, 20, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+        </div>
+      </Collapse>
+      {listError && <Alert variant="danger">{listError} <Button variant="outline-danger" size="sm" onClick={refresh}>Retry</Button></Alert>}
+      <Table striped bordered hover responsive aria-busy={loading}>
+        <thead className="table-brand"><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
         <tbody>
-          {filteredUsers.map(u => (
-            <tr key={u.accountId}>
-              <td>{u.accountId}</td>
-              <td>{u.accountName}</td>
-              <td>{u.accountEmail}</td>
-              <td>{u.accountRole === 1 ? 'Admin' : 'Staff'}</td>
-              <td>
-                <Button variant="warning" size="sm" className="me-2" onClick={() => handleShowModal(u)}>
-                  <i className="bi bi-pencil"></i> Edit
-                </Button>
-                <Button variant="danger" size="sm" onClick={() => handleDeleteConfirm(u.accountId)}>
-                  <i className="bi bi-trash"></i> Delete
-                </Button>
+          {loading && <tr><td colSpan={5} className="text-center p-4"><Spinner size="sm" animation="border" role="status" /> Loading users...</td></tr>}
+          {data?.content.map((user) => (
+            <tr key={user.accountId}>
+              <td>{user.accountId}</td><td>{user.accountName}</td><td>{user.accountEmail}</td>
+              <td><Badge bg={user.accountRole === 1 ? 'primary' : 'secondary'}>{user.accountRole === 1 ? 'Admin' : 'Staff'}</Badge></td>
+              <td className="text-nowrap">
+                <Button variant="warning" size="sm" className="me-2" disabled={busy} onClick={() => setModal({ mode: 'edit', user })}><i className="bi bi-pencil me-1" />Edit</Button>
+                <Button variant="danger" size="sm" disabled={busy} onClick={() => setModal({ mode: 'delete', user })}><i className="bi bi-trash me-1" />Delete</Button>
               </td>
             </tr>
           ))}
-          {filteredUsers.length === 0 && (
-            <tr>
-              <td colSpan="5" className="text-center">No users found.</td>
-            </tr>
-          )}
+          {data?.content.length === 0 && <tr><td colSpan={5} className="text-center p-4">No users match these filters.</td></tr>}
         </tbody>
       </Table>
-
-      <Modal show={showModal} onHide={handleCloseModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{currentUser.accountId ? 'Edit User' : 'Add User'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={currentUser.accountName}
-                onChange={e => setCurrentUser({...currentUser, accountName: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                value={currentUser.accountEmail}
-                onChange={e => setCurrentUser({...currentUser, accountEmail: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                value={currentUser.accountPassword}
-                onChange={e => setCurrentUser({...currentUser, accountPassword: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Role</Form.Label>
-              <Form.Select
-                value={currentUser.accountRole}
-                onChange={e => setCurrentUser({...currentUser, accountRole: Number(e.target.value)})}
-              >
-                <option value={1}>Admin</option>
-                <option value={2}>Staff</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>Cancel</Button>
-          <Button variant="primary" onClick={handleSave}>Save</Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal show={showConfirm} onHide={() => setShowConfirm(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Are you sure you want to delete this user?</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirm(false)}>Cancel</Button>
-          <Button variant="danger" onClick={deleteUser}>Delete</Button>
-        </Modal.Footer>
-      </Modal>
+      {data && (
+        <div className="d-flex flex-wrap gap-3 justify-content-between align-items-center">
+          <span aria-live="polite">
+            Showing {data.totalElements === 0 ? 0 : query.page * query.size + 1}–{Math.min((query.page + 1) * query.size, data.totalElements)} of {data.totalElements} users
+            {totalPages > 0 && ` · Page ${query.page + 1} of ${totalPages}`}
+          </span>
+          <Pagination className="mb-0" aria-label="User pagination">
+            <Pagination.First disabled={query.page === 0 || busy} onClick={() => goToPage(0)} />
+            <Pagination.Prev disabled={query.page === 0 || busy} onClick={() => goToPage(query.page - 1)} />
+            {pageNumbers.map((page) => <Pagination.Item key={page} active={page === query.page} disabled={busy} onClick={() => goToPage(page)}>{page + 1}</Pagination.Item>)}
+            <Pagination.Next disabled={query.page >= totalPages - 1 || busy} onClick={() => goToPage(query.page + 1)} />
+            <Pagination.Last disabled={query.page >= totalPages - 1 || busy} onClick={() => goToPage(totalPages - 1)} />
+          </Pagination>
+        </div>
+      )}
+      {modal && <UserModel key={`${modal.mode}-${modal.user?.accountId ?? 'new'}`} mode={modal.mode}
+        user={modal.user} onHide={() => setModal(null)} onSuccess={handleSuccess} />}
     </div>
   );
 };

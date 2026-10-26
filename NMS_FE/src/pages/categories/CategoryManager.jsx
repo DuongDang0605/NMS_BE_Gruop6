@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { mockCategories } from '../mockData/categories';
+import { mockCategories } from '../../mockData/categories';
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState(mockCategories);
