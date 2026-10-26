@@ -1,16 +1,14 @@
 package com.mvc.nms_be.service.impl;
 
 import com.mvc.nms_be.entity.SystemAccount;
-import com.mvc.nms_be.repository.CategoryRepository;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.repository.NotificationRepository;
-import com.mvc.nms_be.repository.SystemAccountRepository;
-import com.mvc.nms_be.repository.TagRepository;
 import com.mvc.nms_be.service.DashboardService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -24,24 +22,23 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional(readOnly = true)
 public class DashboardServiceImpl implements DashboardService {
 
-    private final SystemAccountRepository accountRepository;
-    private final CategoryRepository categoryRepository;
-    private final TagRepository tagRepository;
     private final NewsArticleRepository articleRepository;
     private final NotificationRepository notificationRepository;
 
     @Override
     public Map<String, Object> overview() {
+        Object[] row = articleRepository.dashboardOverview(
+                SystemAccount.ADMIN_ROLE, SystemAccount.STAFF_ROLE).get(0);
         return Map.of(
-                "totalAccounts", accountRepository.count(),
-                "totalAdmins", accountRepository.countByAccountRole(SystemAccount.ADMIN_ROLE),
-                "totalStaff", accountRepository.countByAccountRole(SystemAccount.STAFF_ROLE),
-                "totalCategories", categoryRepository.count(),
-                "totalTags", tagRepository.count(),
-                "totalArticles", articleRepository.count(),
-                "activeArticles", articleRepository.countByNewsStatus(1),
-                "inactiveArticles", articleRepository.countByNewsStatus(0),
-                "totalNotifications", notificationRepository.count());
+                "totalAccounts", toLong(row[0]),
+                "totalAdmins", toLong(row[1]),
+                "totalStaff", toLong(row[2]),
+                "totalCategories", toLong(row[3]),
+                "totalTags", toLong(row[4]),
+                "totalArticles", toLong(row[5]),
+                "activeArticles", toLong(row[6]),
+                "inactiveArticles", toLong(row[7]),
+                "totalNotifications", toLong(row[8]));
     }
 
     @Override
@@ -55,18 +52,27 @@ public class DashboardServiceImpl implements DashboardService {
                     "articleCount", row[2]));
         }
 
+        // 1 query cho cả 30 ngày: tổng 30 ngày, tổng 7 ngày (rolling) và số bài theo từng ngày UTC
+        long last30Days = 0;
+        long last7Days = 0;
+        Map<String, Long> countByDay = new HashMap<>();
+        for (Object[] row : articleRepository.countArticlesPerDaySince(now.minusDays(30), now.minusDays(7))) {
+            long dayCount = toLong(row[1]);
+            last30Days += dayCount;
+            last7Days += toLong(row[2]);
+            countByDay.put(row[0].toString(), dayCount);
+        }
+
         List<Map<String, Object>> daily = new ArrayList<>();
         LocalDate today = now.toLocalDate();
         for (int daysAgo = 6; daysAgo >= 0; daysAgo--) {
-            LocalDate date = today.minusDays(daysAgo);
-            long count = articleRepository.countByCreatedDateGreaterThanEqualAndCreatedDateLessThan(
-                    date.atStartOfDay(), date.plusDays(1).atStartOfDay());
-            daily.add(Map.of("date", date.toString(), "count", count));
+            String date = today.minusDays(daysAgo).toString();
+            daily.add(Map.of("date", date, "count", countByDay.getOrDefault(date, 0L)));
         }
 
         return Map.of(
-                "articlesLast7Days", articleRepository.countByCreatedDateGreaterThanEqual(now.minusDays(7)),
-                "articlesLast30Days", articleRepository.countByCreatedDateGreaterThanEqual(now.minusDays(30)),
+                "articlesLast7Days", last7Days,
+                "articlesLast30Days", last30Days,
                 "articlesByCategory", byCategory,
                 "dailyArticlesLast7Days", daily);
     }
@@ -76,12 +82,18 @@ public class DashboardServiceImpl implements DashboardService {
         if (recipientId == null || recipientId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "recipientId must be a positive integer");
         }
-        if (!accountRepository.existsById(recipientId)) {
+        List<Object[]> rows = notificationRepository.countStatsForRecipient(recipientId);
+        if (rows.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipient not found");
         }
+        Object[] row = rows.get(0);
         return Map.of(
-                "totalNotifications", notificationRepository.countByRecipient_AccountId(recipientId),
-                "readNotifications", notificationRepository.countByRecipient_AccountIdAndIsRead(recipientId, 1),
-                "unreadNotifications", notificationRepository.countByRecipient_AccountIdAndIsRead(recipientId, 0));
+                "totalNotifications", toLong(row[0]),
+                "readNotifications", toLong(row[1]),
+                "unreadNotifications", toLong(row[2]));
+    }
+
+    private static long toLong(Object value) {
+        return ((Number) value).longValue();
     }
 }

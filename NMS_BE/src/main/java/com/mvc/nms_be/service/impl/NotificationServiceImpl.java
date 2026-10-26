@@ -10,6 +10,7 @@ import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.repository.NotificationRepository;
 import com.mvc.nms_be.repository.SystemAccountRepository;
 import com.mvc.nms_be.service.NotificationService;
+import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -47,12 +48,16 @@ public class NotificationServiceImpl implements NotificationService {
             case "unread" -> 0;
             default -> throw badRequest("status must be all, read, or unread");
         };
-        requireRecipientExists(recipientId);
+        requirePositive(recipientId, "recipientId");
         Pageable pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Order.desc("createdDate"), Sort.Order.desc("notificationId")));
         Page<Notification> notifications = isRead == null
                 ? notificationRepository.findByRecipient_AccountId(recipientId, pageable)
                 : notificationRepository.findByRecipient_AccountIdAndIsRead(recipientId, isRead, pageable);
+        // Trang có dữ liệu đã chứng minh recipient tồn tại; chỉ trang rỗng mới cần kiểm tra để trả 404
+        if (notifications.isEmpty()) {
+            requireRecipientExists(recipientId);
+        }
         return notifications.map(notificationMapper::toResponseDto);
     }
 
@@ -106,14 +111,24 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public int markAllAsRead(Integer recipientId) {
-        requireRecipientExists(recipientId);
-        return notificationRepository.markAllAsRead(recipientId);
+        requirePositive(recipientId, "recipientId");
+        int updated = notificationRepository.markAllAsRead(recipientId);
+        // Có dòng được cập nhật thì recipient chắc chắn tồn tại; chỉ kiểm tra khi không có gì để cập nhật
+        if (updated == 0) {
+            requireRecipientExists(recipientId);
+        }
+        return updated;
     }
 
     @Override
     public long countUnread(Integer recipientId) {
-        requireRecipientExists(recipientId);
-        return notificationRepository.countByRecipient_AccountIdAndIsRead(recipientId, 0);
+        requirePositive(recipientId, "recipientId");
+        // 1 query vừa xác nhận recipient tồn tại vừa đếm: rỗng = không tồn tại, cột 2 = số chưa đọc
+        List<Object[]> rows = notificationRepository.countStatsForRecipient(recipientId);
+        if (rows.isEmpty()) {
+            throw notFound("Recipient not found");
+        }
+        return ((Number) rows.get(0)[2]).longValue();
     }
 
     @Override
