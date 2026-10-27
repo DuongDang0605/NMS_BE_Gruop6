@@ -3,11 +3,15 @@ package com.mvc.nms_be.controller;
 import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
 import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
+import com.mvc.nms_be.dto.request.UserSearchRequestDto;
+import com.mvc.nms_be.dto.response.PageResponseDto;
 import com.mvc.nms_be.service.SystemAccountService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.net.URI;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springdoc.core.annotations.ParameterObject;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,8 +39,10 @@ public class UserController {
     private final SystemAccountService systemAccountService;
 
     @GetMapping
-    public List<SystemAccountResponseDto> findAll() {
-        return systemAccountService.findAll();
+    public PageResponseDto<SystemAccountResponseDto> findAll(
+            @Valid @ModelAttribute UserSearchRequestDto filter,
+            @ParameterObject @PageableDefault(size = 10, sort = "accountId") Pageable pageable) {
+        return PageResponseDto.from(systemAccountService.search(filter, pageable));
     }
 
     @GetMapping("/{id}")
