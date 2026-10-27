@@ -4,7 +4,6 @@ import com.mvc.nms_be.dto.response.ReactionResponseDto;
 import com.mvc.nms_be.dto.response.ViewCountResponseDto;
 import com.mvc.nms_be.entity.ArticleReaction;
 import com.mvc.nms_be.entity.NewsArticle;
-import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.exception.ResourceNotFoundException;
 import com.mvc.nms_be.repository.ArticleReactionRepository;
 import com.mvc.nms_be.repository.NewsArticleRepository;
@@ -59,16 +58,12 @@ public class EngagementServiceImpl implements EngagementService {
     @Override
     @Transactional
     public ViewCountResponseDto incrementViewCount(Integer articleId) {
-        // Kiểm tra bài viết tồn tại
-        if (!newsArticleRepository.existsById(articleId)) {
-            throw new ResourceNotFoundException("News article not found: " + articleId);
-        }
+        // findArticle ném 404 nếu không tồn tại, bỏ existsById thừa
+        NewsArticle article = findArticle(articleId);
         // UPDATE nguyên tử trực tiếp trên DB, tránh race condition
         reactionRepository.incrementViewCount(articleId);
-
-        // Đọc lại viewCount mới sau khi UPDATE
-        NewsArticle article = findArticle(articleId);
-        return new ViewCountResponseDto(articleId, article.getViewCount());
+        // Trả về giá trị tính toán thay vì query lại lần 3
+        return new ViewCountResponseDto(articleId, article.getViewCount() + 1);
     }
 
     private NewsArticle findArticle(Integer articleId) {

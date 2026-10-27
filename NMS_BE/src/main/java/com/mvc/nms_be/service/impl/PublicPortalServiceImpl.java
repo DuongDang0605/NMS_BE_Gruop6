@@ -7,7 +7,6 @@ import com.mvc.nms_be.repository.ArticleReactionRepository;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.repository.NewsTagRepository;
 import com.mvc.nms_be.service.PublicPortalService;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
