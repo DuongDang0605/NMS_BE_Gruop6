@@ -96,12 +96,12 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> engagement() {
-        // Tổng view và like toàn hệ thống
+        // tổng view và like toàn hệ thống
         Object[] sums = articleRepository.sumViewsAndLikes();
         long totalViews = toLong(sums[0]);
         long totalLikes = toLong(sums[1]);
 
-        // Top 5 bài trending theo viewCount
+        // top 5 bài trending theo viewCount
         List<TrendingArticleDto> trending = new ArrayList<>();
         for (Object[] row : articleRepository.findTop5Trending()) {
             trending.add(new TrendingArticleDto(

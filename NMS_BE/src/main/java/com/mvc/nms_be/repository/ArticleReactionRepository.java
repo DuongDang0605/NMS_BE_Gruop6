@@ -17,7 +17,7 @@ public interface ArticleReactionRepository extends JpaRepository<ArticleReaction
     boolean existsByNewsArticleIdAndAccount_AccountId(
             Integer newsArticleId, Integer accountId);
 
-    // Tăng ViewCount nguyên tử, tránh race condition khi nhiều user đọc cùng lúc
+    // tăng ViewCount nguyên tử, tránh race condition khi nhiều user đọc cùng lúc
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE NewsArticle SET ViewCount = ViewCount + 1 WHERE NewsArticleID = :articleId",
             nativeQuery = true)

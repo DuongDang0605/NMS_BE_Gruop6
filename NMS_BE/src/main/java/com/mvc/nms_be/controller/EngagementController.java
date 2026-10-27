@@ -16,19 +16,14 @@ public class EngagementController {
 
     private final EngagementService engagementService;
 
-    /**
-     * POST /api/v1/news/{id}/reactions
-     * Toggle like/unlike bài viết. Yêu cầu đăng nhập.
-     */
+    // Toggle like/unlike bài viết. Yêu cầu đăng nhập
     @PostMapping("/reactions")
     public ReactionResponseDto toggleReaction(@PathVariable Integer id) {
         return engagementService.toggleReaction(id);
     }
 
-    /**
-     * POST /api/v1/news/{id}/views
-     * Tăng lượt xem 1 đơn vị. Gọi mỗi khi người dùng mở trang chi tiết bài viết.
-     */
+
+     // Tăng lượt xem 1 đơn vị gọi mỗi khi người dùng mở trang chi tiết bài viết
     @PostMapping("/views")
     public ViewCountResponseDto incrementViewCount(@PathVariable Integer id) {
         return engagementService.incrementViewCount(id);
