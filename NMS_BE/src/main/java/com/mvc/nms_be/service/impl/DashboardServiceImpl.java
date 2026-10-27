@@ -1,5 +1,6 @@
 package com.mvc.nms_be.service.impl;
 
+import com.mvc.nms_be.dto.response.TrendingArticleDto;
 import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.repository.NotificationRepository;
@@ -93,7 +94,34 @@ public class DashboardServiceImpl implements DashboardService {
                 "unreadNotifications", toLong(row[2]));
     }
 
+    @Override
+    public Map<String, Object> engagement() {
+        // tổng view và like toàn hệ thống
+        Object[] sums = articleRepository.sumViewsAndLikes();
+        long totalViews = toLong(sums[0]);
+        long totalLikes = toLong(sums[1]);
+
+        // top 5 bài trending theo viewCount
+        List<TrendingArticleDto> trending = new ArrayList<>();
+        for (Object[] row : articleRepository.findTop5Trending()) {
+            trending.add(new TrendingArticleDto(
+                    toInt(row[0]),
+                    (String) row[1],
+                    toInt(row[2]),
+                    toInt(row[3])));
+        }
+
+        return Map.of(
+                "totalViews", totalViews,
+                "totalLikes", totalLikes,
+                "top5Trending", trending);
+    }
+
     private static long toLong(Object value) {
         return ((Number) value).longValue();
+    }
+
+    private static int toInt(Object value) {
+        return ((Number) value).intValue();
     }
 }

@@ -38,7 +38,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
 
     // ==================== VALIDATION & COUNTING METHODS ====================
 
-    // Dùng khi xóa category: còn bài viết thuộc danh mục thì không cho xóa
+    // dùng khi xóa category: còn bài viết thuộc danh mục thì không cho xóa
     boolean existsByCategory_CategoryId(Integer categoryId);
 
     long countByNewsStatus(Integer newsStatus);
@@ -53,7 +53,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
             "GROUP BY c.categoryId, c.categoryName ORDER BY c.categoryName")
     List<Object[]> countArticlesByCategory();
 
-    // Dashboard overview: mỗi bảng tổng hợp thành đúng 1 dòng rồi CROSS JOIN, nên COUNT không bị nhân bản
+    // dashboard overview: mỗi bảng tổng hợp thành đúng 1 dòng rồi CROSS JOIN, nên COUNT không bị nhân bản
     @Query(value = "SELECT a.TotalAccounts, a.TotalAdmins, a.TotalStaff, c.TotalCategories, t.TotalTags, "
             + "n.TotalArticles, n.ActiveArticles, n.InactiveArticles, nt.TotalNotifications "
             + "FROM (SELECT COUNT_BIG(*) AS TotalAccounts, "
@@ -71,7 +71,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
     List<Object[]> dashboardOverview(@Param("adminRole") Integer adminRole,
                                      @Param("staffRole") Integer staffRole);
 
-    // Dashboard news: mỗi dòng là 1 ngày UTC (yyyy-MM-dd), kèm số bài trong ngày và số bài thuộc cửa sổ 7 ngày
+    // dashboard news: mỗi dòng là 1 ngày UTC (yyyy-MM-dd), kèm số bài trong ngày và số bài thuộc cửa sổ 7 ngày
     @Query(value = "SELECT CONVERT(char(10), CreatedDate, 23) AS CreatedDay, "
             + "COUNT_BIG(*) AS DayCount, "
             + "COUNT_BIG(CASE WHEN CreatedDate >= :since7 THEN 1 END) AS Last7Count "
@@ -80,4 +80,50 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
             nativeQuery = true)
     List<Object[]> countArticlesPerDaySince(@Param("since30") LocalDateTime since30,
                                             @Param("since7") LocalDateTime since7);
+
+    // top 5 bài viết có lượt xem cao nhất (trending) trong trạng thái đã xuất bản
+    @Query(value = "SELECT TOP 5 NewsArticleID, NewsTitle, ViewCount, LikeCount "
+            + "FROM NewsArticle WHERE NewsStatus = 1 "
+            + "ORDER BY ViewCount DESC, LikeCount DESC",
+            nativeQuery = true)
+    List<Object[]> findTop5Trending();
+
+    // tổng ViewCount và tổng LikeCount toàn hệ thống cho Dashboard
+    @Query(value = "SELECT ISNULL(SUM(ViewCount), 0), ISNULL(SUM(LikeCount), 0) FROM NewsArticle",
+            nativeQuery = true)
+    Object[] sumViewsAndLikes();
+
+    // public portal: lấy bài đã active (newsStatus=1) theo keyword, category, tag, phân trang bằng OFFSET-FETCH
+    @Query(value = "SELECT DISTINCT a.NewsArticleID, a.NewsTitle, a.Headline, a.CreatedDate, "
+            + "a.NewsSource, a.ViewCount, a.LikeCount, c.CategoryName, sa.AccountName "
+            + "FROM NewsArticle a "
+            + "JOIN Category c ON a.CategoryID = c.CategoryID "
+            + "JOIN SystemAccount sa ON a.CreatedByID = sa.AccountID "
+            + "LEFT JOIN NewsTag nt ON a.NewsArticleID = nt.NewsArticleID "
+            + "WHERE a.NewsStatus = 1 "
+            + "AND (:keyword IS NULL OR a.NewsTitle LIKE CONCAT('%', :keyword, '%') "
+            + "     OR a.Headline LIKE CONCAT('%', :keyword, '%')) "
+            + "AND (:categoryId IS NULL OR a.CategoryID = :categoryId) "
+            + "AND (:tagId IS NULL OR nt.TagID = :tagId) "
+            + "ORDER BY a.CreatedDate DESC "
+            + "OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
+            nativeQuery = true)
+    List<Object[]> findPublishedArticles(@Param("keyword") String keyword,
+                                         @Param("categoryId") Integer categoryId,
+                                         @Param("tagId") Integer tagId,
+                                         @Param("offset") int offset,
+                                         @Param("size") int size);
+
+    @Query(value = "SELECT COUNT_BIG(DISTINCT a.NewsArticleID) "
+            + "FROM NewsArticle a "
+            + "LEFT JOIN NewsTag nt ON a.NewsArticleID = nt.NewsArticleID "
+            + "WHERE a.NewsStatus = 1 "
+            + "AND (:keyword IS NULL OR a.NewsTitle LIKE CONCAT('%', :keyword, '%') "
+            + "     OR a.Headline LIKE CONCAT('%', :keyword, '%')) "
+            + "AND (:categoryId IS NULL OR a.CategoryID = :categoryId) "
+            + "AND (:tagId IS NULL OR nt.TagID = :tagId)",
+            nativeQuery = true)
+    long countPublishedArticles(@Param("keyword") String keyword,
+                                @Param("categoryId") Integer categoryId,
+                                @Param("tagId") Integer tagId);
 }

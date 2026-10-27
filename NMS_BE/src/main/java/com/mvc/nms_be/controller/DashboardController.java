@@ -31,4 +31,9 @@ public class DashboardController {
     public Map<String, Object> notifications(@RequestParam Integer recipientId) {
         return dashboardService.notifications(recipientId);
     }
+
+    @GetMapping("/engagement")
+    public Map<String, Object> engagement() {
+        return dashboardService.engagement();
+    }
 }

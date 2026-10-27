@@ -64,6 +64,12 @@ public class NewsArticle {
     @Column(name = "NewsStatus", nullable = false)
     private Integer newsStatus = 1;
 
+    @Column(name = "ViewCount", nullable = false)
+    private Integer viewCount = 0;
+
+    @Column(name = "LikeCount", nullable = false)
+    private Integer likeCount = 0;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "CreatedByID", nullable = false, foreignKey = @ForeignKey(name = "FK_NewsArticle_Creator"))
     private SystemAccount createdBy;
