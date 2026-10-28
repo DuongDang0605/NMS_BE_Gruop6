@@ -3,7 +3,9 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 
 ### Tests ###
-/src/test/
+/src/test/**
+!/src/test/**/
+!/src/test/**/UserSearchTests.java
 
 !**/src/main/**/target/
 

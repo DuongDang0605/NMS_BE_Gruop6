@@ -1,5 +1,6 @@
 package com.mvc.nms_be.service.impl;
 
+import com.mvc.nms_be.dto.response.TrendingArticleDto;
 import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.repository.NotificationRepository;
@@ -93,7 +94,65 @@ public class DashboardServiceImpl implements DashboardService {
                 "unreadNotifications", toLong(row[2]));
     }
 
+    @Override
+    public Map<String, Object> engagement() {
+        // tổng view và like toàn hệ thống
+        List<Object[]> sumRows = articleRepository.sumViewsAndLikes();
+        long totalViews = 0;
+        long totalLikes = 0;
+        if (sumRows != null && !sumRows.isEmpty()) {
+            Object[] sums = sumRows.get(0);
+            totalViews = toLong(sums[0]);
+            totalLikes = toLong(sums[1]);
+        }
+
+        // top 5 bài trending theo viewCount
+        List<TrendingArticleDto> trending = new ArrayList<>();
+        for (Object[] row : articleRepository.findTop5Trending()) {
+            trending.add(new TrendingArticleDto(
+                    toInt(row[0]),
+                    (String) row[1],
+                    toInt(row[2]),
+                    toInt(row[3])));
+        }
+
+        return Map.of(
+                "totalViews", totalViews,
+                "totalLikes", totalLikes,
+                "top5Trending", trending);
+    }
+
     private static long toLong(Object value) {
-        return ((Number) value).longValue();
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof Object[] arr && arr.length > 0) {
+            return toLong(arr[0]);
+        }
+        try {
+            return Long.parseLong(value.toString());
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    private static int toInt(Object value) {
+        if (value == null) {
+            return 0;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof Object[] arr && arr.length > 0) {
+            return toInt(arr[0]);
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }
