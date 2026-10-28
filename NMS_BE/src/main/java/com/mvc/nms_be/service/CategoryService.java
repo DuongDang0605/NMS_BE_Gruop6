@@ -10,4 +10,14 @@ public interface CategoryService {
 
     /** Trả về cây danh mục phân cấp (root → children) để render menu navbar. */
     List<CategoryTreeDto> getTree();
+
+    List<CategoryResponseDto> getAllCategories();
+
+    CategoryResponseDto getCategoryById(Integer id);
+
+    CategoryResponseDto createCategory(CategoryRequestDto request);
+
+    CategoryResponseDto updateCategory(Integer id, CategoryRequestDto request);
+
+    void deleteCategory(Integer id);
 }

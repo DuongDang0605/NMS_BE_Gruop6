@@ -91,7 +91,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
     // tổng ViewCount và tổng LikeCount toàn hệ thống cho Dashboard
     @Query(value = "SELECT ISNULL(SUM(ViewCount), 0), ISNULL(SUM(LikeCount), 0) FROM NewsArticle",
             nativeQuery = true)
-    Object[] sumViewsAndLikes();
+    List<Object[]> sumViewsAndLikes();
 
     // public portal: lấy bài đã active (newsStatus=1) theo keyword, category, tag, phân trang bằng OFFSET-FETCH
     @Query(value = "SELECT DISTINCT a.NewsArticleID, a.NewsTitle, a.Headline, a.CreatedDate, "

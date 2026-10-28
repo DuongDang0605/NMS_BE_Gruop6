@@ -97,9 +97,14 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public Map<String, Object> engagement() {
         // tổng view và like toàn hệ thống
-        Object[] sums = articleRepository.sumViewsAndLikes();
-        long totalViews = toLong(sums[0]);
-        long totalLikes = toLong(sums[1]);
+        List<Object[]> sumRows = articleRepository.sumViewsAndLikes();
+        long totalViews = 0;
+        long totalLikes = 0;
+        if (sumRows != null && !sumRows.isEmpty()) {
+            Object[] sums = sumRows.get(0);
+            totalViews = toLong(sums[0]);
+            totalLikes = toLong(sums[1]);
+        }
 
         // top 5 bài trending theo viewCount
         List<TrendingArticleDto> trending = new ArrayList<>();
@@ -118,10 +123,36 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private static long toLong(Object value) {
-        return ((Number) value).longValue();
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof Object[] arr && arr.length > 0) {
+            return toLong(arr[0]);
+        }
+        try {
+            return Long.parseLong(value.toString());
+        } catch (Exception e) {
+            return 0L;
+        }
     }
 
     private static int toInt(Object value) {
-        return ((Number) value).intValue();
+        if (value == null) {
+            return 0;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof Object[] arr && arr.length > 0) {
+            return toInt(arr[0]);
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }
