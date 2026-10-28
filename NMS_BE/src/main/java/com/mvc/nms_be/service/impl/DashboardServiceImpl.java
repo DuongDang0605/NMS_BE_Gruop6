@@ -2,8 +2,11 @@ package com.mvc.nms_be.service.impl;
 
 import com.mvc.nms_be.dto.response.TrendingArticleDto;
 import com.mvc.nms_be.entity.SystemAccount;
+import com.mvc.nms_be.repository.CategoryRepository;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.repository.NotificationRepository;
+import com.mvc.nms_be.repository.SystemAccountRepository;
+import com.mvc.nms_be.repository.TagRepository;
 import com.mvc.nms_be.service.DashboardService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,21 +28,24 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final NewsArticleRepository articleRepository;
     private final NotificationRepository notificationRepository;
+    private final SystemAccountRepository accountRepository;
+    private final CategoryRepository categoryRepository;
+    private final TagRepository tagRepository;
 
     @Override
     public Map<String, Object> overview() {
-        Object[] row = articleRepository.dashboardOverview(
-                SystemAccount.ADMIN_ROLE, SystemAccount.STAFF_ROLE).get(0);
+        long totalArticles = articleRepository.count();
+        long activeArticles = articleRepository.countByNewsStatus(1);
         return Map.of(
-                "totalAccounts", toLong(row[0]),
-                "totalAdmins", toLong(row[1]),
-                "totalStaff", toLong(row[2]),
-                "totalCategories", toLong(row[3]),
-                "totalTags", toLong(row[4]),
-                "totalArticles", toLong(row[5]),
-                "activeArticles", toLong(row[6]),
-                "inactiveArticles", toLong(row[7]),
-                "totalNotifications", toLong(row[8]));
+                "totalAccounts", accountRepository.count(),
+                "totalAdmins", accountRepository.countByAccountRole(SystemAccount.ADMIN_ROLE),
+                "totalStaff", accountRepository.countByAccountRole(SystemAccount.STAFF_ROLE),
+                "totalCategories", categoryRepository.count(),
+                "totalTags", tagRepository.count(),
+                "totalArticles", totalArticles,
+                "activeArticles", activeArticles,
+                "inactiveArticles", totalArticles - activeArticles,
+                "totalNotifications", notificationRepository.count());
     }
 
     @Override
@@ -83,15 +89,16 @@ public class DashboardServiceImpl implements DashboardService {
         if (recipientId == null || recipientId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "recipientId must be a positive integer");
         }
-        List<Object[]> rows = notificationRepository.countStatsForRecipient(recipientId);
-        if (rows.isEmpty()) {
+        if (!accountRepository.existsById(recipientId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipient not found");
         }
-        Object[] row = rows.get(0);
+        long total = notificationRepository.countByRecipient_AccountId(recipientId);
+        long unread = notificationRepository.countByRecipient_AccountIdAndIsRead(recipientId, 0);
+        long read = total - unread;
         return Map.of(
-                "totalNotifications", toLong(row[0]),
-                "readNotifications", toLong(row[1]),
-                "unreadNotifications", toLong(row[2]));
+                "totalNotifications", total,
+                "readNotifications", read,
+                "unreadNotifications", unread);
     }
 
     @Override
@@ -106,15 +113,16 @@ public class DashboardServiceImpl implements DashboardService {
             totalLikes = toLong(sums[1]);
         }
 
-        // top 5 bài trending theo viewCount
-        List<TrendingArticleDto> trending = new ArrayList<>();
-        for (Object[] row : articleRepository.findTop5Trending()) {
-            trending.add(new TrendingArticleDto(
-                    toInt(row[0]),
-                    (String) row[1],
-                    toInt(row[2]),
-                    toInt(row[3])));
-        }
+        // top 5 bài trending theo viewCount - type-safe từ Spring Data JPA
+        List<TrendingArticleDto> trending = articleRepository
+                .findTop5ByNewsStatusOrderByViewCountDescLikeCountDesc(1)
+                .stream()
+                .map(a -> new TrendingArticleDto(
+                        a.getNewsArticleId(),
+                        a.getNewsTitle(),
+                        a.getViewCount(),
+                        a.getLikeCount()))
+                .toList();
 
         return Map.of(
                 "totalViews", totalViews,
@@ -136,23 +144,6 @@ public class DashboardServiceImpl implements DashboardService {
             return Long.parseLong(value.toString());
         } catch (Exception e) {
             return 0L;
-        }
-    }
-
-    private static int toInt(Object value) {
-        if (value == null) {
-            return 0;
-        }
-        if (value instanceof Number number) {
-            return number.intValue();
-        }
-        if (value instanceof Object[] arr && arr.length > 0) {
-            return toInt(arr[0]);
-        }
-        try {
-            return Integer.parseInt(value.toString());
-        } catch (Exception e) {
-            return 0;
         }
     }
 }

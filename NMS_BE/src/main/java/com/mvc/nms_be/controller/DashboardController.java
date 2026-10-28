@@ -3,7 +3,6 @@ package com.mvc.nms_be.controller;
 import com.mvc.nms_be.service.DashboardService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,7 +26,6 @@ public class DashboardController {
     }
 
     @GetMapping("/notifications")
-   // @PreAuthorize("@recipientAuthorization.canAccess(#recipientId)")
     public Map<String, Object> notifications(@RequestParam Integer recipientId) {
         return dashboardService.notifications(recipientId);
     }

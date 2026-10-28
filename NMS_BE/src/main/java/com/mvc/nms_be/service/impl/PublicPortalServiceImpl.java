@@ -10,10 +10,16 @@ import com.mvc.nms_be.service.PublicPortalService;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import com.mvc.nms_be.security.CustomUserDetails;
 
 @Service
@@ -29,32 +35,31 @@ public class PublicPortalServiceImpl implements PublicPortalService {
     public Map<String, Object> getPublishedArticles(String keyword, Integer categoryId,
                                                      Integer tagId, int page, int size) {
         if (page < 0 || size < 1 || size > 100) {
-            throw new IllegalArgumentException("page >= 0, size between 1 and 100");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "page >= 0, size between 1 and 100");
         }
-        int offset = page * size;
 
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdDate"));
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        List<Object[]> rows = newsArticleRepository.findPublishedArticles(kw, categoryId, tagId, offset, size);
-        long total = newsArticleRepository.countPublishedArticles(kw, categoryId, tagId);
+        Page<NewsArticle> articlePage = newsArticleRepository.findPublishedArticles(kw, categoryId, tagId, pageable);
 
-        List<Map<String, Object>> articles = rows.stream().map(r -> Map.<String, Object>of(
-                "articleId",    ((Number) r[0]).intValue(),
-                "title",        (String) r[1],
-                "headline",     r[2] != null ? (String) r[2] : "",
-                "createdDate",  r[3].toString(),
-                "source",       r[4] != null ? (String) r[4] : "",
-                "viewCount",    ((Number) r[5]).intValue(),
-                "likeCount",    ((Number) r[6]).intValue(),
-                "categoryName", (String) r[7],
-                "authorName",   (String) r[8]
+        List<Map<String, Object>> articles = articlePage.getContent().stream().map(a -> Map.<String, Object>of(
+                "articleId",    a.getNewsArticleId(),
+                "title",        a.getNewsTitle(),
+                "headline",     a.getHeadline() != null ? a.getHeadline() : "",
+                "createdDate",  a.getCreatedDate() != null ? a.getCreatedDate().toString() : "",
+                "source",       a.getNewsSource() != null ? a.getNewsSource() : "",
+                "viewCount",    a.getViewCount(),
+                "likeCount",    a.getLikeCount(),
+                "categoryName", a.getCategory() != null ? a.getCategory().getCategoryName() : "",
+                "authorName",   a.getCreatedBy() != null ? a.getCreatedBy().getAccountName() : ""
         )).toList();
 
         return Map.of(
                 "content",       articles,
-                "page",          page,
-                "size",          size,
-                "totalElements", total,
-                "totalPages",    (int) Math.ceil((double) total / size));
+                "page",          articlePage.getNumber(),
+                "size",          articlePage.getSize(),
+                "totalElements", articlePage.getTotalElements(),
+                "totalPages",    articlePage.getTotalPages());
     }
 
     @Override
@@ -70,11 +75,8 @@ public class PublicPortalServiceImpl implements PublicPortalService {
             isLiked = reactionRepository.existsByNewsArticleIdAndAccount_AccountId(articleId, currentUserId);
         }
 
-        // Lấy danh sách tên tag của bài viết
-        List<String> tags = newsTagRepository.findByNewsArticle_NewsArticleId(articleId)
-                .stream()
-                .map(nt -> nt.getTag().getTagName())
-                .toList();
+        // 1 query trực tiếp lấy tên tag, tránh triệt để N+1 lazy loading
+        List<String> tags = newsTagRepository.findTagNamesByArticleId(articleId);
 
         return new PublicArticleDto(
                 article.getNewsArticleId(),

@@ -15,6 +15,9 @@ public interface NewsTagRepository extends JpaRepository<NewsTag, NewsTagId> {
 
     List<NewsTag> findByNewsArticle_NewsArticleId(Integer newsArticleId);
 
+    @Query("SELECT nt.tag.tagName FROM NewsTag nt WHERE nt.newsArticle.newsArticleId = :articleId")
+    List<String> findTagNamesByArticleId(@Param("articleId") Integer articleId);
+
     List<NewsTag> findByTag_TagId(Integer tagId);
 
     boolean existsByNewsArticle_NewsArticleIdAndTag_TagId(Integer newsArticleId, Integer tagId);

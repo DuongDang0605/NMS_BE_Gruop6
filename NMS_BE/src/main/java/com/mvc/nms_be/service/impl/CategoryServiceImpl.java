@@ -60,8 +60,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponseDto createCategory(CategoryRequestDto request) {
+        if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
+        }
         Category category = new Category();
-        category.setCategoryName(request.getCategoryName());
+        category.setCategoryName(request.getCategoryName().trim());
         category.setCategoryDescription(request.getCategoryDescription());
         category.setIsActive(request.getIsActive() != null ? request.getIsActive() : 1);
 
@@ -78,10 +81,13 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponseDto updateCategory(Integer id, CategoryRequestDto request) {
+        if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
+        }
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id));
 
-        category.setCategoryName(request.getCategoryName());
+        category.setCategoryName(request.getCategoryName().trim());
         category.setCategoryDescription(request.getCategoryDescription());
         if (request.getIsActive() != null) {
             category.setIsActive(request.getIsActive());

@@ -61,8 +61,8 @@ public class EngagementServiceImpl implements EngagementService {
     public ViewCountResponseDto incrementViewCount(Integer articleId) {
         // findArticle ném 404 nếu không tồn tại, bỏ existsById thừa
         NewsArticle article = findArticle(articleId);
-        // update trực tiếp trên DB, tránh race condition
-        reactionRepository.incrementViewCount(articleId);
+        // update trực tiếp trên DB qua NewsArticleRepository, tránh race condition
+        newsArticleRepository.incrementViewCount(articleId);
         // trả về giá trị tính toán thay vì query lại lần 3
         return new ViewCountResponseDto(articleId, article.getViewCount() + 1);
     }

@@ -123,12 +123,8 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public long countUnread(Integer recipientId) {
         requirePositive(recipientId, "recipientId");
-        // 1 query vừa xác nhận recipient tồn tại vừa đếm: rỗng = không tồn tại, cột 2 = số chưa đọc
-        List<Object[]> rows = notificationRepository.countStatsForRecipient(recipientId);
-        if (rows.isEmpty()) {
-            throw notFound("Recipient not found");
-        }
-        return ((Number) rows.get(0)[2]).longValue();
+        requireRecipientExists(recipientId);
+        return notificationRepository.countByRecipient_AccountIdAndIsRead(recipientId, 0);
     }
 
     @Override
