@@ -23,9 +23,25 @@ const Header = ({ user }) => {
 
   useEffect(() => {
     fetchUnread();
-    // Định kỳ kiểm tra thông báo mới mỗi 60 giây
-    const interval = setInterval(fetchUnread, 60000);
-    return () => clearInterval(interval);
+
+    // Chỉ thăm dò (poll) khi tab trình duyệt đang mở (active), tránh tải rác khi tab bị ẩn
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchUnread();
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchUnread();
+      }
+    }, 60000);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [recipientId]);
 
   const loadNotifications = async () => {

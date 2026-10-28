@@ -56,8 +56,13 @@ const PortalHome = () => {
   };
 
   useEffect(() => {
-    fetchArticles(0);
-  }, [selectedCategory]);
+    // Debounce tìm kiếm theo từ khóa và đổi category: hoãn gọi API 350ms khi gõ
+    const timer = setTimeout(() => {
+      fetchArticles(0);
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [keyword, selectedCategory]);
 
   const handleSearch = (e) => {
     e.preventDefault();
