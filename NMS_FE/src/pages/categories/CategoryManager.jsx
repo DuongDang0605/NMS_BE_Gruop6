@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Table, Button, Modal, Form, InputGroup, Alert, Spinner, Badge } from 'react-bootstrap';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../../api/category';
 
@@ -108,12 +108,20 @@ const CategoryManager = () => {
     }
   };
 
-  // Tra cứu tên danh mục cha theo ID
-  const categoryMap = new Map(categories.map(c => [c.categoryId, c.categoryName]));
+  // Tra cứu tên danh mục cha theo ID (ghi nhớ tránh cấp phát lại khi gõ tìm kiếm)
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.categoryId, c.categoryName])),
+    [categories]
+  );
 
-  const filteredCategories = categories.filter(c =>
-    c.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.categoryDescription && c.categoryDescription.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredCategories = useMemo(
+    () =>
+      categories.filter(
+        (c) =>
+          c.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (c.categoryDescription && c.categoryDescription.toLowerCase().includes(searchTerm.toLowerCase()))
+      ),
+    [categories, searchTerm]
   );
 
   return (

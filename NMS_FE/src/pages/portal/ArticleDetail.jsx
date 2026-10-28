@@ -19,9 +19,10 @@ const ArticleDetail = () => {
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
-    // 1. Tải chi tiết bài viết
-    getArticleDetail(id)
+    // 1. Tải chi tiết bài viết (hỗ trợ hủy request an toàn khi unmount / đổi trang)
+    getArticleDetail(id, { signal: controller.signal })
       .then((data) => {
         if (isMounted) {
           setArticle(data);
@@ -29,7 +30,7 @@ const ArticleDetail = () => {
         }
       })
       .catch((err) => {
-        if (isMounted) {
+        if (!controller.signal.aborted && isMounted) {
           setError(err?.response?.data?.message || 'Không thể tải chi tiết bài viết.');
           setLoading(false);
         }
@@ -51,6 +52,7 @@ const ArticleDetail = () => {
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [id]);
 

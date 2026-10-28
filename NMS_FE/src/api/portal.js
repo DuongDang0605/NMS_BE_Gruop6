@@ -12,8 +12,9 @@ export async function getPublishedArticles(params = {}) {
 /**
  * Lấy chi tiết bài báo kèm lượt view, lượt like và trạng thái isLikedByCurrentUser
  * @param {number|string} id
+ * @param {Object} options Axios request config (signal, etc.)
  */
-export async function getArticleDetail(id) {
-  const { data } = await api.get(`/portal/articles/${id}`);
+export async function getArticleDetail(id, options = {}) {
+  const { data } = await api.get(`/portal/articles/${id}`, options);
   return data;
 }

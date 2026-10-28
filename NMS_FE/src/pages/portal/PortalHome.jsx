@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Row, Col, Card, Form, InputGroup, Button, Badge, Spinner, Alert, Pagination, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { getPublishedArticles } from '../../api/portal';
@@ -83,13 +83,23 @@ const PortalHome = () => {
   };
 
   // Danh sách hiển thị nhanh (tối đa 5 mục đầu tiên)
-  const topCategories = categories.slice(0, VISIBLE_CATEGORY_LIMIT);
-  const currentCategoryObj = categories.find((c) => String(c.categoryId) === String(selectedCategory));
-  const isSelectedInTop = topCategories.some((c) => String(c.categoryId) === String(selectedCategory));
+  const topCategories = useMemo(() => categories.slice(0, VISIBLE_CATEGORY_LIMIT), [categories]);
+  const currentCategoryObj = useMemo(
+    () => categories.find((c) => String(c.categoryId) === String(selectedCategory)),
+    [categories, selectedCategory]
+  );
+  const isSelectedInTop = useMemo(
+    () => topCategories.some((c) => String(c.categoryId) === String(selectedCategory)),
+    [topCategories, selectedCategory]
+  );
 
   // Lọc trong modal popup
-  const modalFilteredCategories = categories.filter((c) =>
-    c.categoryName.toLowerCase().includes(categoryModalSearch.toLowerCase())
+  const modalFilteredCategories = useMemo(
+    () =>
+      categories.filter((c) =>
+        c.categoryName.toLowerCase().includes(categoryModalSearch.toLowerCase())
+      ),
+    [categories, categoryModalSearch]
   );
 
   const selectCategoryAndClose = (catId) => {
