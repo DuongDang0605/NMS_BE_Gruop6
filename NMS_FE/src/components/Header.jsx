@@ -18,7 +18,7 @@ const Header = ({ user }) => {
     if (!recipientId) return;
     getUnreadCount(recipientId)
       .then((count) => setUnreadCount(count))
-      .catch(() => {});
+      .catch(() => { });
   };
 
   useEffect(() => {
@@ -58,12 +58,12 @@ const Header = ({ user }) => {
   };
 
   const handleMarkOneRead = async (noti) => {
-    if (noti.readStatus === 1) return;
+    if (noti.isRead === 1) return;
     try {
       await markAsRead(noti.notificationId, recipientId);
       setNotifications((prev) =>
         prev.map((item) =>
-          item.notificationId === noti.notificationId ? { ...item, readStatus: 1 } : item
+          item.notificationId === noti.notificationId ? { ...item, isRead: 1 } : item
         )
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -75,7 +75,7 @@ const Header = ({ user }) => {
   const handleMarkAllRead = async () => {
     try {
       await markAllAsRead(recipientId);
-      setNotifications((prev) => prev.map((item) => ({ ...item, readStatus: 1 })));
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: 1 })));
       setUnreadCount(0);
     } catch {
       // ignore
@@ -179,26 +179,24 @@ const Header = ({ user }) => {
                       <div
                         key={n.notificationId}
                         onClick={() => handleMarkOneRead(n)}
-                        className={`p-2 px-3 border-bottom d-flex align-items-start gap-2 ${
-                          n.readStatus === 0 ? 'bg-light' : 'bg-white'
-                        }`}
+                        className={`p-2 px-3 border-bottom d-flex align-items-start gap-2 ${n.isRead === 0 ? 'bg-light' : 'bg-white'
+                          }`}
                         style={{ cursor: 'pointer', transition: 'background-color 0.15s' }}
                       >
                         <i
-                          className={`bi ${
-                            n.readStatus === 0 ? 'bi-circle-fill text-primary' : 'bi-check-circle text-muted'
-                          } mt-1`}
+                          className={`bi ${n.isRead === 0 ? 'bi-circle-fill text-primary' : 'bi-check-circle text-muted'
+                            } mt-1`}
                           style={{ fontSize: '0.65rem' }}
                         ></i>
                         <div className="flex-grow-1">
                           <div
-                            className={`small ${n.readStatus === 0 ? 'fw-bold text-dark' : 'text-muted'}`}
+                            className={`small ${n.isRead === 0 ? 'fw-bold text-dark' : 'text-muted'}`}
                             style={{ lineHeight: 1.35 }}
                           >
                             {n.content}
                           </div>
                           <div className="text-muted" style={{ fontSize: '0.72rem' }}>
-                            {formatNotiTime(n.sentDate)}
+                            {formatNotiTime(n.createdDate)}
                           </div>
                         </div>
                       </div>
