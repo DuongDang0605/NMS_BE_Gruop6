@@ -8,6 +8,8 @@ import com.mvc.nms_be.repository.CategoryRepository;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.service.CategoryService;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -99,6 +101,19 @@ public class CategoryServiceImpl implements CategoryService {
             }
             Category parent = categoryRepository.findById(request.getParentCategoryId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parent category not found"));
+            Set<Integer> visited = new HashSet<>();
+            Category ancestor = parent;
+            while (ancestor != null) {
+                if (ancestor.getCategoryId().equals(id)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Cannot select a descendant as parent");
+                }
+                if (!visited.add(ancestor.getCategoryId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Parent hierarchy contains a cycle");
+                }
+                ancestor = ancestor.getParentCategory();
+            }
             category.setParentCategory(parent);
         } else {
             category.setParentCategory(null);
