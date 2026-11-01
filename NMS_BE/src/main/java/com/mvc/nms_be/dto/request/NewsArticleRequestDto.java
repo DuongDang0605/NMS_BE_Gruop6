@@ -1,5 +1,6 @@
 package com.mvc.nms_be.dto.request;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -18,8 +19,10 @@ public class NewsArticleRequestDto {
     private String newsContent;
     private String newsSource;
     private Integer categoryId;
-    private Integer newsStatus;
+    private String newsStatus;
+    private LocalDateTime scheduledPublishDate;
+    private Boolean allowComments = true;
     private Integer createdById;
     private Integer updatedById;
-    private List<Integer> tagIds;
+    private List<Integer> tagIds = new ArrayList<>();
 }

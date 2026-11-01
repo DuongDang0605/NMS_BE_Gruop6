@@ -65,7 +65,7 @@ public class PublicPortalServiceImpl implements PublicPortalService {
     @Override
     public PublicArticleDto getArticleDetail(Integer articleId) {
         NewsArticle article = newsArticleRepository.findById(articleId)
-                .filter(a -> a.getNewsStatus() == 1)
+                .filter(a -> NewsArticle.STATUS_PUBLISHED.equalsIgnoreCase(a.getNewsStatus()) || "1".equals(a.getNewsStatus()))
                 .orElseThrow(() -> new ResourceNotFoundException("Article not found: " + articleId));
 
         // Kiểm tra user đăng nhập hay chưa để trả cờ isLikedByCurrentUser
