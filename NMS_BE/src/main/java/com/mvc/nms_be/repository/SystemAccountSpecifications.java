@@ -30,6 +30,9 @@ public final class SystemAccountSpecifications {
             if (filter.getRole() != null) {
                 predicates.add(cb.equal(root.get("accountRole"), filter.getRole()));
             }
+            if (filter.getIsVerified() != null) {
+                predicates.add(cb.equal(root.get("isVerified"), filter.getIsVerified()));
+            }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
     }

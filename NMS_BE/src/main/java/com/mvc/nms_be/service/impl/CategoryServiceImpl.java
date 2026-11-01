@@ -8,12 +8,15 @@ import com.mvc.nms_be.repository.CategoryRepository;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.service.CategoryService;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -59,9 +62,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponseDto createCategory(CategoryRequestDto request) {
+        if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
+        }
         Category category = new Category();
-        category.setCategoryName(request.getCategoryName());
+        category.setCategoryName(request.getCategoryName().trim());
         category.setCategoryDescription(request.getCategoryDescription());
         category.setIsActive(request.getIsActive() != null ? request.getIsActive() : 1);
 
@@ -77,11 +84,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponseDto updateCategory(Integer id, CategoryRequestDto request) {
+        if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
+        }
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id));
 
-        category.setCategoryName(request.getCategoryName());
+        category.setCategoryName(request.getCategoryName().trim());
         category.setCategoryDescription(request.getCategoryDescription());
         if (request.getIsActive() != null) {
             category.setIsActive(request.getIsActive());
@@ -93,6 +104,19 @@ public class CategoryServiceImpl implements CategoryService {
             }
             Category parent = categoryRepository.findById(request.getParentCategoryId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parent category not found"));
+            Set<Integer> visited = new HashSet<>();
+            Category ancestor = parent;
+            while (ancestor != null) {
+                if (ancestor.getCategoryId().equals(id)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Cannot select a descendant as parent");
+                }
+                if (!visited.add(ancestor.getCategoryId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Parent hierarchy contains a cycle");
+                }
+                ancestor = ancestor.getParentCategory();
+            }
             category.setParentCategory(parent);
         } else {
             category.setParentCategory(null);
@@ -104,6 +128,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteCategory(Integer id) {
         if (!categoryRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id);

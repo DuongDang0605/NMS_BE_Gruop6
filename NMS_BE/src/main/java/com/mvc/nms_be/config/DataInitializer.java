@@ -2,8 +2,8 @@ package com.mvc.nms_be.config;
 
 import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.repository.SystemAccountRepository;
+import com.mvc.nms_be.security.PasswordSupport;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
-    private static final Pattern BCRYPT = Pattern.compile("\\$2[aby]\\$\\d{2}\\$[./A-Za-z0-9]{53}");
     private final SystemAccountRepository accounts;
     private final PasswordEncoder encoder;
     private final boolean migratePlaintext;
@@ -29,7 +28,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         if (migratePlaintext) {
             for (SystemAccount account : accounts.findAll()) {
-                if (!BCRYPT.matcher(account.getAccountPassword()).matches()) {
+                if (!PasswordSupport.isBcryptHash(account.getAccountPassword())) {
                     requireBcryptLength(account.getAccountPassword(), "Account " + account.getAccountId());
                     account.setAccountPassword(encoder.encode(account.getAccountPassword()));
                 }

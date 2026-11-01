@@ -1,13 +1,17 @@
 package com.mvc.nms_be.config;
 
 import com.mvc.nms_be.security.CustomUserDetailsService;
+import com.mvc.nms_be.security.CustomAccessDeniedHandler;
+import com.mvc.nms_be.security.JwtAuthenticationEntryPoint;
 import com.mvc.nms_be.security.JwtAuthenticationFilter;
 import com.mvc.nms_be.security.JwtTokenProvider;
 import java.util.Arrays;
 import java.util.List;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -23,7 +27,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -39,7 +43,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager,
-            JwtTokenProvider tokens, CustomUserDetailsService users, UrlBasedCorsConfigurationSource corsSource) throws Exception {
+            JwtTokenProvider tokens, CustomUserDetailsService users, JwtAuthenticationEntryPoint entryPoint,
+            CustomAccessDeniedHandler accessDenied, UrlBasedCorsConfigurationSource corsSource) throws Exception {
         // Construct here so the JWT filter is registered only in Spring Security's chain.
         JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokens, users);
         return http.cors(cors -> cors.configurationSource(corsSource))
@@ -50,8 +55,23 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authenticationManager(authenticationManager)
-                // Only User/Auth are guarded in controllers/services; other modules stay public for demos.
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .exceptionHandling(errors -> errors.authenticationEntryPoint(entryPoint).accessDeniedHandler(accessDenied))
+                .authorizeHttpRequests(auth -> auth
+                        // Preserve the original response during internal servlet error handling.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/error").denyAll()
+                        .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**",
+                                "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
+                                "/api/v1/auth/register-reader", "/api/v1/auth/unlock/request",
+                                "/api/v1/auth/unlock/verify", "/api/v1/auth/unlock/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/news/{id}/views").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/portal", "/api/v1/portal/**",
+                                "/api/v1/news/public", "/api/v1/news/public/**",
+                                "/api/v1/categories", "/api/v1/categories/**", "/api/v1/tags", "/api/v1/tags/**",
+                                "/api/v1/settings/public-configs").permitAll()
+                        // Business roles and ownership belong to method security in each module.
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

@@ -1,7 +1,6 @@
 package com.mvc.nms_be.repository;
 
 import com.mvc.nms_be.entity.Notification;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,14 +25,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
     Page<Notification> findByRecipient_AccountIdAndIsRead(
             Integer recipientId, Integer isRead, Pageable pageable);
 
-    // 0 dòng = tài khoản không tồn tại; 1 dòng = (total, read, unread), có thể đều bằng 0
-    @Query(value = "SELECT COUNT_BIG(n.NotificationID), "
-            + "COUNT_BIG(CASE WHEN n.IsRead = 1 THEN 1 END), "
-            + "COUNT_BIG(CASE WHEN n.IsRead = 0 THEN 1 END) "
-            + "FROM SystemAccount a LEFT JOIN Notification n ON n.RecipientID = a.AccountID "
-            + "WHERE a.AccountID = :recipientId GROUP BY a.AccountID",
-            nativeQuery = true)
-    List<Object[]> countStatsForRecipient(@Param("recipientId") Integer recipientId);
+    long countByRecipient_AccountId(Integer recipientId);
+
+    long countByRecipient_AccountIdAndIsRead(Integer recipientId, Integer isRead);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Notification n SET n.isRead = 1 "

@@ -15,5 +15,5 @@ export async function recordView(articleId) {
  */
 export async function toggleLike(articleId) {
   const { data } = await api.post(`/news/${articleId}/reactions`);
-  return data; // { articleId, isLiked, likeCount }
+  return data; // { articleId, isLikedByCurrentUser, likeCount }
 }

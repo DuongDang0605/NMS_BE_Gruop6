@@ -4,6 +4,7 @@ import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
 import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
 import com.mvc.nms_be.dto.request.UserSearchRequestDto;
+import com.mvc.nms_be.dto.request.ChangePasswordRequestDto;
 import com.mvc.nms_be.dto.response.PageResponseDto;
 import com.mvc.nms_be.service.SystemAccountService;
 import jakarta.validation.Valid;
@@ -23,20 +24,32 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import com.mvc.nms_be.security.SecurityUtils;
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
-    @ModelAttribute
-    public void authorize(HttpServletRequest request) {
-        SecurityUtils.requireAdmin();
+    private final SystemAccountService systemAccountService;
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public SystemAccountResponseDto me() { return systemAccountService.me(); }
+
+    @PutMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequestDto request) {
+        systemAccountService.changePassword(request);
+        return ResponseEntity.noContent().build();
     }
 
-    private final SystemAccountService systemAccountService;
+    @PatchMapping("/{id}/verify")
+    public SystemAccountResponseDto toggleVerify(@PathVariable @Positive Integer id) {
+        return systemAccountService.toggleVerify(id);
+    }
 
     @GetMapping
     public PageResponseDto<SystemAccountResponseDto> findAll(

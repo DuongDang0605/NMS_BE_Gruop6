@@ -10,47 +10,55 @@ const ArticleDetail = () => {
   const navigate = useNavigate();
 
   const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadedId, setLoadedId] = useState(null);
   const [error, setError] = useState('');
   const [liking, setLiking] = useState(false);
 
   // Đảm bảo chỉ tăng view đúng 1 lần cho mỗi bài trong phiên
-  const viewRecordedRef = useRef(false);
+  const viewRequests = useRef(new Map());
+  const loading = loadedId !== id;
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
-    // 1. Tải chi tiết bài viết
-    getArticleDetail(id)
+    // 1. Tải chi tiết bài viết (hỗ trợ hủy request an toàn khi unmount / đổi trang)
+    getArticleDetail(id, { signal: controller.signal })
       .then((data) => {
         if (isMounted) {
           setArticle(data);
-          setLoading(false);
+          setError('');
+          setLoadedId(id);
+          const sessionKey = `viewed_article_${id}`;
+          if (!sessionStorage.getItem(sessionKey)) {
+            if (!viewRequests.current.has(id)) {
+              const request = recordView(id).then((response) => {
+                sessionStorage.setItem(sessionKey, 'true');
+                return response;
+              }).catch((err) => {
+                viewRequests.current.delete(id);
+                throw err;
+              });
+              viewRequests.current.set(id, request);
+            }
+            viewRequests.current.get(id).then((res) => {
+              if (isMounted && res?.viewCount !== undefined) {
+                setArticle((prev) => prev?.articleId === data.articleId ? { ...prev, viewCount: res.viewCount } : prev);
+              }
+            }).catch(() => {});
+          }
         }
       })
       .catch((err) => {
-        if (isMounted) {
+        if (!controller.signal.aborted && isMounted) {
           setError(err?.response?.data?.message || 'Không thể tải chi tiết bài viết.');
-          setLoading(false);
+          setLoadedId(id);
         }
       });
 
-    // 2. Tự động tăng 1 lượt xem (chỉ 1 lần trong phiên đọc này)
-    const sessionKey = `viewed_article_${id}`;
-    if (!sessionStorage.getItem(sessionKey) && !viewRecordedRef.current) {
-      viewRecordedRef.current = true;
-      sessionStorage.setItem(sessionKey, 'true');
-      recordView(id)
-        .then((res) => {
-          if (isMounted && res?.viewCount !== undefined) {
-            setArticle((prev) => (prev ? { ...prev, viewCount: res.viewCount } : prev));
-          }
-        })
-        .catch(() => {});
-    }
-
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [id]);
 
@@ -67,10 +75,10 @@ const ArticleDetail = () => {
       setLiking(true);
       const res = await toggleLike(id);
       setArticle((prev) =>
-        prev
+        prev?.articleId === res.articleId
           ? {
               ...prev,
-              isLikedByCurrentUser: res.isLiked,
+              isLikedByCurrentUser: res.isLikedByCurrentUser,
               likeCount: res.likeCount,
             }
           : prev

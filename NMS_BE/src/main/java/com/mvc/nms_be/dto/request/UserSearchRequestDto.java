@@ -31,7 +31,9 @@ public class UserSearchRequestDto {
     private String email;
 
     @Min(1)
-    @Max(2)
+    @Max(5)
     private Integer role;
+
+    private Boolean isVerified;
 
 }

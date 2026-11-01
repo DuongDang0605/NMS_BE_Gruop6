@@ -19,12 +19,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@PreAuthorize("@recipientAuthorization.canAccess(#recipientId)")
 public class NotificationServiceImpl implements NotificationService {
 
     private static final int MAX_PAGE_SIZE = 100;
@@ -68,6 +70,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public NotificationResponseDto create(NotificationRequestDto request) {
         if (request == null) {
             throw badRequest("Request body is required");
@@ -123,12 +126,8 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public long countUnread(Integer recipientId) {
         requirePositive(recipientId, "recipientId");
-        // 1 query vừa xác nhận recipient tồn tại vừa đếm: rỗng = không tồn tại, cột 2 = số chưa đọc
-        List<Object[]> rows = notificationRepository.countStatsForRecipient(recipientId);
-        if (rows.isEmpty()) {
-            throw notFound("Recipient not found");
-        }
-        return ((Number) rows.get(0)[2]).longValue();
+        requireRecipientExists(recipientId);
+        return notificationRepository.countByRecipient_AccountIdAndIsRead(recipientId, 0);
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
 import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
 import com.mvc.nms_be.dto.request.UserSearchRequestDto;
+import com.mvc.nms_be.dto.request.ChangePasswordRequestDto;
 import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.exception.ResourceConflictException;
 import com.mvc.nms_be.exception.ResourceNotFoundException;
@@ -38,16 +39,45 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
+    public SystemAccountResponseDto toggleVerify(Integer id) {
+        SecurityUtils.requireAdmin();
+        SystemAccount account = findAccountForUpdate(id);
+        account.setIsVerified(!Boolean.TRUE.equals(account.getIsVerified()));
+        return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
+    }
+
+    @Override
+    public SystemAccountResponseDto me() {
+        return accountMapper.toResponseDto(findAccount(SecurityUtils.getCurrentAccountId()));
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(ChangePasswordRequestDto request) {
+        SystemAccount account = findAccountForUpdate(SecurityUtils.getCurrentAccountId());
+        if (!passwordEncoder.matches(request.currentPassword(), account.getAccountPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        if (passwordEncoder.matches(request.newPassword(), account.getAccountPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password must differ from the old password");
+        }
+        account.setAccountPassword(passwordEncoder.encode(request.newPassword()));
+        // Invalidate any outstanding recovery challenge after an authenticated password change.
+        account.clearUnlockChallenge();
+    }
+
+    @Override
     public Page<SystemAccountResponseDto> search(UserSearchRequestDto filter, Pageable pageable) {
         SecurityUtils.requireAdmin();
         if (pageable.isUnpaged() || pageable.getPageSize() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page size must be between 1 and 100");
         }
-        var allowedSorts = Set.of("accountId", "accountName", "accountEmail", "accountRole");
+        var allowedSorts = Set.of("accountId", "accountName", "accountEmail", "accountRole", "isVerified");
         for (Sort.Order order : pageable.getSort()) {
             if (!allowedSorts.contains(order.getProperty())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Sort field must be accountId, accountName, accountEmail or accountRole");
+                        "Sort field must be accountId, accountName, accountEmail, accountRole or isVerified");
             }
         }
         Sort sort = pageable.getSort().isSorted() ? pageable.getSort() : Sort.by("accountId");
@@ -82,6 +112,7 @@ public class SystemAccountServiceImpl implements SystemAccountService {
             throw duplicateEmail();
         }
         SystemAccount account = accountMapper.toEntity(request, passwordEncoder.encode(request.getAccountPassword()));
+        account.setIsVerified(true);
         return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
 
@@ -89,13 +120,16 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     @Transactional
     public SystemAccountResponseDto update(Integer id, SystemAccountUpdateRequestDto request) {
         SecurityUtils.requireAdmin();
-        SystemAccount account = findAccount(id);
+        SystemAccount account = findAccountForUpdate(id);
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCaseAndAccountIdNot(email, id)) {
             throw duplicateEmail();
         }
         String password = request.getAccountPassword() == null ? account.getAccountPassword()
                 : passwordEncoder.encode(request.getAccountPassword());
+        if (request.getAccountPassword() != null || !email.equals(account.getAccountEmail())) {
+            account.clearUnlockChallenge();
+        }
         accountMapper.updateEntity(account, request, password);
         return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
@@ -104,7 +138,7 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     @Transactional
     public void delete(Integer id) {
         SecurityUtils.requireAdmin();
-        SystemAccount account = findAccount(id);
+        SystemAccount account = findAccountForUpdate(id);
         accountRepository.delete(account);
         // Flush inside the request so FK conflicts can be returned as HTTP 409.
         accountRepository.flush();
@@ -112,6 +146,11 @@ public class SystemAccountServiceImpl implements SystemAccountService {
 
     private SystemAccount findAccount(Integer id) {
         return accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " was not found"));
+    }
+
+    private SystemAccount findAccountForUpdate(Integer id) {
+        return accountRepository.findForUpdateById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " was not found"));
     }
 

@@ -11,8 +11,8 @@ export async function getCategoryTree() {
 /**
  * Lấy danh sách phẳng tất cả danh mục (dùng cho dropdown chọn parent hoặc bảng)
  */
-export async function getCategories() {
-  const { data } = await api.get('/categories');
+export async function getCategories(options = {}) {
+  const { data } = await api.get('/categories', options);
   return data;
 }
 

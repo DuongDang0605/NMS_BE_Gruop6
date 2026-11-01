@@ -1,94 +1,106 @@
-import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, InputGroup, Alert, Spinner, Badge } from 'react-bootstrap';
-import { getCategories, createCategory, updateCategory, deleteCategory } from '../../api/category';
+import { useOutletContext } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  InputGroup,
+  Alert,
+  Spinner,
+  Badge,
+} from "react-bootstrap";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "../../api/category";
 
 const DEFAULT_CATEGORY = {
   categoryId: null,
-  categoryName: '',
-  categoryDescription: '',
+  categoryName: "",
+  categoryDescription: "",
   parentCategoryId: null,
   isActive: 1,
 };
 
 const CategoryManager = () => {
+  const { user } = useOutletContext();
+  const canManage = user.accountRole === 1;
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [actionError, setActionError] = useState('');
+  const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(DEFAULT_CATEGORY);
   const [deleteId, setDeleteId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (options = {}) => {
     try {
-      setLoading(true);
-      setError('');
-      const data = await getCategories();
+      const data = await getCategories(options);
+      if (options.signal?.aborted) return;
       setCategories(Array.isArray(data) ? data : []);
+      setError("");
     } catch (err) {
-      setError(err?.response?.data?.message || 'Không thể tải danh sách danh mục.');
+      if (!options.signal?.aborted)
+        setError(
+          err?.response?.data?.message || "Không thể tải danh sách danh mục.",
+        );
     } finally {
-      setLoading(false);
+      if (!options.signal?.aborted) setLoading(false);
     }
   };
 
   useEffect(() => {
-    let ignore = false;
-    const fetchInitial = async () => {
-      try {
-        const data = await getCategories();
-        if (!ignore) {
-          setCategories(Array.isArray(data) ? data : []);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (!ignore) {
-          setError(err?.response?.data?.message || 'Không thể tải danh sách danh mục.');
-          setLoading(false);
-        }
-      }
-    };
-    fetchInitial();
-    return () => {
-      ignore = true;
-    };
+    const controller = new AbortController();
+
+    // Sử dụng lại hàm loadData đã cấu hình sẵn signal thay vì viết lại logic catch/finally
+    loadData({ signal: controller.signal });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setActionError('');
+    setActionError("");
   };
 
   const handleShowModal = (cat = DEFAULT_CATEGORY) => {
+    if (!canManage || submitting) return;
     setCurrentCategory({
       categoryId: cat.categoryId || null,
-      categoryName: cat.categoryName || '',
-      categoryDescription: cat.categoryDescription || '',
+      categoryName: cat.categoryName || "",
+      categoryDescription: cat.categoryDescription || "",
       parentCategoryId: cat.parentCategoryId ?? null,
       isActive: cat.isActive !== undefined ? cat.isActive : 1,
     });
-    setActionError('');
+    setActionError("");
     setShowModal(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!canManage || submitting) return;
     if (!currentCategory.categoryName.trim()) {
-      setActionError('Tên danh mục không được để trống.');
+      setActionError("Tên danh mục không được để trống.");
       return;
     }
 
     try {
       setSubmitting(true);
-      setActionError('');
+      setActionError("");
       const payload = {
         categoryName: currentCategory.categoryName.trim(),
-        categoryDescription: currentCategory.categoryDescription?.trim() || '',
-        parentCategoryId: currentCategory.parentCategoryId ? Number(currentCategory.parentCategoryId) : null,
+        categoryDescription: currentCategory.categoryDescription?.trim() || "",
+        parentCategoryId: currentCategory.parentCategoryId
+          ? Number(currentCategory.parentCategoryId)
+          : null,
         isActive: currentCategory.isActive,
       };
 
@@ -100,19 +112,24 @@ const CategoryManager = () => {
       handleCloseModal();
       await loadData();
     } catch (err) {
-      setActionError(err?.response?.data?.message || 'Không thể lưu danh mục. Vui lòng kiểm tra lại.');
+      setActionError(
+        err?.response?.data?.message ||
+          "Không thể lưu danh mục. Vui lòng kiểm tra lại.",
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteConfirm = (id) => {
+    if (!canManage || submitting) return;
     setDeleteId(id);
-    setActionError('');
+    setActionError("");
     setShowConfirm(true);
   };
 
   const handleDelete = async () => {
+    if (!canManage || submitting) return;
     try {
       setSubmitting(true);
       await deleteCategory(deleteId);
@@ -120,44 +137,74 @@ const CategoryManager = () => {
       setDeleteId(null);
       await loadData();
     } catch (err) {
-      setActionError(err?.response?.data?.message || 'Không thể xóa danh mục (có thể do còn danh mục con hoặc bài viết thuộc danh mục này).');
+      setActionError(
+        err?.response?.data?.message ||
+          "Không thể xóa danh mục (có thể do còn danh mục con hoặc bài viết thuộc danh mục này).",
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Tra cứu tên danh mục cha theo ID
-  const categoryMap = new Map(categories.map(c => [c.categoryId, c.categoryName]));
+  // Tra cứu tên danh mục cha theo ID (ghi nhớ tránh cấp phát lại khi gõ tìm kiếm)
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.categoryId, c.categoryName])),
+    [categories],
+  );
 
-  const filteredCategories = categories.filter(c =>
-    c.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.categoryDescription && c.categoryDescription.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredCategories = useMemo(
+    () =>
+      categories.filter(
+        (c) =>
+          c.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (c.categoryDescription &&
+            c.categoryDescription
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())),
+      ),
+    [categories, searchTerm],
   );
 
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Category Management</h2>
-        <Button variant="primary" onClick={() => handleShowModal()}>
-          <i className="bi bi-plus-circle me-1"></i> Add Category
-        </Button>
+        {canManage && (
+          <Button variant="primary" onClick={() => handleShowModal()}>
+            <i className="bi bi-plus-circle me-1"></i> Add Category
+          </Button>
+        )}
       </div>
 
       {error && (
-        <Alert variant="danger" className="d-flex justify-content-between align-items-center">
+        <Alert
+          variant="danger"
+          className="d-flex justify-content-between align-items-center"
+        >
           <span>{error}</span>
-          <Button variant="outline-danger" size="sm" onClick={loadData}>Thử lại</Button>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => {
+              setLoading(true);
+              loadData();
+            }}
+          >
+            Thử lại
+          </Button>
         </Alert>
       )}
 
       {actionError && !showModal && !showConfirm && (
-        <Alert variant="danger" dismissible onClose={() => setActionError('')}>
+        <Alert variant="danger" dismissible onClose={() => setActionError("")}>
           {actionError}
         </Alert>
       )}
 
       <InputGroup className="mb-3 w-50">
-        <InputGroup.Text><i className="bi bi-search"></i></InputGroup.Text>
+        <InputGroup.Text>
+          <i className="bi bi-search"></i>
+        </InputGroup.Text>
         <Form.Control
           placeholder="Search categories..."
           value={searchTerm}
@@ -178,13 +225,19 @@ const CategoryManager = () => {
               <th>Category Name</th>
               <th>Parent Category</th>
               <th>Description</th>
-              <th style={{ width: 110 }} className="text-center">Status</th>
-              <th style={{ width: 180 }} className="text-center">Actions</th>
+              <th style={{ width: 110 }} className="text-center">
+                Status
+              </th>
+              <th style={{ width: 180 }} className="text-center">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
-            {filteredCategories.map(cat => {
-              const parentName = cat.parentCategoryId ? categoryMap.get(cat.parentCategoryId) : null;
+            {filteredCategories.map((cat) => {
+              const parentName = cat.parentCategoryId
+                ? categoryMap.get(cat.parentCategoryId)
+                : null;
               const isSubCategory = !!cat.parentCategoryId;
 
               return (
@@ -210,10 +263,14 @@ const CategoryManager = () => {
                         {parentName}
                       </Badge>
                     ) : (
-                      <span className="text-muted small"><em>(Root / Danh mục gốc)</em></span>
+                      <span className="text-muted small">
+                        <em>(Root / Danh mục gốc)</em>
+                      </span>
                     )}
                   </td>
-                  <td className="text-muted small">{cat.categoryDescription || '—'}</td>
+                  <td className="text-muted small">
+                    {cat.categoryDescription || "—"}
+                  </td>
                   <td className="text-center">
                     {cat.isActive === 1 ? (
                       <Badge bg="success">Active</Badge>
@@ -222,12 +279,25 @@ const CategoryManager = () => {
                     )}
                   </td>
                   <td className="text-center">
-                    <Button variant="warning" size="sm" className="me-2" onClick={() => handleShowModal(cat)}>
-                      <i className="bi bi-pencil"></i> Edit
-                    </Button>
-                    <Button variant="danger" size="sm" onClick={() => handleDeleteConfirm(cat.categoryId)}>
-                      <i className="bi bi-trash"></i> Delete
-                    </Button>
+                    {canManage && (
+                      <>
+                        <Button
+                          variant="warning"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => handleShowModal(cat)}
+                        >
+                          <i className="bi bi-pencil"></i> Edit
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDeleteConfirm(cat.categoryId)}
+                        >
+                          <i className="bi bi-trash"></i> Delete
+                        </Button>
+                      </>
+                    )}
                   </td>
                 </tr>
               );
@@ -247,37 +317,53 @@ const CategoryManager = () => {
       <Modal show={showModal} onHide={handleCloseModal} backdrop="static">
         <Form onSubmit={handleSave}>
           <Modal.Header closeButton>
-            <Modal.Title>{currentCategory.categoryId ? 'Edit Category' : 'Add Category'}</Modal.Title>
+            <Modal.Title>
+              {currentCategory.categoryId ? "Edit Category" : "Add Category"}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {actionError && <Alert variant="danger">{actionError}</Alert>}
 
             <Form.Group className="mb-3">
-              <Form.Label>Category Name <span className="text-danger">*</span></Form.Label>
+              <Form.Label>
+                Category Name <span className="text-danger">*</span>
+              </Form.Label>
               <Form.Control
                 type="text"
                 required
                 placeholder="Nhập tên danh mục (vd: Công nghệ, Thể thao...)"
                 value={currentCategory.categoryName}
-                onChange={e => setCurrentCategory({ ...currentCategory, categoryName: e.target.value })}
+                onChange={(e) =>
+                  setCurrentCategory({
+                    ...currentCategory,
+                    categoryName: e.target.value,
+                  })
+                }
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
               <Form.Label>Parent Category (Danh mục cha)</Form.Label>
               <Form.Select
-                value={currentCategory.parentCategoryId || ''}
-                onChange={e => setCurrentCategory({
-                  ...currentCategory,
-                  parentCategoryId: e.target.value ? Number(e.target.value) : null,
-                })}
+                value={currentCategory.parentCategoryId || ""}
+                onChange={(e) =>
+                  setCurrentCategory({
+                    ...currentCategory,
+                    parentCategoryId: e.target.value
+                      ? Number(e.target.value)
+                      : null,
+                  })
+                }
               >
                 <option value="">-- Không có (Danh mục gốc / Root) --</option>
                 {categories
-                  .filter(c => c.categoryId !== currentCategory.categoryId) // Không cho chọn chính nó làm cha
-                  .map(c => (
+                  .filter((c) => c.categoryId !== currentCategory.categoryId) // Không cho chọn chính nó làm cha
+                  .map((c) => (
                     <option key={c.categoryId} value={c.categoryId}>
-                      {c.categoryName} {c.parentCategoryId ? `(con của ${categoryMap.get(c.parentCategoryId) || ''})` : ''}
+                      {c.categoryName}{" "}
+                      {c.parentCategoryId
+                        ? `(con của ${categoryMap.get(c.parentCategoryId) || ""})`
+                        : ""}
                     </option>
                   ))}
               </Form.Select>
@@ -293,7 +379,12 @@ const CategoryManager = () => {
                 rows={3}
                 placeholder="Mô tả danh mục..."
                 value={currentCategory.categoryDescription}
-                onChange={e => setCurrentCategory({ ...currentCategory, categoryDescription: e.target.value })}
+                onChange={(e) =>
+                  setCurrentCategory({
+                    ...currentCategory,
+                    categoryDescription: e.target.value,
+                  })
+                }
               />
             </Form.Group>
 
@@ -303,14 +394,27 @@ const CategoryManager = () => {
                 id="active-switch"
                 label="Active"
                 checked={currentCategory.isActive === 1}
-                onChange={e => setCurrentCategory({ ...currentCategory, isActive: e.target.checked ? 1 : 0 })}
+                onChange={(e) =>
+                  setCurrentCategory({
+                    ...currentCategory,
+                    isActive: e.target.checked ? 1 : 0,
+                  })
+                }
               />
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal} disabled={submitting}>Cancel</Button>
+            <Button
+              variant="secondary"
+              onClick={handleCloseModal}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
             <Button variant="primary" type="submit" disabled={submitting}>
-              {submitting ? <Spinner animation="border" size="sm" className="me-1" /> : null}
+              {submitting ? (
+                <Spinner animation="border" size="sm" className="me-1" />
+              ) : null}
               Save
             </Button>
           </Modal.Footer>
@@ -324,12 +428,21 @@ const CategoryManager = () => {
         </Modal.Header>
         <Modal.Body>
           {actionError && <Alert variant="danger">{actionError}</Alert>}
-          Bạn có chắc chắn muốn xóa danh mục này? Thao tác này không thể hoàn tác nếu danh mục chưa gắn bài viết hay danh mục con.
+          Bạn có chắc chắn muốn xóa danh mục này? Thao tác này không thể hoàn
+          tác nếu danh mục chưa gắn bài viết hay danh mục con.
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirm(false)} disabled={submitting}>Cancel</Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowConfirm(false)}
+            disabled={submitting}
+          >
+            Cancel
+          </Button>
           <Button variant="danger" onClick={handleDelete} disabled={submitting}>
-            {submitting ? <Spinner animation="border" size="sm" className="me-1" /> : null}
+            {submitting ? (
+              <Spinner animation="border" size="sm" className="me-1" />
+            ) : null}
             Delete
           </Button>
         </Modal.Footer>
