@@ -37,7 +37,25 @@ const CategoryManager = () => {
   };
 
   useEffect(() => {
-    loadData();
+    let ignore = false;
+    const fetchInitial = async () => {
+      try {
+        const data = await getCategories();
+        if (!ignore) {
+          setCategories(Array.isArray(data) ? data : []);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError(err?.response?.data?.message || 'Không thể tải danh sách danh mục.');
+          setLoading(false);
+        }
+      }
+    };
+    fetchInitial();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleCloseModal = () => {

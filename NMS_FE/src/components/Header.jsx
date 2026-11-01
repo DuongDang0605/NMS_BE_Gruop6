@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Navbar, Container, Nav, Button, Dropdown, Badge, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/fpt-university-logo.png';
@@ -14,19 +14,19 @@ const Header = ({ user }) => {
 
   const recipientId = user?.accountId;
 
-  const fetchUnread = () => {
+  const fetchUnread = useCallback(() => {
     if (!recipientId) return;
     getUnreadCount(recipientId)
       .then((count) => setUnreadCount(count))
       .catch(() => {});
-  };
+  }, [recipientId]);
 
   useEffect(() => {
     fetchUnread();
     // Định kỳ kiểm tra thông báo mới mỗi 60 giây
     const interval = setInterval(fetchUnread, 60000);
     return () => clearInterval(interval);
-  }, [recipientId]);
+  }, [fetchUnread]);
 
   const loadNotifications = async () => {
     if (!recipientId) return;

@@ -56,7 +56,34 @@ const PortalHome = () => {
   };
 
   useEffect(() => {
-    fetchArticles(0);
+    let ignore = false;
+    const loadByCategory = async () => {
+      try {
+        const params = { page: 0, size: 9 };
+        if (keyword.trim()) params.keyword = keyword.trim();
+        if (selectedCategory) params.categoryId = Number(selectedCategory);
+
+        const res = await getPublishedArticles(params);
+        if (!ignore) {
+          setArticles(res?.content || []);
+          setTotalPages(res?.totalPages || 0);
+          setTotalElements(res?.totalElements || 0);
+          setPage(0);
+          setError('');
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError(err?.response?.data?.message || 'Không thể tải danh sách bài báo.');
+          setLoading(false);
+        }
+      }
+    };
+    loadByCategory();
+    return () => {
+      ignore = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   const handleSearch = (e) => {
