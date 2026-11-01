@@ -16,26 +16,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/news-tags")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class NewsTagController {
 
     private final NewsTagService newsTagService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'READER')")
     public ResponseEntity<List<NewsTagResponseDto>> getAllNewsTags() {
         return ResponseEntity.ok(newsTagService.getAllNewsTags());
     }
 
     @GetMapping("/article/{articleId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'READER')")
     public ResponseEntity<List<NewsTagResponseDto>> getTagsByArticle(@PathVariable Integer articleId) {
         return ResponseEntity.ok(newsTagService.getTagsByArticleId(articleId));
     }
 
     @GetMapping("/tag/{tagId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'READER')")
     public ResponseEntity<List<NewsTagResponseDto>> getArticlesByTag(@PathVariable Integer tagId) {
         return ResponseEntity.ok(newsTagService.getArticlesByTagId(tagId));
     }

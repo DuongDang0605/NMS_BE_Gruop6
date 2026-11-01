@@ -1,5 +1,5 @@
 import { Navbar, Container, Nav, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/fpt-university-logo.png';
 import { clearSession } from '../services/session';
 
@@ -28,6 +28,7 @@ const Header = ({ user }) => {
             <Navbar.Text className="user-copy me-lg-2">
               Signed in as: <span className="user-name">{user.accountName}</span>
             </Navbar.Text>
+            <Nav.Link as={Link} to="/account">My account</Nav.Link>
             <Button className="logout-button" size="sm" onClick={handleLogout}>
               <i className="bi bi-box-arrow-right me-1"></i>Logout
             </Button>

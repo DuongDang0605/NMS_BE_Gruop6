@@ -17,7 +17,7 @@ public class OpenApiConfig {
                         .title("News Management System API")
                         .version("v1")
                         .description("Login with a database account, then paste the JWT into Authorize. "
-                                + "API permissions follow the account role: 1 = Admin, 2 = Staff."))
+                                + "Roles: 1 = Admin, 2 = Contributor, 3 = Editor, 4 = Moderator, 5 = Reader."))
                 .components(new Components().addSecuritySchemes("bearerAuth", new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")

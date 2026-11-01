@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'MODERATOR')")
 public class DashboardController {
 
     private final DashboardService dashboardService;
@@ -22,12 +23,13 @@ public class DashboardController {
     }
 
     @GetMapping("/news")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public Map<String, Object> news() {
         return dashboardService.news();
     }
 
     @GetMapping("/notifications")
-   // @PreAuthorize("@recipientAuthorization.canAccess(#recipientId)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'MODERATOR') and @recipientAuthorization.canAccess(#recipientId)")
     public Map<String, Object> notifications(@RequestParam Integer recipientId) {
         return dashboardService.notifications(recipientId);
     }

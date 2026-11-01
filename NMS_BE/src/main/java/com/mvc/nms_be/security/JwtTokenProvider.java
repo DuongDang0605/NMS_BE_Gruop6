@@ -56,11 +56,13 @@ public class JwtTokenProvider {
 
     private String generate(CustomUserDetails user, String type, long validityMs) {
         Instant issuedAt = Instant.now();
-        return Jwts.builder().issuer(issuer).subject(user.getAccountId().toString())
+        return Jwts.builder().issuer(issuer).subject(user.getUsername())
                 .id(UUID.randomUUID().toString())
                 .claim("type", type)
                 .claim("accountId", user.getAccountId())
                 .claim("accountRole", user.getAccountRole())
+                .claim("role", user.getRoleName())
+                .claim("isVerified", user.isVerified())
                 .claim("accountName", user.getAccountName())
                 .claim("email", user.getAccountEmail())
                 .claim("roles", user.getAuthorities().stream().map(a -> a.getAuthority()).toList())
@@ -88,12 +90,27 @@ public class JwtTokenProvider {
     }
 
     public boolean matchesCurrentAccount(Claims claims, CustomUserDetails user) {
-        // Reloaded database roles take effect immediately; password changes invalidate old tokens.
-        return user.getAccountEmail().equals(claims.get("email", String.class))
+        // Reloaded database state blocks locked accounts and applies role/password changes immediately.
+        return user.isAccountNonLocked()
+                && user.getAccountId().equals(getAccountId(claims))
+                && (user.getUsername().equals(claims.getSubject())
+                    || user.getAccountId().toString().equals(claims.getSubject()))
+                && user.getAccountEmail().equals(claims.get("email", String.class))
                 && passwordVersion(user.getPassword()).equals(claims.get("pv", String.class));
     }
 
     public long getExpiresInSeconds() { return expirationMs / 1000; }
+
+    public Integer getAccountId(Claims claims) {
+        // Numeric subjects remain accepted for tokens issued before the Report 2 email subject.
+        Integer id = claims.get("accountId", Integer.class);
+        if (id == null) {
+            try { id = Integer.valueOf(claims.getSubject()); }
+            catch (NumberFormatException ex) { throw new MalformedJwtException("Missing account identity"); }
+        }
+        if (id <= 0) throw new MalformedJwtException("Invalid account identity");
+        return id;
+    }
 
     private static String passwordVersion(String hash) {
         try {

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Col, Collapse, Form, Pagination, Row, Spinner, Table } from 'react-bootstrap';
-import { getUsers } from '../../api/user';
+import { getUsers, toggleUserVerification } from '../../api/user';
+import { ROLES, roleName } from '../../services/roles';
 import { apiErrorMessage } from './userForm';
 import UserModel from './UserModel';
 
-const emptyFilters = () => ({ keyword: '', accountId: '', name: '', email: '', role: '' });
+const emptyFilters = () => ({ keyword: '', accountId: '', name: '', email: '', role: '', isVerified: '' });
 const initialQuery = () => ({ ...emptyFilters(), page: 0, size: 10, sort: 'accountId,asc' });
 const filterFields = [
   { key: 'keyword', label: 'Search', placeholder: 'Name or email', maxLength: 254, width: 4 },
@@ -21,11 +22,13 @@ const UserManager = () => {
   const [result, setResult] = useState(null);
   const [modal, setModal] = useState(null);
   const [notice, setNotice] = useState('');
+  const [noticeVariant, setNoticeVariant] = useState('success');
+  const [verifying, setVerifying] = useState(false);
   const requestKey = JSON.stringify([query, revision]);
   const loading = result?.key !== requestKey;
   const data = loading ? null : result?.data;
   const listError = loading ? '' : result?.error;
-  const busy = !!modal;
+  const busy = !!modal || verifying;
   const [sortBy, sortDirection] = query.sort.split(',');
 
   useEffect(() => {
@@ -50,6 +53,19 @@ const UserManager = () => {
   }, [query, requestKey]);
 
   const refresh = () => setRevision((value) => value + 1);
+  const toggleVerification = async (user) => {
+    if (busy) return;
+    setVerifying(true);
+    try {
+      await toggleUserVerification(user.accountId);
+      setNoticeVariant('success');
+      setNotice('Verification status updated.');
+      refresh();
+    } catch (error) {
+      setNoticeVariant('danger');
+      setNotice(apiErrorMessage(error, 'Unable to update verification status.'));
+    } finally { setVerifying(false); }
+  };
   const changeQuery = (field, value) => setQuery((previous) => ({ ...previous, [field]: value, page: 0 }));
   const goToPage = (page) => setQuery((previous) => ({ ...previous, page }));
   const applyFilters = (event) => {
@@ -62,6 +78,7 @@ const UserManager = () => {
   const handleSuccess = (message) => {
     setModal(null);
     setNotice(message);
+    setNoticeVariant('success');
     refresh();
   };
   const totalPages = data?.totalPages || 0;
@@ -77,7 +94,7 @@ const UserManager = () => {
           <Button disabled={busy} onClick={() => setModal({ mode: 'create' })}><i className="bi bi-plus-circle me-1" /> Add User</Button>
         </div>
       </div>
-      {notice && <Alert variant="success" dismissible onClose={() => setNotice('')}>{notice}</Alert>}
+      {notice && <Alert variant={noticeVariant} dismissible onClose={() => setNotice('')}>{notice}</Alert>}
       <Button variant="outline-secondary" className="mb-3" onClick={() => setShowFilters((visible) => !visible)}
         aria-expanded={showFilters} aria-controls="user-search-sort">
         <i className="bi bi-funnel me-2" aria-hidden="true" />
@@ -101,7 +118,16 @@ const UserManager = () => {
                 <Form.Group controlId="user-filter-role">
                   <Form.Label>Role</Form.Label>
                   <Form.Select value={filters.role} onChange={(event) => setFilters((previous) => ({ ...previous, role: event.target.value }))}>
-                    <option value="">All roles</option><option value="1">Admin</option><option value="2">Staff</option>
+                    <option value="">All roles</option>
+                    {ROLES.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="user-filter-verified">
+                  <Form.Label>Verification</Form.Label>
+                  <Form.Select value={filters.isVerified} onChange={(event) => setFilters((previous) => ({ ...previous, isVerified: event.target.value }))}>
+                    <option value="">All users</option><option value="true">Verified</option><option value="false">Unverified</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -118,6 +144,7 @@ const UserManager = () => {
                 <Form.Select value={sortBy} onChange={(event) => changeQuery('sort', `${event.target.value},${sortDirection}`)} disabled={busy}>
                   <option value="accountId">ID</option><option value="accountName">Name</option>
                   <option value="accountEmail">Email</option><option value="accountRole">Role</option>
+                  <option value="isVerified">Verification</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -142,20 +169,22 @@ const UserManager = () => {
       </Collapse>
       {listError && <Alert variant="danger">{listError} <Button variant="outline-danger" size="sm" onClick={refresh}>Retry</Button></Alert>}
       <Table striped bordered hover responsive aria-busy={loading}>
-        <thead className="table-brand"><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+        <thead className="table-brand"><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Verification</th><th>Actions</th></tr></thead>
         <tbody>
-          {loading && <tr><td colSpan={5} className="text-center p-4"><Spinner size="sm" animation="border" role="status" /> Loading users...</td></tr>}
+          {loading && <tr><td colSpan={6} className="text-center p-4"><Spinner size="sm" animation="border" role="status" /> Loading users...</td></tr>}
           {data?.content.map((user) => (
             <tr key={user.accountId}>
               <td>{user.accountId}</td><td>{user.accountName}</td><td>{user.accountEmail}</td>
-              <td><Badge bg={user.accountRole === 1 ? 'primary' : 'secondary'}>{user.accountRole === 1 ? 'Admin' : 'Staff'}</Badge></td>
+              <td><Badge bg={user.accountRole === 1 ? 'primary' : 'secondary'}>{roleName(user.accountRole)}</Badge></td>
+              <td><Badge bg={user.isVerified ? 'success' : 'warning'}>{user.isVerified ? 'Verified' : 'Unverified'}</Badge></td>
               <td className="text-nowrap">
+                <Button variant="outline-secondary" size="sm" className="me-2" disabled={busy} onClick={() => toggleVerification(user)}>{user.isVerified ? 'Unverify' : 'Verify'}</Button>
                 <Button variant="warning" size="sm" className="me-2" disabled={busy} onClick={() => setModal({ mode: 'edit', user })}><i className="bi bi-pencil me-1" />Edit</Button>
                 <Button variant="danger" size="sm" disabled={busy} onClick={() => setModal({ mode: 'delete', user })}><i className="bi bi-trash me-1" />Delete</Button>
               </td>
             </tr>
           ))}
-          {data?.content.length === 0 && <tr><td colSpan={5} className="text-center p-4">No users match these filters.</td></tr>}
+          {data?.content.length === 0 && <tr><td colSpan={6} className="text-center p-4">No users match these filters.</td></tr>}
         </tbody>
       </Table>
       {data && (

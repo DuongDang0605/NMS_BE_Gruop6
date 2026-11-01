@@ -4,6 +4,7 @@ import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
 import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
 import com.mvc.nms_be.dto.request.UserSearchRequestDto;
+import com.mvc.nms_be.dto.request.ChangePasswordRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import jakarta.validation.Valid;
@@ -12,6 +13,12 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 
 public interface SystemAccountService {
+
+    SystemAccountResponseDto toggleVerify(@NotNull @Positive Integer id);
+
+    SystemAccountResponseDto me();
+
+    void changePassword(@NotNull @Valid ChangePasswordRequestDto request);
 
     List<SystemAccountResponseDto> findAll();
 

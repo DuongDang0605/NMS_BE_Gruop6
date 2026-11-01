@@ -2,29 +2,37 @@ import { useState } from 'react';
 import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
 import { mockNews } from '../../mockData/news';
 import { mockCategories } from '../../mockData/categories';
+import { useOutletContext } from 'react-router-dom';
 
 const NewsManager = () => {
+  const { user } = useOutletContext();
+  const canPublish = [1, 3].includes(user.accountRole);
+  const canEdit = (article) => user.accountRole === 1
+    || (article?.createdById === user.accountId && article.newsStatus === 0);
   const [news, setNews] = useState(mockNews);
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentNews, setCurrentNews] = useState({
     newsArticleId: '', newsTitle: '', headline: '', newsContent: '',
-    newsSource: '', categoryId: '', newsStatus: 1
+    newsSource: '', categoryId: '', newsStatus: 0
   });
   const [deleteId, setDeleteId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleCloseModal = () => setShowModal(false);
-  const handleShowModal = (n = { newsArticleId: '', newsTitle: '', headline: '', newsContent: '', newsSource: '', categoryId: '', newsStatus: 1 }) => {
+  const handleShowModal = (n = { newsArticleId: '', newsTitle: '', headline: '', newsContent: '', newsSource: '', categoryId: '', newsStatus: 0, createdById: user.accountId }) => {
+    if (n.newsArticleId && !canEdit(n)) return;
     setCurrentNews(n);
     setShowModal(true);
   };
 
   const handleSave = () => {
+    if (currentNews.newsArticleId && !canEdit(news.find((article) => article.newsArticleId === currentNews.newsArticleId))) return;
+    const savedNews = { ...currentNews, newsStatus: canPublish ? currentNews.newsStatus : 0 };
     if (currentNews.newsArticleId) {
-      setNews(news.map(n => n.newsArticleId === currentNews.newsArticleId ? currentNews : n));
+      setNews(news.map(n => n.newsArticleId === currentNews.newsArticleId ? savedNews : n));
     } else {
-      setNews([...news, { ...currentNews, newsArticleId: Date.now(), createdDate: new Date().toISOString() }]);
+      setNews([...news, { ...savedNews, createdById: user.accountId, newsArticleId: Date.now(), createdDate: new Date().toISOString() }]);
     }
     handleCloseModal();
   };
@@ -35,11 +43,12 @@ const NewsManager = () => {
   };
 
   const deleteNews = () => {
+    if (!canEdit(news.find((article) => article.newsArticleId === deleteId))) return;
     setNews(news.filter(n => n.newsArticleId !== deleteId));
     setShowConfirm(false);
   };
 
-  const filteredNews = news.filter(n =>
+  const filteredNews = news.filter(n => (user.accountRole !== 2 || n.createdById === user.accountId)).filter(n =>
     n.newsTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -83,10 +92,10 @@ const NewsManager = () => {
                 <td>{catName}</td>
                 <td>{n.newsStatus ? <span className="badge bg-success">Active</span> : <span className="badge bg-secondary">Inactive</span>}</td>
                 <td>
-                  <Button variant="warning" size="sm" className="me-2" onClick={() => handleShowModal(n)}>
+                  <Button variant="warning" size="sm" className="me-2" disabled={!canEdit(n)} onClick={() => handleShowModal(n)}>
                     <i className="bi bi-pencil"></i> Edit
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDeleteConfirm(n.newsArticleId)}>
+                  <Button variant="danger" size="sm" disabled={!canEdit(n)} onClick={() => handleDeleteConfirm(n.newsArticleId)}>
                     <i className="bi bi-trash"></i> Delete
                   </Button>
                 </td>
@@ -156,6 +165,7 @@ const NewsManager = () => {
               <Form.Check
                 type="switch"
                 id="news-active-switch"
+                disabled={!canPublish}
                 label="Active"
                 checked={currentNews.newsStatus === 1}
                 onChange={e => setCurrentNews({...currentNews, newsStatus: e.target.checked ? 1 : 0})}

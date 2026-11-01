@@ -10,7 +10,7 @@ export function validateUser(user) {
   else if (user.accountEmail.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.accountEmail.trim())) {
     errors.accountEmail = 'Enter a valid email address (at most 254 characters).';
   }
-  if (![1, 2].includes(Number(user.accountRole))) errors.accountRole = 'Select Admin or Staff.';
+  if (![1, 2, 3, 4, 5].includes(Number(user.accountRole))) errors.accountRole = 'Select a valid role.';
   const password = user.accountPassword;
   if (!user.accountId || password !== '') {
     if (!password.trim()) errors.accountPassword = 'Password is required.';

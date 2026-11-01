@@ -11,25 +11,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+// A missing username is an expected authentication result, including inside a login transaction.
+@Transactional(readOnly = true, noRollbackFor = UsernameNotFoundException.class)
 public class CustomUserDetailsService implements UserDetailsService {
     private final SystemAccountRepository accountRepository;
 
     @Override
     public CustomUserDetails loadUserByUsername(String email) {
         return accountRepository.findByAccountEmailIgnoreCase(email.strip().toLowerCase(Locale.ROOT))
-                .filter(account -> account.getAccountRole() != null
-                        && (account.getAccountRole() == SystemAccount.ADMIN_ROLE
-                        || account.getAccountRole() == SystemAccount.STAFF_ROLE))
+                .filter(account -> SystemAccount.isSupportedRole(account.getAccountRole()))
                 .map(CustomUserDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
     }
 
     public CustomUserDetails loadUserById(Integer id) {
         return accountRepository.findById(id)
-                .filter(account -> account.getAccountRole() != null
-                        && (account.getAccountRole() == SystemAccount.ADMIN_ROLE
-                        || account.getAccountRole() == SystemAccount.STAFF_ROLE))
+                .filter(account -> SystemAccount.isSupportedRole(account.getAccountRole()))
                 .map(CustomUserDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("Account no longer exists"));
     }

@@ -14,6 +14,10 @@ build/
 logs/
 *.log
 
+# Local tests
+/NMS_BE/src/test/
+/NMS_FE/tests/
+
 # Local IDE and operating system files
 .idea/
 *.iml

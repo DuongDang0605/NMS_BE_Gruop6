@@ -23,7 +23,10 @@ public class CustomUserDetails implements UserDetails {
     public String getRoleName() {
         return switch (account.getAccountRole()) {
             case SystemAccount.ADMIN_ROLE -> "ADMIN";
-            case SystemAccount.STAFF_ROLE -> "STAFF";
+            case SystemAccount.CONTRIBUTOR_ROLE -> "CONTRIBUTOR";
+            case SystemAccount.EDITOR_ROLE -> "EDITOR";
+            case SystemAccount.MODERATOR_ROLE -> "MODERATOR";
+            case SystemAccount.READER_ROLE -> "READER";
             default -> throw new IllegalStateException("Unsupported account role");
         };
     }
@@ -31,12 +34,17 @@ public class CustomUserDetails implements UserDetails {
     @JsonIgnore
     public SystemAccount getAccount() { return account; }
 
+    public Boolean isVerified() { return Boolean.TRUE.equals(account.getIsVerified()); }
+
     @Override
     @JsonIgnore
     public String getPassword() { return account.getAccountPassword(); }
 
     @Override
     public String getUsername() { return account.getAccountEmail(); }
+
+    @Override
+    public boolean isAccountNonLocked() { return !account.isAccountLocked(); }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

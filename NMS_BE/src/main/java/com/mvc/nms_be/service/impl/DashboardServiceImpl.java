@@ -4,6 +4,7 @@ import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.repository.NotificationRepository;
 import com.mvc.nms_be.service.DashboardService;
+import com.mvc.nms_be.security.SecurityUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -14,12 +15,14 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'MODERATOR')")
 public class DashboardServiceImpl implements DashboardService {
 
     private final NewsArticleRepository articleRepository;
@@ -27,12 +30,27 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> overview() {
+        if (SecurityUtils.hasRole("CONTRIBUTOR")) {
+            var articles = articleRepository.findByCreatedBy_AccountId(SecurityUtils.getCurrentAccountId());
+            return Map.of("scope", "personal", "totalArticles", articles.size(),
+                    "activeArticles", articles.stream().filter(article -> Integer.valueOf(1).equals(article.getNewsStatus())).count(),
+                    "inactiveArticles", articles.stream().filter(article -> Integer.valueOf(0).equals(article.getNewsStatus())).count());
+        }
+        if (SecurityUtils.hasRole("MODERATOR")) {
+            var result = new HashMap<String, Object>(notifications(SecurityUtils.getCurrentAccountId()));
+            result.put("scope", "moderation");
+            return result;
+        }
         Object[] row = articleRepository.dashboardOverview(
-                SystemAccount.ADMIN_ROLE, SystemAccount.STAFF_ROLE).get(0);
+                SystemAccount.ADMIN_ROLE, SystemAccount.CONTRIBUTOR_ROLE).get(0);
+        if (SecurityUtils.hasRole("EDITOR")) {
+            return Map.of("scope", "editorial", "totalCategories", toLong(row[3]), "totalTags", toLong(row[4]),
+                    "totalArticles", toLong(row[5]), "activeArticles", toLong(row[6]), "inactiveArticles", toLong(row[7]));
+        }
         return Map.of(
                 "totalAccounts", toLong(row[0]),
                 "totalAdmins", toLong(row[1]),
-                "totalStaff", toLong(row[2]),
+                "totalContributors", toLong(row[2]),
                 "totalCategories", toLong(row[3]),
                 "totalTags", toLong(row[4]),
                 "totalArticles", toLong(row[5]),
@@ -42,6 +60,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public Map<String, Object> news() {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         List<Map<String, Object>> byCategory = new ArrayList<>();
@@ -78,6 +97,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'MODERATOR') and @recipientAuthorization.canAccess(#recipientId)")
     public Map<String, Object> notifications(Integer recipientId) {
         if (recipientId == null || recipientId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "recipientId must be a positive integer");

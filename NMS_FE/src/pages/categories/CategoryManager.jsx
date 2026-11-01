@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
 import { mockCategories } from '../../mockData/categories';
+import { useOutletContext } from 'react-router-dom';
 
 const CategoryManager = () => {
+  const { user } = useOutletContext();
+  const canManage = user.accountRole === 1;
   const [categories, setCategories] = useState(mockCategories);
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -12,11 +15,13 @@ const CategoryManager = () => {
 
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = (cat = { categoryId: '', categoryName: '', categoryDescription: '', isActive: 1 }) => {
+    if (!canManage) return;
     setCurrentCategory(cat);
     setShowModal(true);
   };
 
   const handleSave = () => {
+    if (!canManage) return;
     if (currentCategory.categoryId) {
       // Update
       setCategories(categories.map(c => c.categoryId === currentCategory.categoryId ? currentCategory : c));
@@ -33,6 +38,7 @@ const CategoryManager = () => {
   };
 
   const deleteCategory = () => {
+    if (!canManage) return;
     setCategories(categories.filter(c => c.categoryId !== deleteId));
     setShowConfirm(false);
   };
@@ -45,9 +51,9 @@ const CategoryManager = () => {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Category Management</h2>
-        <Button variant="primary" onClick={() => handleShowModal()}>
+        {canManage && <Button variant="primary" onClick={() => handleShowModal()}>
           <i className="bi bi-plus-circle me-1"></i> Add Category
-        </Button>
+        </Button>}
       </div>
 
       <InputGroup className="mb-3 w-50">
@@ -76,14 +82,14 @@ const CategoryManager = () => {
               <td>{cat.categoryName}</td>
               <td>{cat.categoryDescription}</td>
               <td>{cat.isActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-secondary">Inactive</span>}</td>
-              <td>
+              <td>{canManage && <>
                 <Button variant="warning" size="sm" className="me-2" onClick={() => handleShowModal(cat)}>
                   <i className="bi bi-pencil"></i> Edit
                 </Button>
                 <Button variant="danger" size="sm" onClick={() => handleDeleteConfirm(cat.categoryId)}>
                   <i className="bi bi-trash"></i> Delete
                 </Button>
-              </td>
+              </>}</td>
             </tr>
           ))}
           {filteredCategories.length === 0 && (

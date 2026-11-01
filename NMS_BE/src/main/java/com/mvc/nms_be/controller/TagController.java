@@ -17,16 +17,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/tags")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class TagController {
 
     private final TagService tagService;
 
     @GetMapping
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<TagResponseDto>> getAllTags(
             @RequestParam(required = false) String keyword) {
         if (keyword != null && !keyword.trim().isEmpty()) {
@@ -36,11 +39,13 @@ public class TagController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<TagResponseDto> getTagById(@PathVariable Integer id) {
         return ResponseEntity.ok(tagService.getTagById(id));
     }
 
     @GetMapping("/search")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<TagResponseDto>> searchTags(@RequestParam String keyword) {
         return ResponseEntity.ok(tagService.searchTags(keyword));
     }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Button, Form, Modal } from 'react-bootstrap';
 import { createUser, deleteUser, updateUser } from '../../api/user';
 import { apiErrorMessage, emptyUser, userPayload, validateUser } from './userForm';
+import { ROLES } from '../../services/roles';
 
 const UserModel = ({ mode, user, onHide, onSuccess }) => {
   const [currentUser, setCurrentUser] = useState(() => user ? { ...user, accountPassword: '' } : emptyUser());
@@ -73,7 +74,7 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
                 <Form.Label>Role</Form.Label>
                 <Form.Select value={currentUser.accountRole} isInvalid={!!fieldErrors.accountRole}
                   onChange={(event) => editField('accountRole', Number(event.target.value))}>
-                  <option value={1}>Admin</option><option value={2}>Staff</option>
+                  {ROLES.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
                 </Form.Select>
                 <Form.Control.Feedback type="invalid">{fieldErrors.accountRole}</Form.Control.Feedback>
               </Form.Group>

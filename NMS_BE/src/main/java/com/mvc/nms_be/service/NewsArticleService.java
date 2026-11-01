@@ -6,6 +6,10 @@ import java.util.List;
 
 public interface NewsArticleService {
 
+    List<NewsArticleResponseDto> publishedArticles(String keyword, Integer categoryId, Integer tagId);
+
+    NewsArticleResponseDto publishedArticle(Integer id);
+
     List<NewsArticleResponseDto> getAllArticles();
 
     List<NewsArticleResponseDto> searchArticles(String keyword, Integer categoryId, Integer newsStatus, Integer tagId);

@@ -24,7 +24,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI().substring(request.getContextPath().length());
         return "POST".equals(request.getMethod())
-                && (path.equals("/api/v1/auth/login") || path.equals("/api/v1/auth/refresh"));
+                && (path.equals("/api/v1/auth/login") || path.equals("/api/v1/auth/refresh")
+                    || path.equals("/api/v1/auth/register-reader")
+                    || path.startsWith("/api/v1/auth/unlock/"));
     }
 
     @Override
@@ -34,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.regionMatches(true, 0, "Bearer ", 0, 7)) {
             try {
                 var claims = tokenProvider.parseAccessToken(header.substring(7).strip());
-                int id = Integer.parseInt(claims.getSubject());
+                int id = tokenProvider.getAccountId(claims);
                 CustomUserDetails user = userDetailsService.loadUserById(id);
                 if (id <= 0 || !tokenProvider.matchesCurrentAccount(claims, user)) {
                     throw new BadCredentialsException("Token no longer matches account");
@@ -47,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.setContext(context);
             } catch (JwtException | IllegalArgumentException | AuthenticationException ex) {
                 SecurityContextHolder.clearContext();
-                // User/Auth checks raise UnauthorizedException through their shared advice.
+                // Protected routes return a JSON 401; public read routes can still serve a guest.
             }
         }
         chain.doFilter(request, response);

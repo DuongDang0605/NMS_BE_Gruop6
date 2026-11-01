@@ -20,13 +20,17 @@ export function getSession() {
 }
 
 export function saveSession(login) {
-  const { accountId, accountName, accountEmail, accountRole, roleName } = login;
+  const { accountId, accountName, accountEmail, accountRole, roleName, isVerified } = login;
   if (accountId) {
-    localStorage.setItem('user', JSON.stringify({
-      accountId, accountName, accountEmail, accountRole, roleName,
-    }));
+    saveUser({
+      accountId, accountName, accountEmail, accountRole, roleName, isVerified,
+    });
   }
   localStorage.setItem('accessToken', login.accessToken);
   if (login.refreshToken) localStorage.setItem('refreshToken', login.refreshToken);
   localStorage.setItem('authExpiresAt', String(Date.now() + login.expiresIn * 1000));
+}
+
+export function saveUser(user) {
+  localStorage.setItem('user', JSON.stringify(user));
 }
