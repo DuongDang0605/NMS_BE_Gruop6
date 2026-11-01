@@ -1,15 +1,23 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Form, Button, Container, Card, Alert } from 'react-bootstrap';
-import logo from '../assets/fpt-university-logo.png';
-import api from '../services/api';
-import { saveSession } from '../services/session';
+import logo from '../../assets/fpt-university-logo.png';
+import { login } from '../../api/auth';
+import { saveSession } from '../../services/session';
+import UnlockAccountModal from './UnlockAccountModal';
+import { homeForRole } from '../../services/roles';
 
 const Login = () => {
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [showUnlock, setShowUnlock] = useState(false);
+  const [success, setSuccess] = useState(location.state?.passwordChanged
+    ? 'Password changed. Sign in with your new password.'
+    : location.state?.registered ? 'Account created. Sign in to continue.' : '');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -17,14 +25,16 @@ const Login = () => {
     if (submitting) return;
     setSubmitting(true);
     setError('');
+    setSuccess('');
     try {
-      const { data } = await api.post('/auth/login', {
+      const data = await login({
         accountEmail: email.trim(),
         accountPassword: password,
       });
       saveSession(data);
-      navigate('/dashboard', { replace: true });
+      navigate(homeForRole(data.accountRole), { replace: true });
     } catch (error) {
+      setLocked(error.response?.data?.errors?.account === 'ACCOUNT_LOCKED');
       setError(error.response?.data?.message || 'Cannot connect to the server. Please try again.');
     } finally {
       setSubmitting(false);
@@ -43,6 +53,7 @@ const Login = () => {
           </div>
 
           {error && <Alert variant="danger">{error}</Alert>}
+          {success && <Alert variant="success">{success}</Alert>}
 
           <Form onSubmit={handleLogin}>
             <Form.Group className="mb-3">
@@ -52,7 +63,7 @@ const Login = () => {
                 autoComplete="username"
                 placeholder="Enter email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setLocked(false); setError(''); }}
                 required
               />
             </Form.Group>
@@ -73,9 +84,18 @@ const Login = () => {
               <i className="bi bi-box-arrow-in-right me-2"></i>{submitting ? 'Signing in...' : 'Login'}
             </Button>
           </Form>
+          <Button variant={locked ? 'warning' : 'link'} className="w-100 mt-3" disabled={submitting}
+            onClick={() => setShowUnlock(true)}>
+            {locked ? 'Request account unlock' : 'Account locked? Unlock with email OTP'}
+          </Button>
+          <div className="text-center mt-3"><Link to="/register">Create a Reader account</Link> · <Link to="/portal">Read campus news</Link></div>
           </Card.Body>
         </Card>
       </Container>
+      {showUnlock && <UnlockAccountModal initialEmail={email} onClose={() => setShowUnlock(false)}
+        onUnlocked={(accountEmail, message) => {
+          setEmail(accountEmail); setPassword(''); setLocked(false); setError(''); setSuccess(message); setShowUnlock(false);
+        }} />}
     </div>
   );
 };

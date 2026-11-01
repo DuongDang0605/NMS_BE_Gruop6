@@ -1,8 +1,8 @@
 import { Outlet, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Alert, Button, Spinner } from 'react-bootstrap';
-import api from '../services/api';
-import { getSession } from '../services/session';
+import { getCurrentUser } from '../api/auth';
+import { getSession, saveUser } from '../services/session';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
@@ -13,10 +13,12 @@ const Layout = () => {
 
   useEffect(() => {
     if (!getSession()) return;
+    const requestedAccountId = getSession().user.accountId;
     const controller = new AbortController();
-    api.get('/auth/me', { signal: controller.signal })
-      .then(({ data }) => {
-        localStorage.setItem('user', JSON.stringify(data));
+    getCurrentUser({ signal: controller.signal })
+      .then((data) => {
+        if (controller.signal.aborted || getSession()?.user.accountId !== requestedAccountId) return;
+        saveUser(data);
         setUser(data);
         setStatus('ready');
       })
@@ -42,6 +44,8 @@ const Layout = () => {
       </Alert>
     );
   }
+
+  if (user.accountRole === 5) return <Navigate to="/portal" replace />;
 
   return (
     <div className="app-shell d-flex flex-column min-vh-100">

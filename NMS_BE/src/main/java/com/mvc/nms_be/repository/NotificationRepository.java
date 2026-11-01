@@ -25,9 +25,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
     Page<Notification> findByRecipient_AccountIdAndIsRead(
             Integer recipientId, Integer isRead, Pageable pageable);
 
-    long countByRecipient_AccountIdAndIsRead(Integer recipientId, Integer isRead);
-
     long countByRecipient_AccountId(Integer recipientId);
+
+    long countByRecipient_AccountIdAndIsRead(Integer recipientId, Integer isRead);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Notification n SET n.isRead = 1 "

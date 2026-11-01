@@ -2,120 +2,169 @@ package com.mvc.nms_be.service.impl;
 
 import com.mvc.nms_be.dto.request.CategoryRequestDto;
 import com.mvc.nms_be.dto.response.CategoryResponseDto;
+import com.mvc.nms_be.dto.response.CategoryTreeDto;
 import com.mvc.nms_be.entity.Category;
-import com.mvc.nms_be.exception.ResourceConflictException;
-import com.mvc.nms_be.exception.ResourceNotFoundException;
-import com.mvc.nms_be.mapper.CategoryMapper;
 import com.mvc.nms_be.repository.CategoryRepository;
+import com.mvc.nms_be.repository.NewsArticleRepository;
 import com.mvc.nms_be.service.CategoryService;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
-// Lỗi dữ liệu đầu vào (400) do @Valid + annotation trên CategoryRequestDto xử lý trước khi vào service.
-// Service chỉ ném exception của nhóm: ResourceNotFoundException (404), ResourceConflictException (409).
 @Service
-@RequiredArgsConstructor                 // Lombok tạo constructor để Spring inject các field final
-@Transactional(readOnly = true)          // Mặc định chỉ đọc; hàm ghi dữ liệu gắn @Transactional riêng
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final CategoryMapper categoryMapper;
+    private final NewsArticleRepository newsArticleRepository;
 
     @Override
-    public List<CategoryResponseDto> findAll() {
-        // Lấy toàn bộ entity rồi map sang DTO, không trả entity trực tiếp ra API
-        return categoryRepository.findAll().stream()
-                .map(categoryMapper::toResponseDto)
+    public List<CategoryTreeDto> getTree() {
+        // Load toàn bộ category 1 query duy nhất, build cây trong memory — tránh N+1
+        List<Category> all = categoryRepository.findAll();
+
+        // Nhóm các category con theo parentId
+        Map<Integer, List<Category>> byParent = all.stream()
+                .filter(c -> c.getParentCategory() != null)
+                .collect(Collectors.groupingBy(c -> c.getParentCategory().getCategoryId()));
+
+        // Chỉ lấy root (không có cha) rồi đệ quy build từ map đã có sẵn
+        return all.stream()
+                .filter(c -> c.getParentCategory() == null)
+                .sorted(Comparator.comparing(Category::getCategoryName))
+                .map(c -> toTreeDto(c, byParent))
                 .toList();
     }
 
     @Override
-    public CategoryResponseDto getById(Integer id) {
-        return categoryMapper.toResponseDto(findCategory(id));
+    public List<CategoryResponseDto> getAllCategories() {
+        return categoryRepository.findAll().stream()
+                .map(this::toResponseDto)
+                .toList();
+    }
+
+    @Override
+    public CategoryResponseDto getCategoryById(Integer id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id));
+        return toResponseDto(category);
     }
 
     @Override
     @Transactional
-    public CategoryResponseDto create(CategoryRequestDto request) {
-        request.setCategoryName(request.getCategoryName().strip());
-        // parentCategoryId = null nghĩa là danh mục gốc
-        Category parent = findParent(request.getParentCategoryId());
-        Category category = categoryMapper.toEntity(request, parent);
-        return categoryMapper.toResponseDto(categoryRepository.save(category));
-    }
-
-    @Override
-    @Transactional
-    public CategoryResponseDto update(Integer id, CategoryRequestDto request) {
-        Category category = findCategory(id);
-        Category parent = findParent(request.getParentCategoryId());
-        checkNoCycle(category, parent);
-
-        // Sửa trên entity đang có để giữ nguyên ID; Hibernate tự UPDATE khi transaction kết thúc
-        category.setCategoryName(request.getCategoryName().strip());
+    @PreAuthorize("hasRole('ADMIN')")
+    public CategoryResponseDto createCategory(CategoryRequestDto request) {
+        if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
+        }
+        Category category = new Category();
+        category.setCategoryName(request.getCategoryName().trim());
         category.setCategoryDescription(request.getCategoryDescription());
-        category.setParentCategory(parent);
-        category.setIsActive(request.getIsActive());
-        return categoryMapper.toResponseDto(category);
+        category.setIsActive(request.getIsActive() != null ? request.getIsActive() : 1);
+
+        if (request.getParentCategoryId() != null) {
+            Category parent = categoryRepository.findById(request.getParentCategoryId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parent category not found"));
+            category.setParentCategory(parent);
+        }
+
+        Category saved = categoryRepository.save(category);
+        return toResponseDto(saved);
     }
 
     @Override
     @Transactional
-    public void delete(Integer id) {
-        Category category = findCategory(id);
-        // Kiểm tra trước để trả 409 dễ hiểu thay vì lỗi khóa ngoại (FK) từ SQL Server
-        if (categoryRepository.existsByParentCategory_CategoryId(id)) {
-            throw new ResourceConflictException(describe(category)
-                    + " still has child categories. Delete or move its child categories first.");
+    @PreAuthorize("hasRole('ADMIN')")
+    public CategoryResponseDto updateCategory(Integer id, CategoryRequestDto request) {
+        if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
         }
-        if (categoryRepository.hasArticles(id)) {
-            throw new ResourceConflictException(describe(category)
-                    + " is used by news articles. Move those articles to another category first.");
-        }
-        categoryRepository.delete(category);
-    }
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id));
 
-    // ===== Hàm hỗ trợ =====
-
-    // Tìm danh mục theo ID, không có thì 404
-    private Category findCategory(Integer id) {
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category with id " + id + " was not found"));
-    }
-
-    // null -> danh mục gốc; có ID thì phải tồn tại, không có thì 404
-    private Category findParent(Integer parentId) {
-        if (parentId == null) {
-            return null;
+        category.setCategoryName(request.getCategoryName().trim());
+        category.setCategoryDescription(request.getCategoryDescription());
+        if (request.getIsActive() != null) {
+            category.setIsActive(request.getIsActive());
         }
-        return categoryRepository.findById(parentId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Parent category with id " + parentId + " was not found"));
-    }
 
-    // Đi ngược từ cha mới lên tới gốc; gặp lại chính danh mục đang sửa thì là vòng lặp (A -> B -> A).
-    // Trả 409 kèm field "parentCategoryId" để client biết sai ở trường nào.
-    private static void checkNoCycle(Category category, Category parent) {
-        if (parent == null) {
-            return;
-        }
-        if (parent.getCategoryId().equals(category.getCategoryId())) {
-            throw new ResourceConflictException(describe(category)
-                    + " cannot be its own parent.", "parentCategoryId");
-        }
-        for (Category current = parent.getParentCategory(); current != null; current = current.getParentCategory()) {
-            if (current.getCategoryId().equals(category.getCategoryId())) {
-                throw new ResourceConflictException("Cannot set " + describe(parent) + " as parent of "
-                        + describe(category) + " because it is a descendant of " + describe(category)
-                        + ". This would create a cycle.", "parentCategoryId");
+        if (request.getParentCategoryId() != null) {
+            if (request.getParentCategoryId().equals(id)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category cannot be its own parent");
             }
+            Category parent = categoryRepository.findById(request.getParentCategoryId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parent category not found"));
+            Set<Integer> visited = new HashSet<>();
+            Category ancestor = parent;
+            while (ancestor != null) {
+                if (ancestor.getCategoryId().equals(id)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Cannot select a descendant as parent");
+                }
+                if (!visited.add(ancestor.getCategoryId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Parent hierarchy contains a cycle");
+                }
+                ancestor = ancestor.getParentCategory();
+            }
+            category.setParentCategory(parent);
+        } else {
+            category.setParentCategory(null);
         }
+
+        Category updated = categoryRepository.save(category);
+        return toResponseDto(updated);
     }
 
-    // Ví dụ: Category 'Thể thao' (id 1) — dùng trong message để client biết chính xác danh mục nào
-    private static String describe(Category category) {
-        return "Category '" + category.getCategoryName() + "' (id " + category.getCategoryId() + ")";
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteCategory(Integer id) {
+        if (!categoryRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id);
+        }
+        if (categoryRepository.existsByParentCategory_CategoryId(id)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete category that has subcategories");
+        }
+        if (newsArticleRepository.existsByCategory_CategoryId(id)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete category that has associated articles");
+        }
+        categoryRepository.deleteById(id);
+    }
+
+    private CategoryResponseDto toResponseDto(Category category) {
+        Integer parentId = category.getParentCategory() != null ? category.getParentCategory().getCategoryId() : null;
+        return new CategoryResponseDto(
+                category.getCategoryId(),
+                category.getCategoryName(),
+                category.getCategoryDescription(),
+                parentId,
+                category.getIsActive());
+    }
+
+    private CategoryTreeDto toTreeDto(Category category, Map<Integer, List<Category>> byParent) {
+        List<CategoryTreeDto> children = byParent
+                .getOrDefault(category.getCategoryId(), List.of())
+                .stream()
+                .sorted(Comparator.comparing(Category::getCategoryName))
+                .map(c -> toTreeDto(c, byParent))
+                .toList();
+
+        return new CategoryTreeDto(
+                category.getCategoryId(),
+                category.getCategoryName(),
+                category.getCategoryDescription(),
+                category.getIsActive(),
+                children);
     }
 }

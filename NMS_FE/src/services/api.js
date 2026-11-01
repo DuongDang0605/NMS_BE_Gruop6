@@ -8,7 +8,8 @@ const api = axios.create({
 
 const refreshApi = axios.create({ baseURL: api.defaults.baseURL, timeout: 10000 });
 let refreshPromise = null;
-const isAuthRequest = (config) => ['/auth/login', '/auth/refresh'].includes(config?.url);
+const isAuthRequest = (config) => ['/auth/login', '/auth/refresh', '/auth/register-reader'].includes(config?.url)
+  || config?.url?.startsWith('/auth/unlock/');
 
 function endSession() {
   clearSession();

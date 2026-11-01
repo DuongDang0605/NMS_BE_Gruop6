@@ -4,9 +4,40 @@ Spring Boot 4.1.1, Java 21+, Hibernate/JPA và SQL Server.
 
 ## Login và phân quyền
 
-Đã nâng cấp riêng luồng User/Auth: login, refresh, me tại `/api/v1/auth`, Access Token 30 phút, Refresh Token 7 ngày, BCrypt và kiểm tra quyền Admin khi CRUD User. Các module khác giữ `permitAll()` để thành viên demo và sẽ tích hợp security sau. Không seed tài khoản Admin; tài khoản quản trị phải tồn tại trong database. Mật khẩu plaintext cũ vẫn được chuyển sang BCrypt khi bật migration.
+Phân quyền theo `plan_report2`: 1=Admin, 2=Contributor, 3=Editor, 4=Moderator, 5=Reader. API nội bộ yêu cầu JWT; quyền chi tiết nằm tại controller/service qua `@PreAuthorize`. Login/đăng ký/refresh/OTP và API đọc tin công khai được mở. Access Token 30 phút, Refresh Token 7 ngày, BCrypt. Không seed tài khoản Admin; tài khoản quản trị phải tồn tại trong database. Mật khẩu plaintext cũ được chuyển sang BCrypt ngay khi đăng nhập đúng; migration hàng loạt lúc khởi động vẫn là tùy chọn.
 
 Chi tiết cấu hình JWT/CORS, ma trận quyền, tích hợp frontend và kiểm thử: [Security implementation](docs/security-implementation.md). Request/response CRUD User: [User API](docs/user-api.md). Kế hoạch gốc: [Security plan](docs/security-plan.md).
+
+### Khóa tài khoản khi đăng nhập sai
+
+Sai mật khẩu quá 3 lần liên tiếp (lần sai thứ 4) sẽ khóa tài khoản hẳn, không tự hết hạn. Đăng nhập thành công trước khi bị khóa sẽ đặt `FailedLoginAttempts` về 0. Bộ đếm và `AccountLocked` được lưu trong database; tài khoản bị khóa không thể đăng nhập, dùng Access Token hoặc Refresh Token trên các API có bảo vệ. Frontend Login hiển thị thông báo lỗi và nút **Request account unlock**. Người dùng cũng có thể chọn **Account locked? Unlock with email OTP** tại trang đăng nhập.
+
+Luồng khôi phục: nhập email tài khoản → nhận OTP 6 chữ số qua email → xác thực OTP → nhập và xác nhận mật khẩu mới → lưu mật khẩu và mở khóa. Xác thực OTP chưa mở khóa ngay. Người dùng phải đặt mật khẩu khác mật khẩu cũ rồi đăng nhập lại. Đổi mật khẩu vô hiệu hóa Access/Refresh Token cũ.
+
+| Endpoint POST | Request | Kết quả |
+| --- | --- | --- |
+| `/api/v1/auth/unlock/request` | `accountEmail` | Gửi OTP đến email trong database nếu tài khoản đang bị khóa |
+| `/api/v1/auth/unlock/verify` | `accountEmail`, `otp` | Trả `resetToken` dùng một lần, hiệu lực 5 phút |
+| `/api/v1/auth/unlock/reset-password` | `accountEmail`, `resetToken`, `newPassword` | Đổi mật khẩu BCrypt, xóa thông tin khôi phục, đặt bộ đếm về 0 và mở khóa |
+
+OTP hết hạn sau 5 phút, chỉ dùng một lần; sai 5 lần sẽ vô hiệu mã hiện tại. Mỗi tài khoản chỉ gửi lại sau 60 giây. Gửi lại sẽ thay mã cũ và vô hiệu quyền đổi mật khẩu đã cấp. OTP và reset token chỉ lưu dạng hash; API không trả OTP. Request gửi OTP trả thông báo chung cho email không tồn tại/tài khoản chưa khóa. Nếu gửi email thất bại, challenge được rollback để có thể thử lại.
+
+`Start-Backend.ps1` tự chạy `database/migrations/002-account-login-lock.sql` và `003-account-unlock-otp.sql`. Khi chạy IDE/JAR, chạy hai migration này trên database đích trước khi khởi động; script có thể chạy lại. Thời điểm hết hạn được lưu theo UTC.
+
+### Cấu hình email OTP
+
+Gửi mail dùng [Spring Boot Mail / JavaMailSender](https://docs.spring.io/spring-boot/reference/io/email.html). Cấu hình SMTP trong biến môi trường của backend (hoặc Run Configuration của IDE), ví dụ:
+
+```powershell
+$env:MAIL_HOST = 'smtp.example.com'
+$env:MAIL_PORT = '587'
+$env:MAIL_USERNAME = 'noreply@example.com'
+$env:MAIL_PASSWORD = '<SMTP password or app password>'
+$env:MAIL_FROM = 'noreply@example.com'
+# Sau đó chạy backend với cấu hình database như bên dưới.
+```
+
+Mặc định bật SMTP authentication và STARTTLS (bắt buộc). `MAIL_SMTP_AUTH=false` và `MAIL_STARTTLS=false` chỉ dùng cho SMTP local phục vụ kiểm thử nếu cần. Backend vẫn khởi động khi chưa cấu hình email; yêu cầu gửi OTP cho tài khoản bị khóa sẽ trả HTTP 503 nếu chưa cấu hình hoặc SMTP không gửi được. Không có mã OTP giả hoặc fallback ghi OTP ra log.
 
 ## Swagger UI
 
@@ -20,7 +51,7 @@ Sau khi khởi động backend:
 
 Để thử API có bảo vệ, mở `POST /api/v1/auth/login`, chọn **Try it out**, nhập email/mật khẩu của tài khoản trong database và **Execute**. Sao chép trường `accessToken` trong response, bấm **Authorize**, dán token (không thêm `Bearer `) và xác nhận. Swagger tự gửi Bearer header; backend kiểm tra role từ database như các request thông thường. Khi token hết hạn hoặc restart với khóa JWT ngẫu nhiên, đăng nhập và Authorize lại.
 
-Trang tài liệu mở công khai. Hiện chỉ User/Auth được bảo vệ; các module nghiệp vụ khác giữ `permitAll()` để demo.
+Trang tài liệu mở công khai; API nghiệp vụ vẫn áp dụng xác thực và quyền theo vai trò.
 
 ## Chạy trên Windows
 
@@ -79,7 +110,7 @@ Không cần bật profile `sql-auth`; profile này vẫn được giữ để t
 
 | Entity | Khóa / quan hệ |
 | --- | --- |
-| `SystemAccount` | `AccountID` tự tăng; email duy nhất; role `1=Admin`, `2=Staff` |
+| `SystemAccount` | `AccountID` tự tăng; email duy nhất; role `1=Admin`, `2=Contributor`, `3=Editor`, `4=Moderator`, `5=Reader` |
 | `Category` | `CategoryID` tự tăng; `ParentCategoryID` tham chiếu cùng bảng, có thể NULL |
 | `NewsArticle` | `NewsArticleID` tự tăng; FK bắt buộc tới category và người tạo; người sửa có thể NULL |
 | `Tag` | `TagID` tự tăng; tên và ghi chú |
@@ -106,7 +137,7 @@ Sau khi tạo database, chạy với JDK 21+:
 .\mvnw.cmd test
 ```
 
-Toàn bộ `src/test/` được Git ignore và chỉ giữ trên máy local. Test local dùng SQL Server thật và rollback dữ liệu; test error dispatch dùng HTTP thật, test sinh DDL Unicode không cần kết nối database. Các lỗi SQL trong test kiểm tra ràng buộc là lỗi được kỳ vọng. Xem lệnh `clean verify` trong tài liệu Security để kiểm thử với seed/migration tắt và schema ở chế độ validate.
+Toàn bộ `src/test/` và thư mục test frontend được Git ignore, chỉ giữ trên máy local. Test local dùng SQL Server thật; các test thông thường rollback dữ liệu, còn test khóa/mở khóa kiểm tra commit qua từng request rồi xóa tài khoản test. Test OTP thay SMTP bằng mock để kiểm tra nội dung email, mã sai/hết hạn/dùng lại, đổi mật khẩu, chặn token cũ và rollback khi gửi email lỗi. Test error dispatch dùng HTTP thật, test sinh DDL Unicode không cần kết nối database. Các lỗi SQL trong test kiểm tra ràng buộc là lỗi được kỳ vọng. Xem lệnh `clean verify` trong tài liệu Security để kiểm thử với seed/migration tắt và schema ở chế độ validate.
 
 Package `com.mvc.nms_be.repository` có 6 interface kế thừa `JpaRepository`, cùng các query cho tài khoản, thông báo và Dashboard. Năm entity có khóa đơn dùng `Integer`; `NewsTagRepository` dùng khóa ghép `NewsTagId`. Frontend hiện vẫn dùng mock data.
 
@@ -164,6 +195,6 @@ Request DTO hiện dùng cho dữ liệu tạo/cập nhật đầy đủ, không
 | GET | `/api/v1/settings`, `/api/v1/settings/{id}`, `/api/v1/settings/key/{key}` | Danh sách / chi tiết cấu hình |
 | POST / PUT / DELETE | `/api/v1/settings`, `/api/v1/settings/{id}` | Tạo (201) / sửa / xóa (204); `settingKey` trùng thì 409 |
 
-`SystemSetting` là bảng cấu hình key/value (`SettingID`, `SettingKey` duy nhất, `SettingValue`, `Description`). Lỗi nghiệp vụ trả qua `ResponseStatusException` dạng JSON `{status, error, message, path}`. Swagger UI: `http://localhost:8080/swagger-ui.html`; Postman collection: `docs/NMS_Category_Setting.postman_collection.json`. Category và Setting cần JWT: đăng nhập `POST /api/v1/auth/login`, gửi header `Authorization: Bearer <token>`. Admin được đọc/ghi; Staff chỉ được đọc.
+`SystemSetting` là bảng cấu hình key/value (`SettingID`, `SettingKey` duy nhất, `SettingValue`, `Description`). Lỗi nghiệp vụ trả qua `ResponseStatusException` dạng JSON `{status, error, message, path}`. Swagger UI: `http://localhost:8080/swagger-ui.html`; Postman collection: `docs/NMS_Category_Setting.postman_collection.json`. Category và Setting cần JWT: đăng nhập `POST /api/v1/auth/login`, gửi header `Authorization: Bearer <token>`. Chỉ Admin quản lý cấu hình hệ thống; taxonomy đọc công khai, ghi chỉ dành cho Admin. Các controller Category/Settings hiện chưa có CRUD handler.
 
 Tài liệu: [Spring Boot database initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html), [Hibernate mapping](https://docs.hibernate.org/orm/7.4/userguide/html_single/), [Microsoft JDBC driver](https://github.com/microsoft/mssql-jdbc).

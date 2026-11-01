@@ -26,8 +26,8 @@ public class SystemAccountUpdateRequestDto {
     private String accountEmail;
 
     @NotNull(message = "Account role is required")
-    @Min(value = 1, message = "Account role must be 1 (Admin) or 2 (Staff)")
-    @Max(value = 2, message = "Account role must be 1 (Admin) or 2 (Staff)")
+    @Min(value = 1, message = "Account role must be between 1 and 5")
+    @Max(value = 5, message = "Account role must be between 1 and 5")
     private Integer accountRole = 2;
 
     @Size(min = 6, max = 72, message = "Password must contain between 6 and 72 characters")

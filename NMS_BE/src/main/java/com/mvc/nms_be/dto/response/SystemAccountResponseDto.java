@@ -15,4 +15,6 @@ public class SystemAccountResponseDto {
     private String accountName;
     private String accountEmail;
     private Integer accountRole;
+    private String roleName;
+    private Boolean isVerified;
 }

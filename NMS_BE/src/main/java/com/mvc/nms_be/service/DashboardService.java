@@ -9,4 +9,7 @@ public interface DashboardService {
     Map<String, Object> news();
 
     Map<String, Object> notifications(Integer recipientId);
+
+    // thống kê engagement: tổng view, like, top 5 trending bài viết
+    Map<String, Object> engagement();
 }

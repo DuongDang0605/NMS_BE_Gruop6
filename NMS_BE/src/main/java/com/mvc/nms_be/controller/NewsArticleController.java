@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/news")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR')")
 public class NewsArticleController {
 
     private final NewsArticleService newsArticleService;
@@ -72,6 +74,7 @@ public class NewsArticleController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public ResponseEntity<NewsArticleResponseDto> updateStatus(
             @PathVariable Integer id,
             @RequestParam Integer status) {

@@ -2,11 +2,11 @@ package com.mvc.nms_be.controller;
 
 import com.mvc.nms_be.dto.request.CategoryRequestDto;
 import com.mvc.nms_be.dto.response.CategoryResponseDto;
+import com.mvc.nms_be.dto.response.CategoryTreeDto;
 import com.mvc.nms_be.service.CategoryService;
-import jakarta.validation.Valid;
-import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,45 +16,57 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
-// Controller chỉ nhận request HTTP và gọi service; nghiệp vụ nằm trong CategoryServiceImpl
 @RestController
 @RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class CategoryController {
 
     private final CategoryService categoryService;
 
-    // GET /api/v1/categories -> danh sách danh mục (200)
+    /**
+     * GET /api/v1/categories/tree
+     * Trả về cây danh mục phân cấp để FE render menu navbar hoặc tree view.
+     */
+    @GetMapping("/tree")
+    @PreAuthorize("permitAll()")
+    public List<CategoryTreeDto> tree() {
+        return categoryService.getTree();
+    }
+
+    /**
+     * GET /api/v1/categories
+     * Trả về danh sách phẳng các category (dùng cho dropdown chọn parent).
+     */
     @GetMapping
-    public List<CategoryResponseDto> findAll() {
-        return categoryService.findAll();
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<CategoryResponseDto>> getAllCategories() {
+        return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
-    // GET /api/v1/categories/{id} -> một danh mục (200) hoặc 404
     @GetMapping("/{id}")
-    public CategoryResponseDto getById(@PathVariable Integer id) {
-        return categoryService.getById(id);
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<CategoryResponseDto> getCategoryById(@PathVariable Integer id) {
+        return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
-    // POST /api/v1/categories -> tạo mới, 201 Created kèm header Location
-    // @Valid: kiểm tra annotation trên DTO, sai thì GlobalExceptionHandler trả 400 "Validation failed"
     @PostMapping
-    public ResponseEntity<CategoryResponseDto> create(@Valid @RequestBody CategoryRequestDto request) {
-        CategoryResponseDto result = categoryService.create(request);
-        return ResponseEntity.created(URI.create("/api/v1/categories/" + result.getCategoryId())).body(result);
+    public ResponseEntity<CategoryResponseDto> createCategory(@RequestBody CategoryRequestDto request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(request));
     }
 
-    // PUT /api/v1/categories/{id} -> cập nhật (200)
     @PutMapping("/{id}")
-    public CategoryResponseDto update(@PathVariable Integer id, @Valid @RequestBody CategoryRequestDto request) {
-        return categoryService.update(id, request);
+    public ResponseEntity<CategoryResponseDto> updateCategory(
+            @PathVariable Integer id,
+            @RequestBody CategoryRequestDto request) {
+        return ResponseEntity.ok(categoryService.updateCategory(id, request));
     }
 
-    // DELETE /api/v1/categories/{id} -> 204; còn danh mục con hoặc bài viết thì 409
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        categoryService.delete(id);
+    public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
+        categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
 }

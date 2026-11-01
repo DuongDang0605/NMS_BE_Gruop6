@@ -2,18 +2,22 @@ package com.mvc.nms_be.service;
 
 import com.mvc.nms_be.dto.request.CategoryRequestDto;
 import com.mvc.nms_be.dto.response.CategoryResponseDto;
+import com.mvc.nms_be.dto.response.CategoryTreeDto;
 import java.util.List;
 
 // Các nghiệp vụ CRUD cơ bản của danh mục; controller chỉ gọi qua interface này.
 public interface CategoryService {
 
-    List<CategoryResponseDto> findAll();
+    /** Trả về cây danh mục phân cấp (root → children) để render menu navbar. */
+    List<CategoryTreeDto> getTree();
 
-    CategoryResponseDto getById(Integer id);
+    List<CategoryResponseDto> getAllCategories();
 
-    CategoryResponseDto create(CategoryRequestDto request);
+    CategoryResponseDto getCategoryById(Integer id);
 
-    CategoryResponseDto update(Integer id, CategoryRequestDto request);
+    CategoryResponseDto createCategory(CategoryRequestDto request);
 
-    void delete(Integer id);
+    CategoryResponseDto updateCategory(Integer id, CategoryRequestDto request);
+
+    void deleteCategory(Integer id);
 }

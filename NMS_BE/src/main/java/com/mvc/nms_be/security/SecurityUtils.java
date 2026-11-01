@@ -22,9 +22,20 @@ public final class SecurityUtils {
         return user;
     }
 
-    public static SystemAccount getCurrentUser() {
-        return getCurrentPrincipal().getAccount();
+    public static CustomUserDetails getCurrentUser() {
+        return getCurrentPrincipal();
     }
+
+    public static Integer getCurrentAccountId() { return getCurrentPrincipal().getAccountId(); }
+
+    public static boolean hasRole(String role) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream().anyMatch(authority ->
+                        authority.getAuthority().equals(role.startsWith("ROLE_") ? role : "ROLE_" + role));
+    }
+
+    public static boolean isAdmin() { return hasRole("ADMIN"); }
 
     public static void requireAdmin() {
         if (!Objects.equals(getCurrentUser().getAccountRole(), SystemAccount.ADMIN_ROLE)) {
@@ -33,7 +44,7 @@ public final class SecurityUtils {
     }
 
     public static void requireArticleOwnerOrAdmin(NewsArticle article) {
-        SystemAccount currentUser = getCurrentUser();
+        SystemAccount currentUser = getCurrentUser().getAccount();
         if (currentUser.getAccountRole() != SystemAccount.ADMIN_ROLE
                 && (article.getCreatedBy() == null
                 || !Objects.equals(currentUser.getAccountId(), article.getCreatedBy().getAccountId()))) {
@@ -42,12 +53,12 @@ public final class SecurityUtils {
     }
 
     public static void applyCreator(NewsArticle article) {
-        article.setCreatedBy(getCurrentUser());
+        article.setCreatedBy(getCurrentUser().getAccount());
     }
 
     public static void applyUpdater(NewsArticle article) {
         requireArticleOwnerOrAdmin(article);
-        article.setUpdatedBy(getCurrentUser());
+        article.setUpdatedBy(getCurrentUser().getAccount());
         article.setModifiedDate(LocalDateTime.now(ZoneOffset.UTC));
     }
 }

@@ -4,6 +4,7 @@ import com.mvc.nms_be.dto.request.SystemAccountRequestDto;
 import com.mvc.nms_be.dto.request.SystemAccountUpdateRequestDto;
 import com.mvc.nms_be.dto.response.SystemAccountResponseDto;
 import com.mvc.nms_be.entity.SystemAccount;
+import com.mvc.nms_be.security.CustomUserDetails;
 import java.util.Locale;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +37,9 @@ public class SystemAccountMapper {
                 account.getAccountId(),
                 account.getAccountName(),
                 account.getAccountEmail(),
-                account.getAccountRole()
+                account.getAccountRole(),
+                new CustomUserDetails(account).getRoleName(),
+                Boolean.TRUE.equals(account.getIsVerified())
         );
     }
 }

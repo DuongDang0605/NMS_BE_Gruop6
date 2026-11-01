@@ -1,8 +1,6 @@
 package com.mvc.nms_be.exception;
 
 import com.mvc.nms_be.dto.response.ApiErrorResponse;
-import com.mvc.nms_be.controller.AuthController;
-import com.mvc.nms_be.controller.UserController;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -29,13 +27,14 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @Slf4j
-@RestControllerAdvice(assignableTypes = {UserController.class, AuthController.class})
+@RestControllerAdvice(basePackages = "com.mvc.nms_be.controller")
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Object> handleUnauthorized(UnauthorizedException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
-                .body(body(HttpStatus.UNAUTHORIZED, ex.getMessage(), Map.of(), request));
+                .body(body(HttpStatus.UNAUTHORIZED, ex.getMessage(),
+                        ex instanceof AccountLockedException ? Map.of("account", "ACCOUNT_LOCKED") : Map.of(), request));
     }
 
     @ExceptionHandler(ForbiddenException.class)
