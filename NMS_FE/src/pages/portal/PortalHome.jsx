@@ -1,8 +1,20 @@
-import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Row, Col, Card, Form, InputGroup, Button, Badge, Spinner, Alert, Pagination, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { getPublishedArticles } from '../../api/portal';
-import { getCategories } from '../../api/category';
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
+import {
+  Row,
+  Col,
+  Card,
+  Form,
+  InputGroup,
+  Button,
+  Badge,
+  Spinner,
+  Alert,
+  Pagination,
+  Modal,
+} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { getPublishedArticles } from "../../api/portal";
+import { getCategories } from "../../api/category";
 
 const VISIBLE_CATEGORY_LIMIT = 5; // Số danh mục hiển thị nhanh trên thanh
 
@@ -14,16 +26,16 @@ const PortalHome = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  const [keyword, setKeyword] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [keyword, setKeyword] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const activeRequest = useRef(null);
 
   // Quản lý Modal Popup "Tất cả chuyên mục"
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [categoryModalSearch, setCategoryModalSearch] = useState('');
+  const [categoryModalSearch, setCategoryModalSearch] = useState("");
 
   // Tải danh mục
   useEffect(() => {
@@ -33,39 +45,46 @@ const PortalHome = () => {
   }, []);
 
   // Tải bài viết khi filter / page thay đổi
-  const fetchArticles = useCallback(async (targetPage = 0) => {
-    activeRequest.current?.abort();
-    const controller = new AbortController();
-    activeRequest.current = controller;
-    try {
-      setLoading(true);
-      setError('');
-      const params = {
-        page: targetPage,
-        size: 9,
-      };
-      if (keyword.trim()) params.keyword = keyword.trim();
-      if (selectedCategory) params.categoryId = Number(selectedCategory);
+  const fetchArticles = useCallback(
+    async (targetPage = 0) => {
+      activeRequest.current?.abort();
+      const controller = new AbortController();
+      activeRequest.current = controller;
+      try {
+        setLoading(true);
+        setError("");
+        const params = {
+          page: targetPage,
+          size: 9,
+        };
+        if (keyword.trim()) params.keyword = keyword.trim();
+        if (selectedCategory) params.categoryId = Number(selectedCategory);
 
-      const res = await getPublishedArticles(params, { signal: controller.signal });
-      if (controller.signal.aborted) return;
-      setArticles(res?.content || []);
-      setTotalPages(res?.totalPages || 0);
-      setTotalElements(res?.totalElements || 0);
-      setPage(targetPage);
-    } catch (err) {
-      if (!controller.signal.aborted) {
-        setError(err?.response?.data?.message || 'Không thể tải danh sách bài báo.');
+        const res = await getPublishedArticles(params, {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        setArticles(res?.content || []);
+        setTotalPages(res?.totalPages || 0);
+        setTotalElements(res?.totalElements || 0);
+        setPage(targetPage);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError(
+            err?.response?.data?.message || "Không thể tải danh sách bài báo.",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-    } finally {
-      if (!controller.signal.aborted) setLoading(false);
-    }
-  }, [keyword, selectedCategory]);
+    },
+    [keyword, selectedCategory],
+  );
 
   useEffect(() => {
     // Debounce tìm kiếm theo từ khóa và đổi category: hoãn gọi API 350ms khi gõ
     const timer = setTimeout(() => {
-      fetchArticles(0);
+      fetchArticles(0); // Luôn quay về trang 1 khi filter thay đổi
     }, 350);
 
     return () => {
@@ -80,12 +99,12 @@ const PortalHome = () => {
   };
 
   const formatDate = (isoString) => {
-    if (!isoString) return 'Mới cập nhật';
+    if (!isoString) return "Mới cập nhật";
     try {
-      return new Date(isoString).toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
+      return new Date(isoString).toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
       });
     } catch {
       return isoString;
@@ -93,33 +112,45 @@ const PortalHome = () => {
   };
 
   // Danh sách hiển thị nhanh (tối đa 5 mục đầu tiên)
-  const topCategories = useMemo(() => categories.slice(0, VISIBLE_CATEGORY_LIMIT), [categories]);
+  const topCategories = useMemo(
+    () => categories.slice(0, VISIBLE_CATEGORY_LIMIT),
+    [categories],
+  );
   const currentCategoryObj = useMemo(
-    () => categories.find((c) => String(c.categoryId) === String(selectedCategory)),
-    [categories, selectedCategory]
+    () =>
+      categories.find((c) => String(c.categoryId) === String(selectedCategory)),
+    [categories, selectedCategory],
   );
   const isSelectedInTop = useMemo(
-    () => topCategories.some((c) => String(c.categoryId) === String(selectedCategory)),
-    [topCategories, selectedCategory]
+    () =>
+      topCategories.some(
+        (c) => String(c.categoryId) === String(selectedCategory),
+      ),
+    [topCategories, selectedCategory],
   );
 
   // Lọc trong modal popup
   const modalFilteredCategories = useMemo(
     () =>
       categories.filter((c) =>
-        c.categoryName.toLowerCase().includes(categoryModalSearch.toLowerCase())
+        c.categoryName
+          .toLowerCase()
+          .includes(categoryModalSearch.toLowerCase()),
       ),
-    [categories, categoryModalSearch]
+    [categories, categoryModalSearch],
   );
 
   const selectCategoryAndClose = (catId) => {
     setSelectedCategory(catId);
     setShowCategoryModal(false);
-    setCategoryModalSearch('');
+    setCategoryModalSearch("");
   };
 
   // Tách bài đầu tiên làm Spotlight / Feature khi ở trang 1 và không tìm kiếm
-  const featuredArticle = !keyword && !selectedCategory && page === 0 && articles.length > 0 ? articles[0] : null;
+  const featuredArticle =
+    !keyword && !selectedCategory && page === 0 && articles.length > 0
+      ? articles[0]
+      : null;
   const remainingArticles = featuredArticle ? articles.slice(1) : articles;
 
   return (
@@ -146,7 +177,10 @@ const PortalHome = () => {
               </InputGroup>
             </Form>
           </Col>
-          <Col md={5} className="d-flex align-items-center justify-content-md-end text-muted small">
+          <Col
+            md={5}
+            className="d-flex align-items-center justify-content-md-end text-muted small"
+          >
             <span>
               <i className="bi bi-newspaper me-1 text-primary"></i>
               Tổng số <strong>{totalElements}</strong> bài viết đã xuất bản
@@ -159,8 +193,8 @@ const PortalHome = () => {
           {/* Nút Xem tất cả */}
           <button
             type="button"
-            className={`portal-category-pill ${!selectedCategory ? 'active' : ''}`}
-            onClick={() => setSelectedCategory('')}
+            className={`portal-category-pill ${!selectedCategory ? "active" : ""}`}
+            onClick={() => setSelectedCategory("")}
           >
             Tất cả
           </button>
@@ -170,7 +204,7 @@ const PortalHome = () => {
             <button
               key={cat.categoryId}
               type="button"
-              className={`portal-category-pill ${String(selectedCategory) === String(cat.categoryId) ? 'active' : ''}`}
+              className={`portal-category-pill ${String(selectedCategory) === String(cat.categoryId) ? "active" : ""}`}
               onClick={() => setSelectedCategory(cat.categoryId)}
             >
               {cat.categoryName}
@@ -182,11 +216,14 @@ const PortalHome = () => {
             <button
               type="button"
               className="portal-category-pill active d-inline-flex align-items-center gap-1"
-              onClick={() => setSelectedCategory('')}
+              onClick={() => setSelectedCategory("")}
               title="Bấm để bỏ chọn"
             >
               <span>{currentCategoryObj.categoryName}</span>
-              <i className="bi bi-x-circle-fill" style={{ fontSize: '0.8rem' }}></i>
+              <i
+                className="bi bi-x-circle-fill"
+                style={{ fontSize: "0.8rem" }}
+              ></i>
             </button>
           )}
 
@@ -195,21 +232,31 @@ const PortalHome = () => {
             variant="outline-secondary"
             size="sm"
             className="rounded-pill d-inline-flex align-items-center gap-1 px-3 py-1 fw-semibold ms-auto"
-            style={{ fontSize: '0.85rem', borderColor: '#cbd5e1' }}
+            style={{ fontSize: "0.85rem", borderColor: "#cbd5e1" }}
             onClick={() => setShowCategoryModal(true)}
           >
             <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
             <span>Tất cả chuyên mục ({categories.length})</span>
-            <i className="bi bi-chevron-right" style={{ fontSize: '0.75rem' }}></i>
+            <i
+              className="bi bi-chevron-right"
+              style={{ fontSize: "0.75rem" }}
+            ></i>
           </Button>
         </div>
       </div>
 
       {/* Thông báo lỗi nếu có */}
       {error && (
-        <Alert variant="danger" className="d-flex justify-content-between align-items-center rounded-3">
+        <Alert
+          variant="danger"
+          className="d-flex justify-content-between align-items-center rounded-3"
+        >
           <span>{error}</span>
-          <Button variant="outline-danger" size="sm" onClick={() => fetchArticles(page)}>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => fetchArticles(page)}
+          >
             Thử lại
           </Button>
         </Alert>
@@ -218,24 +265,27 @@ const PortalHome = () => {
       {loading ? (
         <div className="text-center py-5">
           <Spinner animation="border" variant="primary" />
-          <div className="mt-3 text-muted fw-semibold">Đang cập nhật tin tức mới nhất...</div>
+          <div className="mt-3 text-muted fw-semibold">
+            Đang cập nhật tin tức mới nhất...
+          </div>
         </div>
       ) : articles.length === 0 ? (
         <Card className="border-0 shadow-sm text-center py-5 rounded-4">
           <Card.Body>
-            <div className="text-muted mb-3" style={{ fontSize: '3.5rem' }}>
+            <div className="text-muted mb-3" style={{ fontSize: "3.5rem" }}>
               <i className="bi bi-journal-text"></i>
             </div>
             <h4 className="fw-bold text-dark">Không tìm thấy bài viết nào</h4>
             <p className="text-secondary">
-              Không có bài báo nào phù hợp với bộ lọc hiện tại. Thử xóa từ khóa hoặc chọn chuyên mục khác.
+              Không có bài báo nào phù hợp với bộ lọc hiện tại. Thử xóa từ khóa
+              hoặc chọn chuyên mục khác.
             </p>
             <Button
               variant="outline-primary"
               size="sm"
               onClick={() => {
-                setKeyword('');
-                setSelectedCategory('');
+                setKeyword("");
+                setSelectedCategory("");
               }}
             >
               Xem tất cả bài viết
@@ -248,39 +298,59 @@ const PortalHome = () => {
           {featuredArticle && (
             <Card
               className="portal-card portal-lead-card mb-4 border-0 shadow-sm overflow-hidden"
-              onClick={() => navigate(`/portal/articles/${featuredArticle.articleId}`)}
+              onClick={() =>
+                navigate(`/portal/articles/${featuredArticle.articleId}`)
+              }
             >
               <Card.Body className="p-4 p-md-5">
                 <div className="d-flex align-items-center gap-2 mb-3">
-                  <Badge bg="danger" className="px-3 py-1 text-uppercase fw-semibold" style={{ fontSize: '0.72rem' }}>
+                  <Badge
+                    bg="danger"
+                    className="px-3 py-1 text-uppercase fw-semibold"
+                    style={{ fontSize: "0.72rem" }}
+                  >
                     <i className="bi bi-lightning-fill me-1"></i>Tiêu điểm
                   </Badge>
-                  <span className="text-primary fw-semibold small">{featuredArticle.categoryName}</span>
-                  <span className="text-muted small">• {formatDate(featuredArticle.publishedDate || featuredArticle.createdDate)}</span>
+                  <span className="text-primary fw-semibold small">
+                    {featuredArticle.categoryName}
+                  </span>
+                  <span className="text-muted small">
+                    {formatDate(
+                      featuredArticle.publishedDate ||
+                        featuredArticle.createdDate,
+                    )}
+                  </span>
                 </div>
 
                 <h2 className="portal-lead-title mb-3">
                   {featuredArticle.title}
                 </h2>
 
-                <p className="text-secondary lead mb-4" style={{ fontSize: '1.1rem', lineHeight: 1.65 }}>
+                <p
+                  className="text-secondary lead mb-4"
+                  style={{ fontSize: "1.1rem", lineHeight: 1.65 }}
+                >
                   {featuredArticle.headline ||
-                    (featuredArticle.content ? featuredArticle.content.substring(0, 180) + '...' : '')}
+                    (featuredArticle.content
+                      ? featuredArticle.content.substring(0, 180) + "..."
+                      : "")}
                 </p>
 
                 <div className="d-flex justify-content-between align-items-center pt-3 border-top text-muted small flex-wrap gap-2">
                   <div className="d-flex align-items-center gap-2">
                     <i className="bi bi-person-circle fs-5 text-secondary"></i>
-                    <span className="fw-semibold text-dark">{featuredArticle.authorName || 'FPT Editorial'}</span>
+                    <span className="fw-semibold text-dark">
+                      {featuredArticle.authorName || "FPT Editorial"}
+                    </span>
                   </div>
                   <div className="d-flex gap-4">
                     <span>
                       <i className="bi bi-eye me-1"></i>
-                      {featuredArticle.viewCount?.toLocaleString('vi-VN') || 0}
+                      {featuredArticle.viewCount?.toLocaleString("vi-VN") || 0}
                     </span>
                     <span className="text-danger">
                       <i className="bi bi-heart-fill me-1"></i>
-                      {featuredArticle.likeCount?.toLocaleString('vi-VN') || 0}
+                      {featuredArticle.likeCount?.toLocaleString("vi-VN") || 0}
                     </span>
                   </div>
                 </div>
@@ -291,8 +361,17 @@ const PortalHome = () => {
           {/* 4. Lưới các bài viết còn lại */}
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-              <span style={{ width: 4, height: 18, background: 'var(--fpt-orange)', borderRadius: 2 }}></span>
-              {currentCategoryObj ? `Chuyên mục: ${currentCategoryObj.categoryName}` : 'Tin tức mới cập nhật'}
+              <span
+                style={{
+                  width: 4,
+                  height: 18,
+                  background: "var(--fpt-orange)",
+                  borderRadius: 2,
+                }}
+              ></span>
+              {currentCategoryObj
+                ? `Chuyên mục: ${currentCategoryObj.categoryName}`
+                : "Tin tức mới cập nhật"}
             </h5>
           </div>
 
@@ -305,33 +384,42 @@ const PortalHome = () => {
                 >
                   <Card.Body className="d-flex flex-column p-4">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="text-primary fw-bold text-uppercase" style={{ fontSize: '0.75rem' }}>
-                        {item.categoryName || 'Tin tức'}
+                      <span
+                        className="text-primary fw-bold text-uppercase"
+                        style={{ fontSize: "0.75rem" }}
+                      >
+                        {item.categoryName || "Tin tức"}
                       </span>
-                      <small className="text-muted">{formatDate(item.publishedDate || item.createdDate)}</small>
+                      <small className="text-muted">
+                        {formatDate(item.publishedDate || item.createdDate)}
+                      </small>
                     </div>
 
-                    <h3 className="portal-card-title mb-2">
-                      {item.title}
-                    </h3>
+                    <h3 className="portal-card-title mb-2">{item.title}</h3>
 
-                    <p className="text-secondary small mb-4 flex-grow-1" style={{ lineHeight: 1.6 }}>
-                      {item.headline || (item.content ? item.content.substring(0, 105) + '...' : '')}
+                    <p
+                      className="text-secondary small mb-4 flex-grow-1"
+                      style={{ lineHeight: 1.6 }}
+                    >
+                      {item.headline ||
+                        (item.content
+                          ? item.content.substring(0, 105) + "..."
+                          : "")}
                     </p>
 
                     <div className="d-flex justify-content-between align-items-center pt-3 border-top text-muted small">
                       <span className="text-truncate" style={{ maxWidth: 130 }}>
                         <i className="bi bi-person me-1"></i>
-                        {item.authorName || 'Ban biên tập'}
+                        {item.authorName || "Ban biên tập"}
                       </span>
                       <div className="d-flex gap-3">
                         <span>
                           <i className="bi bi-eye me-1"></i>
-                          {item.viewCount?.toLocaleString('vi-VN') || 0}
+                          {item.viewCount?.toLocaleString("vi-VN") || 0}
                         </span>
                         <span className="text-danger">
                           <i className="bi bi-heart-fill me-1"></i>
-                          {item.likeCount?.toLocaleString('vi-VN') || 0}
+                          {item.likeCount?.toLocaleString("vi-VN") || 0}
                         </span>
                       </div>
                     </div>
@@ -345,13 +433,23 @@ const PortalHome = () => {
           {totalPages > 1 && (
             <div className="d-flex justify-content-center mt-4">
               <Pagination>
-                <Pagination.Prev disabled={page === 0} onClick={() => fetchArticles(page - 1)} />
+                <Pagination.Prev
+                  disabled={page === 0}
+                  onClick={() => fetchArticles(page - 1)}
+                />
                 {Array.from({ length: totalPages }, (_, i) => (
-                  <Pagination.Item key={i} active={i === page} onClick={() => fetchArticles(i)}>
+                  <Pagination.Item
+                    key={i}
+                    active={i === page}
+                    onClick={() => fetchArticles(i)}
+                  >
                     {i + 1}
                   </Pagination.Item>
                 ))}
-                <Pagination.Next disabled={page === totalPages - 1} onClick={() => fetchArticles(page + 1)} />
+                <Pagination.Next
+                  disabled={page === totalPages - 1}
+                  onClick={() => fetchArticles(page + 1)}
+                />
               </Pagination>
             </div>
           )}
@@ -367,7 +465,10 @@ const PortalHome = () => {
         backdrop="static"
       >
         <Modal.Header closeButton className="border-bottom pb-3">
-          <Modal.Title className="fw-bold d-flex align-items-center gap-2" style={{ fontSize: '1.2rem' }}>
+          <Modal.Title
+            className="fw-bold d-flex align-items-center gap-2"
+            style={{ fontSize: "1.2rem" }}
+          >
             <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
             Tất cả chuyên mục tin tức ({categories.length})
           </Modal.Title>
@@ -387,21 +488,31 @@ const PortalHome = () => {
               autoFocus
             />
             {categoryModalSearch && (
-              <Button variant="light" className="border border-start-0" onClick={() => setCategoryModalSearch('')}>
+              <Button
+                variant="light"
+                className="border border-start-0"
+                onClick={() => setCategoryModalSearch("")}
+              >
                 <i className="bi bi-x-lg text-muted"></i>
               </Button>
             )}
           </InputGroup>
 
           {/* Lưới hiển thị các chuyên mục dạng Grid */}
-          <div style={{ maxHeight: '55vh', overflowY: 'auto', paddingRight: '4px' }}>
+          <div
+            style={{
+              maxHeight: "55vh",
+              overflowY: "auto",
+              paddingRight: "4px",
+            }}
+          >
             {/* Lựa chọn 'Tất cả' */}
             <div className="mb-3">
               <Button
-                variant={!selectedCategory ? 'primary' : 'outline-secondary'}
+                variant={!selectedCategory ? "primary" : "outline-secondary"}
                 size="sm"
                 className="w-100 text-start py-2 px-3 fw-bold rounded-3 d-flex justify-content-between align-items-center"
-                onClick={() => selectCategoryAndClose('')}
+                onClick={() => selectCategoryAndClose("")}
               >
                 <span>
                   <i className="bi bi-collection me-2"></i>Tất cả chuyên mục
@@ -412,40 +523,45 @@ const PortalHome = () => {
 
             <Row className="g-2">
               {modalFilteredCategories.map((cat) => {
-                const isSelected = String(selectedCategory) === String(cat.categoryId);
+                const isSelected =
+                  String(selectedCategory) === String(cat.categoryId);
                 return (
                   <Col md={6} lg={4} key={cat.categoryId}>
                     <div
                       onClick={() => selectCategoryAndClose(cat.categoryId)}
                       className={`p-3 rounded-3 border d-flex justify-content-between align-items-center ${
                         isSelected
-                          ? 'border-primary bg-primary text-white fw-bold shadow-sm'
-                          : 'bg-white hover-bg-light text-dark'
+                          ? "border-primary bg-primary text-white fw-bold shadow-sm"
+                          : "bg-white hover-bg-light text-dark"
                       }`}
                       style={{
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
                       }}
                       onMouseEnter={(e) => {
                         if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = '#f8fafc';
-                          e.currentTarget.style.borderColor = 'var(--fpt-orange)';
+                          e.currentTarget.style.backgroundColor = "#f8fafc";
+                          e.currentTarget.style.borderColor =
+                            "var(--fpt-orange)";
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = '#ffffff';
-                          e.currentTarget.style.borderColor = '#dee2e6';
+                          e.currentTarget.style.backgroundColor = "#ffffff";
+                          e.currentTarget.style.borderColor = "#dee2e6";
                         }
                       }}
                     >
                       <div className="d-flex align-items-center gap-2 text-truncate me-2">
                         <i
-                          className={`bi ${cat.parentCategoryId ? 'bi-tag' : 'bi-folder2'} ${
-                            isSelected ? 'text-white' : 'text-primary'
+                          className={`bi ${cat.parentCategoryId ? "bi-tag" : "bi-folder2"} ${
+                            isSelected ? "text-white" : "text-primary"
                           }`}
                         ></i>
-                        <span className="text-truncate" title={cat.categoryName}>
+                        <span
+                          className="text-truncate"
+                          title={cat.categoryName}
+                        >
                           {cat.categoryName}
                         </span>
                       </div>
@@ -463,7 +579,8 @@ const PortalHome = () => {
             {modalFilteredCategories.length === 0 && (
               <div className="text-center py-5 text-muted">
                 <i className="bi bi-search fs-2 d-block mb-2 text-secondary"></i>
-                Không tìm thấy chuyên mục nào với từ khóa "{categoryModalSearch}".
+                Không tìm thấy chuyên mục nào với từ khóa "{categoryModalSearch}
+                ".
               </div>
             )}
           </div>
@@ -472,7 +589,11 @@ const PortalHome = () => {
           <span className="text-muted small">
             Bấm vào bất kỳ chuyên mục nào để lọc tin tức ngay lập tức.
           </span>
-          <Button variant="secondary" size="sm" onClick={() => setShowCategoryModal(false)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowCategoryModal(false)}
+          >
             Đóng
           </Button>
         </Modal.Footer>

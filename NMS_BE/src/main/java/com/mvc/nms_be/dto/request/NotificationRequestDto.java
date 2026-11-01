@@ -13,5 +13,5 @@ public class NotificationRequestDto {
     private Integer newsArticleId;
     private String title;
     private String content;
-    private Integer isRead = 0;
+    private Integer isRead;
 }

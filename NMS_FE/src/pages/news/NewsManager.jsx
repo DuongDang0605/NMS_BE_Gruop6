@@ -1,194 +1,202 @@
-import { useState } from 'react';
-import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { mockNews } from '../../mockData/news';
-import { mockCategories } from '../../mockData/categories';
-import { useOutletContext } from 'react-router-dom';
+import { useEffect, useState, useMemo } from "react";
+import { Spinner } from "react-bootstrap";
+import { useNavigate, useOutletContext } from "react-router-dom";
+
+import useNewsData from "./news/useNewsData";
+import useNewsFilters from "./news/useNewsFilters";
+import useArticleForm from "./news/useArticleForm";
+import useArticleActions from "./news/useArticleActions";
+import useTagManager from "./news/useTagManager";
+import { exportArticlesToCSV } from "./news/utils";
+
+import NewsHeader from "./news/components/NewsHeader";
+import NewsAlerts from "./news/components/NewsAlerts";
+import NewsStats from "./news/components/NewsStats";
+import NewsFilters from "./news/components/NewsFilters";
+import NewsEmptyState from "./news/components/NewsEmptyState";
+import NewsTable from "./news/components/NewsTable";
+import NewsCardGrid from "./news/components/NewsCardGrid";
+import NewsPagination from "./news/components/NewsPagination";
+import ArticleFormModal from "./news/components/ArticleFormModal";
+import ArticleDetailModal from "./news/components/ArticleDetailModal";
+import TagManagerModal from "./news/components/TagManagerModal";
+import DeleteConfirmModal from "./news/components/DeleteConfirmModal";
 
 const NewsManager = () => {
+  const navigate = useNavigate();
   const { user } = useOutletContext();
-  const canPublish = [1, 3].includes(user.accountRole);
-  const canEdit = (article) => user.accountRole === 1
-    || (article?.createdById === user.accountId && article.newsStatus === 0);
-  const [news, setNews] = useState(mockNews);
-  const [showModal, setShowModal] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [currentNews, setCurrentNews] = useState({
-    newsArticleId: '', newsTitle: '', headline: '', newsContent: '',
-    newsSource: '', categoryId: '', newsStatus: 0
+
+  // --- Logic phân quyền (RBAC) từ nhánh develop ---
+  const canPublish = [1, 3].includes(user?.accountRole);
+  const canEdit = (article) =>
+    user?.accountRole === 1 ||
+    (article?.createdById === user?.accountId && article?.newsStatus === 0);
+
+  const {
+    articles,
+    setArticles,
+    categories,
+    tags,
+    setTags,
+    categoryMap,
+    tagMap,
+    loading,
+    error,
+    reloadData,
+  } = useNewsData();
+
+  // Lọc bài viết theo quyền: Role 2 (Contributor) chỉ thấy bài của mình
+  const allowedArticles = useMemo(() => {
+    if (!articles) return [];
+    return articles.filter(
+      (n) => user?.accountRole !== 2 || n.createdById === user?.accountId,
+    );
+  }, [articles, user]);
+
+  const [actionError, setActionError] = useState("");
+  const [successToast, setSuccessToast] = useState("");
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailArticle, setDetailArticle] = useState(null);
+
+  // Tự ẩn thông báo thành công sau 4 giây
+  useEffect(() => {
+    if (!successToast) return;
+    const timer = setTimeout(() => setSuccessToast(""), 4000);
+    return () => clearTimeout(timer);
+  }, [successToast]);
+
+  // Sử dụng allowedArticles đã được phân quyền thay vì toàn bộ articles
+  const filters = useNewsFilters(allowedArticles);
+  const form = useArticleForm({
+    setActionError,
+    onSuccess: setSuccessToast,
+    reloadData,
   });
-  const [deleteId, setDeleteId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const actions = useArticleActions({
+    articles: allowedArticles,
+    setArticles,
+    setActionError,
+    onSuccess: setSuccessToast,
+    reloadData,
+  });
+  const tagManager = useTagManager({ setTags, onSuccess: setSuccessToast });
 
-  const handleCloseModal = () => setShowModal(false);
-  const handleShowModal = (n = { newsArticleId: '', newsTitle: '', headline: '', newsContent: '', newsSource: '', categoryId: '', newsStatus: 0, createdById: user.accountId }) => {
-    if (n.newsArticleId && !canEdit(n)) return;
-    setCurrentNews(n);
-    setShowModal(true);
+  const openDetail = (article) => {
+    setDetailArticle(article);
+    setShowDetail(true);
   };
+  const closeDetail = () => setShowDetail(false);
 
-  const handleSave = () => {
-    if (currentNews.newsArticleId && !canEdit(news.find((article) => article.newsArticleId === currentNews.newsArticleId))) return;
-    const savedNews = { ...currentNews, newsStatus: canPublish ? currentNews.newsStatus : 0 };
-    if (currentNews.newsArticleId) {
-      setNews(news.map(n => n.newsArticleId === currentNews.newsArticleId ? savedNews : n));
-    } else {
-      setNews([...news, { ...savedNews, createdById: user.accountId, newsArticleId: Date.now(), createdDate: new Date().toISOString() }]);
-    }
-    handleCloseModal();
+  const listProps = {
+    articles: filters.pagedArticles,
+    categoryMap,
+    tagMap,
+    user, // Truyền user xuống để table check quyền
+    canEdit, // Truyền hàm check quyền edit
+    canPublish, // Truyền cờ check quyền publish
+    onView: openDetail,
+    onEdit: form.open,
+    onToggleStatus: actions.toggleStatus,
+    onDelete: actions.openDelete,
   };
-
-  const handleDeleteConfirm = (id) => {
-    setDeleteId(id);
-    setShowConfirm(true);
-  };
-
-  const deleteNews = () => {
-    if (!canEdit(news.find((article) => article.newsArticleId === deleteId))) return;
-    setNews(news.filter(n => n.newsArticleId !== deleteId));
-    setShowConfirm(false);
-  };
-
-  const filteredNews = news.filter(n => (user.accountRole !== 2 || n.createdById === user.accountId)).filter(n =>
-    n.newsTitle.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>News Article Management</h2>
-        <Button variant="primary" onClick={() => handleShowModal()}>
-          <i className="bi bi-plus-circle me-1"></i> Add News
-        </Button>
-      </div>
+    <div className="pb-5">
+      <NewsHeader
+        total={allowedArticles.length}
+        tagCount={tags.length}
+        onReload={reloadData}
+        onOpenTags={tagManager.open}
+        onExport={() =>
+          exportArticlesToCSV(
+            filters.filteredAndSortedArticles,
+            categoryMap,
+            tagMap,
+          )
+        }
+        onCreate={() => form.open()}
+      />
 
-      <InputGroup className="mb-3 w-50">
-        <InputGroup.Text><i className="bi bi-search"></i></InputGroup.Text>
-        <Form.Control
-          placeholder="Search news by title..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+      <NewsAlerts
+        successToast={successToast}
+        onCloseSuccess={() => setSuccessToast("")}
+        error={error}
+        onRetry={reloadData}
+        actionError={!form.show && !actions.showDelete ? actionError : ""}
+        onCloseAction={() => setActionError("")}
+      />
+
+      <NewsStats articles={allowedArticles} />
+      <NewsFilters filters={filters} categories={categories} tags={tags} />
+
+      {loading ? (
+        <div className="text-center py-5 bg-white rounded-4 shadow-sm border">
+          <Spinner animation="border" variant="primary" />
+          <div className="mt-2 text-muted fw-semibold">
+            Đang tải dữ liệu bài viết...
+          </div>
+        </div>
+      ) : filters.totalItems === 0 ? (
+        <NewsEmptyState
+          hasActiveFilters={filters.hasActiveFilters}
+          onClear={filters.handleClearFilters}
+          onCreate={() => form.open()}
         />
-      </InputGroup>
+      ) : filters.viewMode === "table" ? (
+        <NewsTable {...listProps} />
+      ) : (
+        <NewsCardGrid {...listProps} />
+      )}
 
-      <Table striped bordered hover>
-        <thead className="table-brand">
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Headline</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredNews.map(n => {
-            const catName = mockCategories.find(c => c.categoryId === Number(n.categoryId))?.categoryName || 'Unknown';
-            return (
-              <tr key={n.newsArticleId}>
-                <td>{n.newsArticleId}</td>
-                <td>{n.newsTitle}</td>
-                <td>{n.headline}</td>
-                <td>{catName}</td>
-                <td>{n.newsStatus ? <span className="badge bg-success">Active</span> : <span className="badge bg-secondary">Inactive</span>}</td>
-                <td>
-                  <Button variant="warning" size="sm" className="me-2" disabled={!canEdit(n)} onClick={() => handleShowModal(n)}>
-                    <i className="bi bi-pencil"></i> Edit
-                  </Button>
-                  <Button variant="danger" size="sm" disabled={!canEdit(n)} onClick={() => handleDeleteConfirm(n.newsArticleId)}>
-                    <i className="bi bi-trash"></i> Delete
-                  </Button>
-                </td>
-              </tr>
-            );
-          })}
-          {filteredNews.length === 0 && (
-            <tr>
-              <td colSpan="6" className="text-center">No news articles found.</td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
+      {filters.totalPages > 1 && (
+        <NewsPagination
+          safePage={filters.safePage}
+          totalPages={filters.totalPages}
+          totalItems={filters.totalItems}
+          pageSize={filters.pageSize}
+          setCurrentPage={filters.setCurrentPage}
+          setPageSize={filters.setPageSize}
+        />
+      )}
 
-      <Modal show={showModal} onHide={handleCloseModal} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>{currentNews.newsArticleId ? 'Edit News' : 'Add News'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>News Title</Form.Label>
-              <Form.Control
-                type="text"
-                value={currentNews.newsTitle}
-                onChange={e => setCurrentNews({...currentNews, newsTitle: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Headline</Form.Label>
-              <Form.Control
-                type="text"
-                value={currentNews.headline}
-                onChange={e => setCurrentNews({...currentNews, headline: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Category</Form.Label>
-              <Form.Select
-                value={currentNews.categoryId}
-                onChange={e => setCurrentNews({...currentNews, categoryId: e.target.value})}
-              >
-                <option value="">Select Category...</option>
-                {mockCategories.map(c => (
-                  <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Source</Form.Label>
-              <Form.Control
-                type="text"
-                value={currentNews.newsSource}
-                onChange={e => setCurrentNews({...currentNews, newsSource: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Content</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={5}
-                value={currentNews.newsContent}
-                onChange={e => setCurrentNews({...currentNews, newsContent: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="switch"
-                id="news-active-switch"
-                disabled={!canPublish}
-                label="Active"
-                checked={currentNews.newsStatus === 1}
-                onChange={e => setCurrentNews({...currentNews, newsStatus: e.target.checked ? 1 : 0})}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>Cancel</Button>
-          <Button variant="primary" onClick={handleSave}>Save</Button>
-        </Modal.Footer>
-      </Modal>
+      <ArticleFormModal
+        form={form}
+        categories={categories}
+        tags={tags}
+        categoryMap={categoryMap}
+        tagMap={tagMap}
+        actionError={actionError}
+        onOpenTagModal={tagManager.open}
+        user={user}
+        canPublish={canPublish}
+        canEdit={canEdit}
+      />
 
-      <Modal show={showConfirm} onHide={() => setShowConfirm(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Are you sure you want to delete this news article?</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirm(false)}>Cancel</Button>
-          <Button variant="danger" onClick={deleteNews}>Delete</Button>
-        </Modal.Footer>
-      </Modal>
+      <ArticleDetailModal
+        show={showDetail}
+        article={detailArticle}
+        categoryMap={categoryMap}
+        onHide={closeDetail}
+        onEdit={() => {
+          closeDetail();
+          form.open(detailArticle);
+        }}
+        onOpenPortal={() => {
+          closeDetail();
+          navigate(`/portal/articles/${detailArticle.newsArticleId}`);
+        }}
+        canEdit={canEdit}
+      />
+
+      <TagManagerModal tags={tags} manager={tagManager} />
+
+      <DeleteConfirmModal
+        show={actions.showDelete}
+        target={actions.deleteTarget}
+        submitting={actions.submitting}
+        onHide={actions.closeDelete}
+        onConfirm={actions.confirmDelete}
+      />
     </div>
   );
 };
