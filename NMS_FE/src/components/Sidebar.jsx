@@ -10,20 +10,24 @@ const Sidebar = ({ user }) => {
           <Nav.Link as={NavLink} to="/dashboard">
             <i className="bi bi-speedometer2 me-2"></i>Dashboard
           </Nav.Link>
-          {[1, 2, 3].includes(user.accountRole) && <Nav.Link as={NavLink} to="/category">
+          <Nav.Link as={NavLink} to="/category">
             <i className="bi bi-tags me-2"></i>Category
-          </Nav.Link>}
-          {[1, 2, 3].includes(user.accountRole) && <Nav.Link as={NavLink} to="/news">
+          </Nav.Link>
+          <Nav.Link as={NavLink} to="/news">
             <i className="bi bi-newspaper me-2"></i>News
-          </Nav.Link>}
-          {user.accountRole === 1 && <Nav.Link as={NavLink} to="/users">
-            <i className="bi bi-people me-2"></i>Users
-          </Nav.Link>}
+          </Nav.Link>
+          {user.accountRole === 1 && (
+            <Nav.Link as={NavLink} to="/users">
+              <i className="bi bi-people me-2"></i>Users
+            </Nav.Link>
+          )}
           <hr />
-          {user.accountRole === 1 && <Nav.Link as={NavLink} to="/settings">
+          <Nav.Link as={NavLink} to="/portal">
+            <i className="bi bi-globe me-2 text-primary"></i>Public Portal
+          </Nav.Link>
+          <Nav.Link as={NavLink} to="/settings">
             <i className="bi bi-gear me-2"></i>Settings
-          </Nav.Link>}
-          <Nav.Link as={NavLink} to="/portal">Campus news</Nav.Link>
+          </Nav.Link>
         </Nav>
       </div>
     </aside>

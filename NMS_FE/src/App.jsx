@@ -11,10 +11,19 @@ import RequireRoles from './components/RequireRoles'
 import Register from './pages/auth/Register'
 import Portal from './pages/portal/Portal'
 import Profile from './pages/auth/Profile'
+import PortalLayout from './components/PortalLayout';
+import PortalHome from './pages/portal/PortalHome';
+import ArticleDetail from './pages/portal/ArticleDetail';
 
 function App() {
   return (
     <Routes>
+
+      <Route path="/portal" element={<PortalLayout />}>
+        <Route index element={<PortalHome />} />
+        <Route path="articles/:id" element={<ArticleDetail />} />
+      </Route>
+
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/portal" element={<Portal />} />
@@ -27,8 +36,10 @@ function App() {
         <Route path="users" element={<RequireAdmin><UserManager /></RequireAdmin>} />
         <Route path="settings" element={<RequireAdmin><Settings /></RequireAdmin>} />
       </Route>
+
+      <Route path="*" element={<Navigate to="/portal" replace />} />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;
