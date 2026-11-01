@@ -19,12 +19,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@PreAuthorize("@recipientAuthorization.canAccess(#recipientId)")
 public class NotificationServiceImpl implements NotificationService {
 
     private static final int MAX_PAGE_SIZE = 100;
@@ -68,6 +70,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public NotificationResponseDto create(NotificationRequestDto request) {
         if (request == null) {
             throw badRequest("Request body is required");

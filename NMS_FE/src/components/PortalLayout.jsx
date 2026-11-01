@@ -2,7 +2,8 @@ import { Navbar, Container, Nav, Button } from 'react-bootstrap';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import logo from '../assets/fpt-university-logo.png';
 import Footer from './Footer';
-import { getSession } from '../services/session';
+import { clearSession, getSession } from '../services/session';
+import { canAccess } from '../services/roles';
 
 const PortalLayout = () => {
   const navigate = useNavigate();
@@ -62,6 +63,9 @@ const PortalLayout = () => {
               </Nav.Link>
 
               {session?.user ? (
+                <>
+                <Nav.Link as={Link} to="/account">Tài khoản của tôi ({session.user.accountName})</Nav.Link>
+                {canAccess(session.user, [1, 2, 3, 4]) &&
                 <Button
                   variant="primary"
                   size="sm"
@@ -69,9 +73,16 @@ const PortalLayout = () => {
                   className="d-flex align-items-center gap-2 px-3 py-2 ms-lg-2 shadow-sm rounded-pill"
                 >
                   <i className="bi bi-speedometer2"></i>
-                  <span>Trang quản trị ({session.user.accountName})</span>
-                </Button>
+                  <span>Trang quản trị</span>
+                </Button>}
+                <Button variant="outline-secondary" size="sm" onClick={() => {
+                  clearSession();
+                  navigate('/login', { replace: true });
+                }}>Đăng xuất</Button>
+                </>
               ) : (
+                <>
+                <Nav.Link as={Link} to="/register">Đăng ký</Nav.Link>
                 <Button
                   variant="outline-primary"
                   size="sm"
@@ -81,6 +92,7 @@ const PortalLayout = () => {
                   <i className="bi bi-box-arrow-in-right"></i>
                   <span>Đăng nhập</span>
                 </Button>
+                </>
               )}
             </Nav>
           </Navbar.Collapse>

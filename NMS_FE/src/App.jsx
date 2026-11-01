@@ -9,7 +9,6 @@ import UserManager from './pages/users/UserManager'
 import Settings from './pages/setting/Settings'
 import RequireRoles from './components/RequireRoles'
 import Register from './pages/auth/Register'
-import Portal from './pages/portal/Portal'
 import Profile from './pages/auth/Profile'
 import PortalLayout from './components/PortalLayout';
 import PortalHome from './pages/portal/PortalHome';
@@ -26,7 +25,6 @@ function App() {
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/portal" element={<Portal />} />
       <Route path="/account" element={<Profile />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />

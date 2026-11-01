@@ -14,6 +14,7 @@ import com.mvc.nms_be.service.EngagementService;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -26,6 +27,7 @@ public class EngagementServiceImpl implements EngagementService {
 
     @Override
     @Transactional
+    @PreAuthorize("isAuthenticated()")
     public ReactionResponseDto toggleReaction(Integer articleId) {
         NewsArticle article = findArticle(articleId);
         Integer currentUserId = SecurityUtils.getCurrentUser().getAccountId();
@@ -58,6 +60,7 @@ public class EngagementServiceImpl implements EngagementService {
 
     @Override
     @Transactional
+    @PreAuthorize("permitAll()")
     public ViewCountResponseDto incrementViewCount(Integer articleId) {
         // findArticle ném 404 nếu không tồn tại, bỏ existsById thừa
         NewsArticle article = findArticle(articleId);
@@ -68,7 +71,7 @@ public class EngagementServiceImpl implements EngagementService {
     }
 
     private NewsArticle findArticle(Integer articleId) {
-        return newsArticleRepository.findById(articleId)
+        return newsArticleRepository.findPublishedForUpdate(articleId)
                 .orElseThrow(() -> new ResourceNotFoundException("News article not found: " + articleId));
     }
 }

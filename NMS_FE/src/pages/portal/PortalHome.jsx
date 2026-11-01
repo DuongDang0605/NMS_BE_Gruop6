@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { Row, Col, Card, Form, InputGroup, Button, Badge, Spinner, Alert, Pagination, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { getPublishedArticles } from '../../api/portal';
@@ -19,6 +19,7 @@ const PortalHome = () => {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const activeRequest = useRef(null);
 
   // Quản lý Modal Popup "Tất cả chuyên mục"
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -32,7 +33,10 @@ const PortalHome = () => {
   }, []);
 
   // Tải bài viết khi filter / page thay đổi
-  const fetchArticles = async (targetPage = page) => {
+  const fetchArticles = useCallback(async (targetPage = 0) => {
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
     try {
       setLoading(true);
       setError('');
@@ -43,17 +47,20 @@ const PortalHome = () => {
       if (keyword.trim()) params.keyword = keyword.trim();
       if (selectedCategory) params.categoryId = Number(selectedCategory);
 
-      const res = await getPublishedArticles(params);
+      const res = await getPublishedArticles(params, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       setArticles(res?.content || []);
       setTotalPages(res?.totalPages || 0);
       setTotalElements(res?.totalElements || 0);
       setPage(targetPage);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Không thể tải danh sách bài báo.');
+      if (!controller.signal.aborted) {
+        setError(err?.response?.data?.message || 'Không thể tải danh sách bài báo.');
+      }
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
-  };
+  }, [keyword, selectedCategory]);
 
   useEffect(() => {
     // Debounce tìm kiếm theo từ khóa và đổi category: hoãn gọi API 350ms khi gõ
@@ -61,8 +68,11 @@ const PortalHome = () => {
       fetchArticles(0);
     }, 350);
 
-    return () => clearTimeout(timer);
-  }, [keyword, selectedCategory]);
+    return () => {
+      clearTimeout(timer);
+      activeRequest.current?.abort();
+    };
+  }, [fetchArticles]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -246,7 +256,7 @@ const PortalHome = () => {
                     <i className="bi bi-lightning-fill me-1"></i>Tiêu điểm
                   </Badge>
                   <span className="text-primary fw-semibold small">{featuredArticle.categoryName}</span>
-                  <span className="text-muted small">• {formatDate(featuredArticle.publishedDate)}</span>
+                  <span className="text-muted small">• {formatDate(featuredArticle.publishedDate || featuredArticle.createdDate)}</span>
                 </div>
 
                 <h2 className="portal-lead-title mb-3">
@@ -298,7 +308,7 @@ const PortalHome = () => {
                       <span className="text-primary fw-bold text-uppercase" style={{ fontSize: '0.75rem' }}>
                         {item.categoryName || 'Tin tức'}
                       </span>
-                      <small className="text-muted">{formatDate(item.publishedDate)}</small>
+                      <small className="text-muted">{formatDate(item.publishedDate || item.createdDate)}</small>
                     </div>
 
                     <h3 className="portal-card-title mb-2">

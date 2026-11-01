@@ -8,6 +8,8 @@ import com.mvc.nms_be.repository.NotificationRepository;
 import com.mvc.nms_be.repository.SystemAccountRepository;
 import com.mvc.nms_be.repository.TagRepository;
 import com.mvc.nms_be.service.DashboardService;
+import com.mvc.nms_be.security.SecurityUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -24,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'MODERATOR')")
 public class DashboardServiceImpl implements DashboardService {
 
     private final NewsArticleRepository articleRepository;
@@ -34,12 +37,28 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> overview() {
+        if (SecurityUtils.hasRole("CONTRIBUTOR")) {
+            var articles = articleRepository.findByCreatedBy_AccountId(SecurityUtils.getCurrentAccountId());
+            long active = articles.stream().filter(article -> Integer.valueOf(1).equals(article.getNewsStatus())).count();
+            return Map.of("scope", "personal", "totalArticles", articles.size(),
+                    "activeArticles", active, "inactiveArticles", articles.size() - active);
+        }
+        if (SecurityUtils.hasRole("MODERATOR")) {
+            var result = new HashMap<String, Object>(notifications(SecurityUtils.getCurrentAccountId()));
+            result.put("scope", "moderation");
+            return result;
+        }
         long totalArticles = articleRepository.count();
         long activeArticles = articleRepository.countByNewsStatus(1);
+        if (SecurityUtils.hasRole("EDITOR")) {
+            return Map.of("scope", "editorial", "totalArticles", totalArticles, "activeArticles", activeArticles,
+                    "inactiveArticles", totalArticles - activeArticles, "totalCategories", categoryRepository.count(),
+                    "totalTags", tagRepository.count());
+        }
         return Map.of(
                 "totalAccounts", accountRepository.count(),
                 "totalAdmins", accountRepository.countByAccountRole(SystemAccount.ADMIN_ROLE),
-                "totalStaff", accountRepository.countByAccountRole(SystemAccount.STAFF_ROLE),
+                "totalContributors", accountRepository.countByAccountRole(SystemAccount.CONTRIBUTOR_ROLE),
                 "totalCategories", categoryRepository.count(),
                 "totalTags", tagRepository.count(),
                 "totalArticles", totalArticles,
@@ -49,6 +68,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public Map<String, Object> news() {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         List<Map<String, Object>> byCategory = new ArrayList<>();
@@ -85,6 +105,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR', 'MODERATOR') and @recipientAuthorization.canAccess(#recipientId)")
     public Map<String, Object> notifications(Integer recipientId) {
         if (recipientId == null || recipientId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "recipientId must be a positive integer");
@@ -102,7 +123,19 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTRIBUTOR', 'EDITOR')")
     public Map<String, Object> engagement() {
+        if (SecurityUtils.hasRole("CONTRIBUTOR")) {
+            var ownArticles = articleRepository.findByCreatedBy_AccountId(SecurityUtils.getCurrentAccountId());
+            List<TrendingArticleDto> trending = ownArticles.stream()
+                    .filter(article -> Integer.valueOf(1).equals(article.getNewsStatus()))
+                    .sorted(java.util.Comparator.comparingInt(com.mvc.nms_be.entity.NewsArticle::getViewCount).reversed()
+                            .thenComparing(java.util.Comparator.comparingInt(com.mvc.nms_be.entity.NewsArticle::getLikeCount).reversed()))
+                    .limit(5).map(article -> new TrendingArticleDto(article.getNewsArticleId(), article.getNewsTitle(),
+                            article.getViewCount(), article.getLikeCount())).toList();
+            return Map.of("scope", "personal", "totalViews", ownArticles.stream().mapToLong(article -> article.getViewCount()).sum(),
+                    "totalLikes", ownArticles.stream().mapToLong(article -> article.getLikeCount()).sum(), "top5Trending", trending);
+        }
         // tổng view và like toàn hệ thống
         List<Object[]> sumRows = articleRepository.sumViewsAndLikes();
         long totalViews = 0;

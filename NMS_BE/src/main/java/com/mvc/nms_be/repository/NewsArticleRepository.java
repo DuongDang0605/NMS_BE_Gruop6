@@ -8,12 +8,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface NewsArticleRepository extends JpaRepository<NewsArticle, Integer> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select article from NewsArticle article where article.newsArticleId = :id and article.newsStatus = 1")
+    Optional<NewsArticle> findPublishedForUpdate(@Param("id") Integer id);
 
     // ==================== QUERY & SEARCH METHODS ====================
 

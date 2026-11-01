@@ -10,12 +10,12 @@
 | 2 | `ROLE_CONTRIBUTOR` | Tạo bản nháp; chỉ xem/sửa/xóa bài của mình, chỉ sửa/xóa khi còn nháp; dashboard cá nhân; không tự xuất bản |
 | 3 | `ROLE_EDITOR` | Xem bài trong tòa soạn, tạo/sửa bản nháp của mình; xuất bản/gỡ bài qua API trạng thái; dashboard tòa soạn |
 | 4 | `ROLE_MODERATOR` | Dashboard nội bộ và thông báo của mình; không quản lý bài viết, tài khoản hoặc cấu hình |
-| 5 | `ROLE_READER` | Portal đọc tin đã xuất bản, profile và đổi mật khẩu cá nhân; không vào dashboard hoặc API quản trị |
-| Khách | Không có token | Đăng ký Reader, đăng nhập, refresh, OTP mở khóa, đọc tin công khai và đọc taxonomy |
+| 5 | `ROLE_READER` | Portal đọc tin đã xuất bản, Like/Unlike, thông báo của mình, profile và đổi mật khẩu cá nhân; không vào dashboard hoặc API quản trị |
+| Khách | Không có token | Đăng ký Reader, đăng nhập, refresh, OTP mở khóa, đọc tin công khai, ghi lượt xem và đọc taxonomy |
 
 Vai trò 2 cũ được đổi tên từ Staff sang Contributor, giữ nguyên ID tài khoản và mật khẩu. Hằng `STAFF_ROLE` chỉ giữ làm alias tương thích cho tích hợp cũ; JWT không cấp `ROLE_STAFF`.
 
-`SecurityConfig` chỉ khai báo ranh giới công khai/xác thực. Swagger/OpenAPI, POST đăng nhập/đăng ký/refresh/OTP, GET portal/news-public/taxonomy được mở; các request còn lại yêu cầu token. Từng controller/service dùng `@PreAuthorize` để kiểm tra role. `GET /api/v1/auth/me` vẫn cần đăng nhập. `DispatcherType.ERROR` được phép để giữ nguyên mã lỗi khi servlet xử lý lỗi nội bộ.
+`SecurityConfig` chỉ khai báo ranh giới công khai/xác thực. Swagger/OpenAPI, POST đăng nhập/đăng ký/refresh/OTP, POST `/api/v1/news/{id}/views`, GET portal/news-public/taxonomy được mở; các request còn lại yêu cầu token. Từng controller/service dùng `@PreAuthorize` để kiểm tra role. `GET /api/v1/auth/me` vẫn cần đăng nhập. `DispatcherType.ERROR` được phép để giữ nguyên mã lỗi khi servlet xử lý lỗi nội bộ.
 
 `NotificationController` kiểm tra người nhận: người dùng chỉ đọc/đánh dấu/xóa thông báo của mình, Admin được quản lý mọi người nhận; chỉ Admin tạo thông báo. Dashboard thông báo áp dụng cùng kiểm tra người nhận và chỉ dành cho các vai trò nội bộ.
 
@@ -41,13 +41,19 @@ Luồng khóa ở lần sai mật khẩu thứ 4 và mở khóa bằng email OTP
 
 Các endpoint quản trị `/api/v1/news` áp dụng role Admin/Contributor/Editor. Contributor chỉ nhận bài do chính mình tạo ở cả danh sách, tìm kiếm và lọc. Khi tạo/sửa bài, tác giả/người sửa lấy từ phiên đăng nhập; các ID giả mạo trong body không được sử dụng. Contributor không được thay trạng thái xuất bản bằng POST, PUT hoặc PATCH. Editor/Admin dùng PATCH `/{id}/status`.
 
-Portal đọc tin qua GET `/api/v1/portal/news`, `/{id}`; alias `/api/v1/news/public`, `/{id}`. Các endpoint này luôn lọc bài đã xuất bản, không lộ bản nháp.
+Portal mới đọc tin qua GET `/api/v1/portal/articles` (phân trang/lọc) và `/{id}`. Các URL cũ GET `/api/v1/portal/news`, `/{id}` và alias `/api/v1/news/public`, `/{id}` tiếp tục hoạt động. Các endpoint này luôn lọc bài đã xuất bản, không lộ bản nháp.
 
-Mã nguồn hiện tại vẫn dùng `NewsStatus` dạng số: `0` = nháp/chưa công khai, `1` = đã công khai. Chưa triển khai state machine đầy đủ `PENDING_REVIEW`, `CHANGES_REQUESTED`, `SCHEDULED`, `ARCHIVED`, review queue/audit trail, comment/moderation/reactions. Các module đó thuộc phần nghiệp vụ riêng trong kế hoạch và phải có method security khi được bổ sung. Dashboard Moderator hiện chỉ có số liệu thông báo cá nhân, chưa có số liệu bình luận. Category và Settings controller hiện chưa có CRUD handler; annotation đã đặt sẵn cho quản trị, API đọc công khai cần ghi đè annotation ở từng method khi bổ sung. NewsTag giữ URL hiện có `/api/news-tags`.
+POST `/api/v1/news/{id}/views` cho khách và tài khoản đăng nhập; POST `/api/v1/news/{id}/reactions` yêu cầu đăng nhập, hỗ trợ cả 5 role. Cả hai chỉ thao tác bài đã xuất bản, khóa hàng bài viết trong transaction để tránh mất bộ đếm khi nhiều request đồng thời. Phản hồi Like dùng `isLikedByCurrentUser`, `articleId`, `likeCount`. Frontend chỉ ghi lượt xem sau khi tải chi tiết thành công và lưu dấu trong session sau khi API ghi nhận thành công.
+
+Category đã có CRUD và cây danh mục: các GET công khai, tạo/sửa/xóa chỉ Admin ở cả controller và service. Dashboard `/overview` giữ scope theo role; `/engagement` dành cho Admin/Editor và Contributor (chỉ số bài của chính mình). Moderator chỉ nhận số liệu thông báo cá nhân, frontend không gọi engagement. `/news` dành cho Admin/Editor. Thông báo giữ kiểm tra người nhận ở cả controller và service sau khi tích hợp module Dev 3.
+
+Mã nguồn hiện tại vẫn dùng `NewsStatus` dạng số: `0` = nháp/chưa công khai, `1` = đã công khai. Chưa triển khai state machine đầy đủ `PENDING_REVIEW`, `CHANGES_REQUESTED`, `SCHEDULED`, `ARCHIVED`, review queue/audit trail và comment/moderation. Các module đó thuộc phần nghiệp vụ riêng trong kế hoạch và phải có method security khi được bổ sung. Dashboard Moderator hiện chỉ có số liệu thông báo cá nhân, chưa có số liệu bình luận. Settings controller hiện chưa có CRUD handler. NewsTag giữ URL hiện có `/api/news-tags`.
 
 ## Database và chạy ứng dụng
 
 Chạy `database/migrations/004-report2-account-roles.sql` trên database đích trước khi chạy IDE/JAR. Migration mở rộng check constraint 1..5, thêm `IsVerified` và đánh dấu tài khoản nội bộ cũ đã xác minh. Chạy lại không đặt lại trạng thái xác minh đã chỉnh. `Start-Backend.ps1` tự chạy migration này sau các migration khóa tài khoản/OTP.
+
+Migration `005-article-engagement-counters.sql` thêm ViewCount/LikeCount với mặc định 0 cho database đã có bài viết; chạy lại không đặt lại các bộ đếm đã tồn tại. `Start-Backend.ps1` tự chạy sau migration 004. Entity cũng khai báo DB default để Hibernate thêm cột được trên bảng có dữ liệu.
 
 Cấu hình JWT/CORS vẫn dùng `JWT_SECRET`, `JWT_ACCESS_EXPIRATION_MS`, `JWT_REFRESH_EXPIRATION_MS`, `JWT_ISSUER`, `CORS_ALLOWED_ORIGINS`. Không seed hoặc ghi đè mật khẩu tài khoản Admin. JWT secret chưa cấu hình thì dùng khóa local ngẫu nhiên, token không tồn tại qua lần khởi động lại.
 
@@ -60,16 +66,16 @@ Cấu hình JWT/CORS vẫn dùng `JWT_SECRET`, `JWT_ACCESS_EXPIRATION_MS`, `JWT_
 - `src/api/auth.js` tập trung login/register/refresh/me và khôi phục OTP; `src/api/user.js` tập trung CRUD/Verify/profile/đổi mật khẩu.
 - User form/filter hỗ trợ 5 vai trò, badge Verified/Unverified, nút Verify/Unverify và lọc xác minh.
 - Dashboard dùng các chỉ số khác nhau theo role; Contributor không nhận tổng số người dùng hoặc thống kê toàn hệ thống.
-- Trang News/Category hiện vẫn dùng mock dữ liệu local; các nút thao tác được giới hạn theo role, chưa thay thế nghiệp vụ frontend của thành viên khác.
+- Trang Category đã dùng API thật; chỉ Admin thấy nút tạo/sửa/xóa. Trang News hiện vẫn dùng mock dữ liệu local.
 - `api.js` không tự refresh khi login/register/OTP thất bại. Các API bảo vệ gặp 401 thì refresh một lần; 403 giữ phiên và báo thiếu quyền.
 
 ## Kiểm thử local
 
-Toàn bộ thư mục test backend/frontend được Git ignore theo yêu cầu. Test mới `Report2AuthorizationTests` kiểm tra 5 role, JWT/refresh, profile, role assignment, Verify, sở hữu bản nháp, chống giả tác giả, ngăn tự xuất bản, portal không lộ bản nháp, dashboard và đổi mật khẩu. Giữ các test khóa/OTP và kiểm tra Swagger/error dispatch.
+Test mới trong thư mục backend/frontend được Git ignore theo yêu cầu; file test đã được thành viên commit trước đó vẫn được Git theo dõi. `Report2AuthorizationTests` kiểm tra 5 role, JWT/refresh, profile, role assignment, Verify, sở hữu bản nháp, chống giả tác giả, ngăn tự xuất bản, portal không lộ bản nháp, dashboard và đổi mật khẩu. `MergeIntegrationRegressionTests` kiểm tra public taxonomy/portal/views, quyền CRUD category, Like/Unlike cho 5 role, quyền thông báo và scope engagement. Giữ các test khóa/OTP và kiểm tra Swagger/error dispatch.
 
 ```powershell
 $env:JAVA_HOME = 'C:\path\to\jdk-21'
-.\mvnw.cmd test '-Dtest=Report2AuthorizationTests,UserSecurityCompletionTests,AccountLoginLockTests,AccountUnlockTests,SwaggerDocumentationTests,ApiErrorDispatchRegressionTests,DataInitializerTests' '-Dspring.jpa.show-sql=false'
+.\mvnw.cmd test '-Dtest=MergeIntegrationRegressionTests,Report2AuthorizationTests,UserSecurityCompletionTests,AccountLoginLockTests,AccountUnlockTests,SwaggerDocumentationTests,ApiErrorDispatchRegressionTests,DataInitializerTests,CategoryServiceTests' '-Dspring.jpa.show-sql=false'
 ```
 
 Frontend: `npm test`, `npm run lint`, `npm run build`. Test tích hợp dùng SQL Server local; test gửi mail dùng SMTP mock, không gửi thư tới người dùng thật.
@@ -85,4 +91,4 @@ Frontend: `npm test`, `npm run lint`, `npm run build`. Test tích hợp dùng SQ
 - Phân quyền method security; API công khai giới hạn rõ ràng, lỗi 400/401/403 nhất quán.
 - API client Auth/User, bảo vệ phiên refresh và điều hướng theo vai trò.
 
-Workflow biên tập, comment/moderation và engagement trong các file 02–04 của kế hoạch vẫn là phạm vi các module khác.
+Workflow biên tập và comment/moderation vẫn là phạm vi các module khác. Engagement/Category/Dashboard/Portal của Dev 3 đã được khớp với phân quyền hiện tại.

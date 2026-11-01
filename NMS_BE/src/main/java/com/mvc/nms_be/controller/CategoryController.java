@@ -31,6 +31,7 @@ public class CategoryController {
      * Trả về cây danh mục phân cấp để FE render menu navbar hoặc tree view.
      */
     @GetMapping("/tree")
+    @PreAuthorize("permitAll()")
     public List<CategoryTreeDto> tree() {
         return categoryService.getTree();
     }
@@ -40,11 +41,13 @@ public class CategoryController {
      * Trả về danh sách phẳng các category (dùng cho dropdown chọn parent).
      */
     @GetMapping
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<CategoryResponseDto>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<CategoryResponseDto> getCategoryById(@PathVariable Integer id) {
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }

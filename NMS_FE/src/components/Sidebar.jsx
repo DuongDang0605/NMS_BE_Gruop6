@@ -1,5 +1,6 @@
 import { Nav } from 'react-bootstrap';
 import { NavLink } from 'react-router-dom';
+import { canAccess } from '../services/roles';
 
 const Sidebar = ({ user }) => {
   return (
@@ -10,13 +11,15 @@ const Sidebar = ({ user }) => {
           <Nav.Link as={NavLink} to="/dashboard">
             <i className="bi bi-speedometer2 me-2"></i>Dashboard
           </Nav.Link>
+          {canAccess(user, [1, 2, 3]) && <>
           <Nav.Link as={NavLink} to="/category">
             <i className="bi bi-tags me-2"></i>Category
           </Nav.Link>
           <Nav.Link as={NavLink} to="/news">
             <i className="bi bi-newspaper me-2"></i>News
           </Nav.Link>
-          {user.accountRole === 1 && (
+          </>}
+          {canAccess(user, [1]) && (
             <Nav.Link as={NavLink} to="/users">
               <i className="bi bi-people me-2"></i>Users
             </Nav.Link>
@@ -25,9 +28,9 @@ const Sidebar = ({ user }) => {
           <Nav.Link as={NavLink} to="/portal">
             <i className="bi bi-globe me-2 text-primary"></i>Public Portal
           </Nav.Link>
-          <Nav.Link as={NavLink} to="/settings">
+          {canAccess(user, [1]) && <Nav.Link as={NavLink} to="/settings">
             <i className="bi bi-gear me-2"></i>Settings
-          </Nav.Link>
+          </Nav.Link>}
         </Nav>
       </div>
     </aside>

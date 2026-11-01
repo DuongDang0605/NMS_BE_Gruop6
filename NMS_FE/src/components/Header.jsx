@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Navbar, Container, Nav, Button, Dropdown, Badge, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/fpt-university-logo.png';
@@ -14,12 +14,12 @@ const Header = ({ user }) => {
 
   const recipientId = user?.accountId;
 
-  const fetchUnread = () => {
+  const fetchUnread = useCallback(() => {
     if (!recipientId) return;
     getUnreadCount(recipientId)
       .then((count) => setUnreadCount(count))
       .catch(() => { });
-  };
+  }, [recipientId]);
 
   useEffect(() => {
     fetchUnread();
@@ -42,7 +42,7 @@ const Header = ({ user }) => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [recipientId]);
+  }, [fetchUnread]);
 
   const loadNotifications = async () => {
     if (!recipientId) return;
@@ -206,6 +206,9 @@ const Header = ({ user }) => {
               </Dropdown.Menu>
             </Dropdown>
 
+            <Button variant="outline-secondary" size="sm" onClick={() => navigate('/account')}>
+              Tài khoản của tôi
+            </Button>
             <Navbar.Text className="user-copy me-lg-2">
               Signed in as: <span className="user-name">{user.accountName}</span>
             </Navbar.Text>

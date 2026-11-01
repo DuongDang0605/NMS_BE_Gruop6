@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -61,6 +62,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponseDto createCategory(CategoryRequestDto request) {
         if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
@@ -82,6 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponseDto updateCategory(Integer id, CategoryRequestDto request) {
         if (request == null || request.getCategoryName() == null || request.getCategoryName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
@@ -125,6 +128,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteCategory(Integer id) {
         if (!categoryRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id);

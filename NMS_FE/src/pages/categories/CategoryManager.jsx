@@ -1,6 +1,3 @@
-import { useState } from 'react';
-import { Table, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { mockCategories } from '../../mockData/categories';
 import { useOutletContext } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { Table, Button, Modal, Form, InputGroup, Alert, Spinner, Badge } from 'react-bootstrap';
@@ -17,7 +14,7 @@ const DEFAULT_CATEGORY = {
 const CategoryManager = () => {
   const { user } = useOutletContext();
   const canManage = user.accountRole === 1;
-  const [categories, setCategories] = useState(mockCategories);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -29,25 +26,29 @@ const CategoryManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (options = {}) => {
     try {
-      setLoading(true);
-      setError('');
-      const data = await getCategories();
+      const data = await getCategories(options);
+      if (options.signal?.aborted) return;
       setCategories(Array.isArray(data) ? data : []);
+      setError('');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Không thể tải danh sách danh mục.');
+      if (!options.signal?.aborted) setError(err?.response?.data?.message || 'Không thể tải danh sách danh mục.');
     } finally {
-      setLoading(false);
+      if (!options.signal?.aborted) setLoading(false);
     }
   };
 
-  const handleCloseModal = () => setShowModal(false);
-  const handleShowModal = (cat = { categoryId: '', categoryName: '', categoryDescription: '', isActive: 1 }) => {
-    if (!canManage) return;
-    setCurrentCategory(cat);
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    getCategories({ signal: controller.signal }).then((data) => {
+      if (!controller.signal.aborted) setCategories(Array.isArray(data) ? data : []);
+    }).catch((err) => {
+      if (!controller.signal.aborted) setError(err?.response?.data?.message || 'Không thể tải danh sách danh mục.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
   }, []);
 
   const handleCloseModal = () => {
@@ -56,6 +57,7 @@ const CategoryManager = () => {
   };
 
   const handleShowModal = (cat = DEFAULT_CATEGORY) => {
+    if (!canManage || submitting) return;
     setCurrentCategory({
       categoryId: cat.categoryId || null,
       categoryName: cat.categoryName || '',
@@ -69,6 +71,7 @@ const CategoryManager = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!canManage || submitting) return;
     if (!currentCategory.categoryName.trim()) {
       setActionError('Tên danh mục không được để trống.');
       return;
@@ -99,16 +102,14 @@ const CategoryManager = () => {
   };
 
   const handleDeleteConfirm = (id) => {
+    if (!canManage || submitting) return;
     setDeleteId(id);
     setActionError('');
     setShowConfirm(true);
   };
 
-  const deleteCategory = () => {
-    if (!canManage) return;
-    setCategories(categories.filter(c => c.categoryId !== deleteId));
-    setShowConfirm(false);
   const handleDelete = async () => {
+    if (!canManage || submitting) return;
     try {
       setSubmitting(true);
       await deleteCategory(deleteId);
@@ -150,7 +151,7 @@ const CategoryManager = () => {
       {error && (
         <Alert variant="danger" className="d-flex justify-content-between align-items-center">
           <span>{error}</span>
-          <Button variant="outline-danger" size="sm" onClick={loadData}>Thử lại</Button>
+          <Button variant="outline-danger" size="sm" onClick={() => { setLoading(true); loadData(); }}>Thử lại</Button>
         </Alert>
       )}
 
@@ -226,12 +227,14 @@ const CategoryManager = () => {
                     )}
                   </td>
                   <td className="text-center">
+                    {canManage && <>
                     <Button variant="warning" size="sm" className="me-2" onClick={() => handleShowModal(cat)}>
                       <i className="bi bi-pencil"></i> Edit
                     </Button>
                     <Button variant="danger" size="sm" onClick={() => handleDeleteConfirm(cat.categoryId)}>
                       <i className="bi bi-trash"></i> Delete
                     </Button>
+                    </>}
                   </td>
                 </tr>
               );

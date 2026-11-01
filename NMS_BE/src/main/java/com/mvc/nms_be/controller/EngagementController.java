@@ -4,6 +4,7 @@ import com.mvc.nms_be.dto.response.ReactionResponseDto;
 import com.mvc.nms_be.dto.response.ViewCountResponseDto;
 import com.mvc.nms_be.service.EngagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ public class EngagementController {
 
     // Toggle like/unlike bài viết. Yêu cầu đăng nhập
     @PostMapping("/reactions")
+    @PreAuthorize("isAuthenticated()")
     public ReactionResponseDto toggleReaction(@PathVariable Integer id) {
         return engagementService.toggleReaction(id);
     }
@@ -25,6 +27,7 @@ public class EngagementController {
 
      // Tăng lượt xem 1 đơn vị gọi mỗi khi người dùng mở trang chi tiết bài viết
     @PostMapping("/views")
+    @PreAuthorize("permitAll()")
     public ViewCountResponseDto incrementViewCount(@PathVariable Integer id) {
         return engagementService.incrementViewCount(id);
     }

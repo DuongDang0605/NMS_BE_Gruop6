@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Card, Row, Col, Spinner, Table, Badge } from 'react-bootstrap';
 import { getDashboardOverview, getDashboardEngagement } from '../../api/dashboard';
+import { useOutletContext } from 'react-router-dom';
+import { canAccess } from '../../services/roles';
 
 const StatCard = ({ title, value, icon, colorClass, loading, hasError }) => (
   <Card className={`stat-card ${colorClass} h-100`}>
@@ -17,6 +19,8 @@ const StatCard = ({ title, value, icon, colorClass, loading, hasError }) => (
 );
 
 const Dashboard = () => {
+  const { user } = useOutletContext();
+  const showEngagement = canAccess(user, [1, 2, 3]);
   const [overview, setOverview] = useState(null);
   const [engagement, setEngagement] = useState(null);
   const [error, setError] = useState('');
@@ -28,7 +32,7 @@ const Dashboard = () => {
 
     Promise.all([
       getDashboardOverview({ signal: controller.signal }),
-      getDashboardEngagement({ signal: controller.signal }),
+      showEngagement ? getDashboardEngagement({ signal: controller.signal }) : Promise.resolve(null),
     ])
       .then(([overviewData, engagementData]) => {
         if (isMounted) {
@@ -47,9 +51,22 @@ const Dashboard = () => {
       isMounted = false;
       controller.abort();
     };
-  }, [attempt]);
+  }, [attempt, showEngagement, user.accountId, user.accountRole]);
 
-  const loading = (!overview || !engagement) && !error;
+  const loading = (!overview || (showEngagement && !engagement)) && !error;
+  const cards = canAccess(user, [4]) ? [
+    ['Total Notifications', overview?.totalNotifications, 'bi-bell'],
+    ['Unread Notifications', overview?.unreadNotifications, 'bi-envelope'],
+    ['Read Notifications', overview?.readNotifications, 'bi-envelope-open'],
+  ] : canAccess(user, [1]) ? [
+    ['Total News', overview?.totalArticles, 'bi-newspaper'],
+    ['Total Categories', overview?.totalCategories, 'bi-tags'],
+    ['Total Users', overview?.totalAccounts, 'bi-people'],
+  ] : [
+    [canAccess(user, [2]) ? 'My News' : 'Total News', overview?.totalArticles, 'bi-newspaper'],
+    ['Published News', overview?.activeArticles, 'bi-check-circle'],
+    ['Unpublished News', overview?.inactiveArticles, 'bi-pencil'],
+  ];
 
   return (
     <div>
@@ -63,39 +80,17 @@ const Dashboard = () => {
 
       {/* Hàng 1: 3 Card tổng quan hệ thống */}
       <Row className="mb-3">
-        <Col md={4} className="mb-3">
-          <StatCard
-            title="Total News"
-            value={overview?.totalArticles}
-            icon="bi-newspaper"
-            colorClass="stat-card-orange"
-            loading={loading}
-            hasError={!!error}
-          />
-        </Col>
-        <Col md={4} className="mb-3">
-          <StatCard
-            title="Total Categories"
-            value={overview?.totalCategories}
-            icon="bi-tags"
-            colorClass="stat-card-blue"
-            loading={loading}
-            hasError={!!error}
-          />
-        </Col>
-        <Col md={4} className="mb-3">
-          <StatCard
-            title="Total Users"
-            value={overview?.totalAccounts}
-            icon="bi-people"
-            colorClass="stat-card-green"
-            loading={loading}
-            hasError={!!error}
-          />
-        </Col>
+        {cards.map(([title, value, icon], index) => (
+          <Col md={4} className="mb-3" key={title}>
+            <StatCard title={title} value={value} icon={icon}
+              colorClass={['stat-card-orange', 'stat-card-blue', 'stat-card-green'][index]}
+              loading={loading} hasError={!!error} />
+          </Col>
+        ))}
       </Row>
 
       {/* Hàng 2: 2 Card tương tác (Views & Likes từ API thật) */}
+      {showEngagement && <>
       <Row className="mb-4">
         <Col md={6} className="mb-3">
           <StatCard
@@ -176,6 +171,7 @@ const Dashboard = () => {
           </Table>
         </Card.Body>
       </Card>
+      </>}
     </div>
   );
 };

@@ -64,10 +64,10 @@ public class NewsArticle {
     @Column(name = "NewsStatus", nullable = false)
     private Integer newsStatus = 1;
 
-    @Column(name = "ViewCount", nullable = false)
+    @Column(name = "ViewCount", nullable = false, columnDefinition = "int default 0")
     private Integer viewCount = 0;
 
-    @Column(name = "LikeCount", nullable = false)
+    @Column(name = "LikeCount", nullable = false, columnDefinition = "int default 0")
     private Integer likeCount = 0;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
