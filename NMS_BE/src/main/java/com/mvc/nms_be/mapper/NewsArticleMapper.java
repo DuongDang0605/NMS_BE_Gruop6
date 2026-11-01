@@ -10,6 +10,8 @@ import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.entity.Tag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -70,9 +72,23 @@ public class NewsArticleMapper {
         }
 
         if (tags != null) {
-            article.getNewsTags().clear();
+            Set<Integer> newTagIds = tags.stream()
+                    .map(Tag::getTagId)
+                    .collect(Collectors.toSet());
+
+            // 1. Xóa các thẻ không còn được chọn
+            article.getNewsTags().removeIf(nt -> !newTagIds.contains(nt.getTag().getTagId()));
+
+            // 2. Tìm danh sách ID thẻ đã có sẵn
+            Set<Integer> existingTagIds = article.getNewsTags().stream()
+                    .map(nt -> nt.getTag().getTagId())
+                    .collect(Collectors.toSet());
+
+            // 3. Chỉ thêm các thẻ mới chưa tồn tại để tránh vi phạm Primary Key constraint
             for (Tag tag : tags) {
-                article.getNewsTags().add(new NewsTag(article, tag));
+                if (!existingTagIds.contains(tag.getTagId())) {
+                    article.getNewsTags().add(new NewsTag(article, tag));
+                }
             }
         }
     }

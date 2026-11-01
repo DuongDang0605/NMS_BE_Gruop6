@@ -8,6 +8,7 @@ import useArticleForm from "./news/useArticleForm";
 import useArticleActions from "./news/useArticleActions";
 import useTagManager from "./news/useTagManager";
 import { exportArticlesToCSV } from "./news/utils";
+import { normalizeStatus, ARTICLE_STATUS } from "./news/constants";
 
 import NewsHeader from "./news/components/NewsHeader";
 import NewsAlerts from "./news/components/NewsAlerts";
@@ -26,11 +27,15 @@ const NewsManager = () => {
   const navigate = useNavigate();
   const { user } = useOutletContext();
 
-  // --- Logic phân quyền (RBAC) từ nhánh develop ---
+  // --- Logic phân quyền (RBAC) ---
   const canPublish = [1, 3].includes(user?.accountRole);
-  const canEdit = (article) =>
-    user?.accountRole === 1 ||
-    (article?.createdById === user?.accountId && article?.newsStatus === 0);
+  const canEdit = (article) => {
+    if (!article) return false;
+    if (user?.accountRole === 1) return true; // Admin có quyền sửa mọi bài
+    const isOwner = article?.createdById === user?.accountId;
+    const norm = normalizeStatus(article?.newsStatus);
+    return isOwner && (norm === ARTICLE_STATUS.DRAFT || norm === ARTICLE_STATUS.CHANGES_REQUESTED);
+  };
 
   const {
     articles,
@@ -91,12 +96,13 @@ const NewsManager = () => {
     articles: filters.pagedArticles,
     categoryMap,
     tagMap,
-    user, // Truyền user xuống để table check quyền
-    canEdit, // Truyền hàm check quyền edit
-    canPublish, // Truyền cờ check quyền publish
+    user,
+    canEdit,
+    canPublish,
     onView: openDetail,
     onEdit: form.open,
     onToggleStatus: actions.toggleStatus,
+    onChangeStatus: actions.changeStatus,
     onDelete: actions.openDelete,
   };
 

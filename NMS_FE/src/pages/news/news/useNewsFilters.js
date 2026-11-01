@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { normalizeStatus } from './constants';
 
 const toTime = (d) => (d ? new Date(d).getTime() : 0);
 
@@ -32,7 +33,8 @@ const useNewsFilters = (articles) => {
     }
 
     if (filterStatus !== '') {
-      list = list.filter((a) => String(a.newsStatus) === String(filterStatus));
+      const targetNorm = normalizeStatus(filterStatus);
+      list = list.filter((a) => normalizeStatus(a.newsStatus) === targetNorm);
     }
 
     if (filterTag !== '') {

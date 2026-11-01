@@ -16,7 +16,7 @@ export async function getNewsArticles(params = {}, options = {}) {
     cleanParams.categoryId = Number(params.categoryId);
   }
   if (params.newsStatus !== undefined && params.newsStatus !== '' && params.newsStatus !== null) {
-    cleanParams.newsStatus = Number(params.newsStatus);
+    cleanParams.newsStatus = String(params.newsStatus).trim();
   }
   if (params.tagId !== undefined && params.tagId !== '' && params.tagId !== null) {
     cleanParams.tagId = Number(params.tagId);
@@ -56,13 +56,13 @@ export async function updateNewsArticle(id, payload) {
 }
 
 /**
- * Thay đổi nhanh trạng thái bài viết (0: Inactive / Lưu nháp, 1: Active / Đã xuất bản)
+ * Thay đổi trạng thái bài viết (DRAFT, PUBLISHED, ARCHIVED, ...)
  * @param {number|string} id
- * @param {number} status
+ * @param {string} status
  */
 export async function updateNewsArticleStatus(id, status) {
   const { data } = await api.patch(`/news/${id}/status`, null, {
-    params: { status: Number(status) },
+    params: { status: String(status) },
   });
   return data;
 }

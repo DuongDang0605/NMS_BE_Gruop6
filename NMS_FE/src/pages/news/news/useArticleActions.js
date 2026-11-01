@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { updateNewsArticleStatus, deleteNewsArticle } from '../../../api/news';
+import { normalizeStatus, STATUS_CONFIG, ARTICLE_STATUS } from './constants';
 
 // Đổi trạng thái nhanh + Xóa bài viết
 const useArticleActions = ({ articles, setArticles, setActionError, onSuccess, reloadData }) => {
@@ -7,10 +8,13 @@ const useArticleActions = ({ articles, setArticles, setActionError, onSuccess, r
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Toggle Status nhanh (1-click, optimistic update)
-  const toggleStatus = async (article, e) => {
-    e.stopPropagation();
-    const newStatus = article.newsStatus === 1 ? 0 : 1;
+  // Đổi sang một trạng thái cụ thể
+  const changeStatus = async (article, targetStatus, e) => {
+    if (e) e.stopPropagation();
+    const current = normalizeStatus(article.newsStatus);
+    const newStatus = normalizeStatus(targetStatus);
+    if (current === newStatus) return;
+
     const oldArticles = [...articles];
 
     setArticles((prev) =>
@@ -23,17 +27,25 @@ const useArticleActions = ({ articles, setArticles, setActionError, onSuccess, r
 
     try {
       await updateNewsArticleStatus(article.newsArticleId, newStatus);
-      onSuccess(
-        `Đã đổi trạng thái bài viết #${article.newsArticleId} sang ${
-          newStatus === 1 ? 'Đang hoạt động (Active)' : 'Đã ẩn (Inactive)'
-        }`
-      );
+      const label = STATUS_CONFIG[newStatus]?.label || newStatus;
+      onSuccess(`Đã chuyển trạng thái bài viết #${article.newsArticleId} sang "${label}"`);
     } catch (err) {
       setArticles(oldArticles);
       setActionError(
         err?.response?.data?.message || 'Không thể cập nhật trạng thái bài viết.'
       );
     }
+  };
+
+  // Toggle nhanh: Nếu đang PUBLISHED -> đổi sang ARCHIVED, ngược lại -> PUBLISHED
+  const toggleStatus = async (article, e) => {
+    if (e) e.stopPropagation();
+    const current = normalizeStatus(article.newsStatus);
+    const newStatus =
+      current === ARTICLE_STATUS.PUBLISHED
+        ? ARTICLE_STATUS.ARCHIVED
+        : ARTICLE_STATUS.PUBLISHED;
+    return changeStatus(article, newStatus, e);
   };
 
   const openDelete = (article, e) => {
@@ -65,8 +77,13 @@ const useArticleActions = ({ articles, setArticles, setActionError, onSuccess, r
 
   return {
     toggleStatus,
-    showDelete, deleteTarget, submitting,
-    openDelete, closeDelete, confirmDelete,
+    changeStatus,
+    showDelete,
+    deleteTarget,
+    submitting,
+    openDelete,
+    closeDelete,
+    confirmDelete,
   };
 };
 

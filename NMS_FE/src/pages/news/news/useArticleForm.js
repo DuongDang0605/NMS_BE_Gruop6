@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createNewsArticle, updateNewsArticle } from '../../../api/news';
 import { getSession } from '../../../services/session';
-import { DEFAULT_ARTICLE } from './constants';
+import { DEFAULT_ARTICLE, normalizeStatus, ARTICLE_STATUS } from './constants';
 
 // Modal Thêm / Sửa bài viết
 const useArticleForm = ({ setActionError, onSuccess, reloadData }) => {
@@ -21,7 +21,7 @@ const useArticleForm = ({ setActionError, onSuccess, reloadData }) => {
         newsContent: article.newsContent || '',
         newsSource: article.newsSource || '',
         categoryId: article.categoryId ? String(article.categoryId) : '',
-        newsStatus: article.newsStatus !== undefined ? article.newsStatus : 1,
+        newsStatus: normalizeStatus(article.newsStatus),
         tagIds: Array.isArray(article.tagIds)
           ? article.tagIds
           : Array.isArray(article.tags)
@@ -29,7 +29,10 @@ const useArticleForm = ({ setActionError, onSuccess, reloadData }) => {
           : [],
       });
     } else {
-      setFormData(DEFAULT_ARTICLE);
+      setFormData({
+        ...DEFAULT_ARTICLE,
+        newsStatus: ARTICLE_STATUS.DRAFT,
+      });
     }
     setShow(true);
   };
@@ -80,7 +83,7 @@ const useArticleForm = ({ setActionError, onSuccess, reloadData }) => {
         newsContent: formData.newsContent.trim(),
         newsSource: formData.newsSource ? formData.newsSource.trim() : null,
         categoryId: Number(formData.categoryId),
-        newsStatus: Number(formData.newsStatus),
+        newsStatus: normalizeStatus(formData.newsStatus),
         tagIds: formData.tagIds || [],
       };
 

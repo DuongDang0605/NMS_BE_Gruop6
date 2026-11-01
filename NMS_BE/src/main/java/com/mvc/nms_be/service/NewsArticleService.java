@@ -12,7 +12,7 @@ public interface NewsArticleService {
 
     List<NewsArticleResponseDto> getAllArticles();
 
-    List<NewsArticleResponseDto> searchArticles(String keyword, Integer categoryId, Integer newsStatus, Integer tagId);
+    List<NewsArticleResponseDto> searchArticles(String keyword, Integer categoryId, String newsStatus, Integer tagId);
 
     NewsArticleResponseDto getArticleById(Integer id);
 
@@ -22,7 +22,7 @@ public interface NewsArticleService {
 
     void deleteArticle(Integer id);
 
-    NewsArticleResponseDto updateArticleStatus(Integer id, Integer status);
+    NewsArticleResponseDto updateArticleStatus(Integer id, String status);
 
     List<NewsArticleResponseDto> getArticlesByCategory(Integer categoryId);
 
