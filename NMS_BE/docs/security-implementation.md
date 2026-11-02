@@ -51,9 +51,11 @@ Mã nguồn hiện tại vẫn dùng `NewsStatus` dạng số: `0` = nháp/chưa
 
 ## Database và chạy ứng dụng
 
-Chạy `database/migrations/004-report2-account-roles.sql` trên database đích trước khi chạy IDE/JAR. Migration mở rộng check constraint 1..5, thêm `IsVerified` và đánh dấu tài khoản nội bộ cũ đã xác minh. Chạy lại không đặt lại trạng thái xác minh đã chỉnh. `Start-Backend.ps1` tự chạy migration này sau các migration khóa tài khoản/OTP.
+Spring Boot tự chạy lại migration `001`–`006` theo thứ tự trước Hibernate ở mỗi lần khởi động IDE/Maven/JAR. Maven đóng gói các script từ `database/migrations` vào `db/migrations` trên classpath. `spring.sql.init.mode=always` bật việc chạy lặp lại; mỗi file được thực thi thành một batch T-SQL, lỗi migration dừng khởi động. `Start-Backend.ps1` chỉ chuẩn bị database rồi khởi động ứng dụng.
 
-Migration `005-article-engagement-counters.sql` thêm ViewCount/LikeCount với mặc định 0 cho database đã có bài viết; chạy lại không đặt lại các bộ đếm đã tồn tại. `Start-Backend.ps1` tự chạy sau migration 004. Entity cũng khai báo DB default để Hibernate thêm cột được trên bảng có dữ liệu.
+Migration `004-report2-account-roles.sql` mở rộng check constraint 1..5, thêm `IsVerified` và đánh dấu tài khoản nội bộ cũ đã xác minh. Chạy lại không đặt lại trạng thái xác minh đã chỉnh.
+
+Migration `005-article-engagement-counters.sql` thêm ViewCount/LikeCount với mặc định 0 cho database đã có bài viết; chạy lại không đặt lại các bộ đếm đã tồn tại. Spring Boot tự chạy sau migration 004. Entity cũng khai báo DB default để Hibernate thêm cột được trên bảng có dữ liệu.
 
 Cấu hình JWT/CORS vẫn dùng `JWT_SECRET`, `JWT_ACCESS_EXPIRATION_MS`, `JWT_REFRESH_EXPIRATION_MS`, `JWT_ISSUER`, `CORS_ALLOWED_ORIGINS`. Không seed hoặc ghi đè mật khẩu tài khoản Admin. JWT secret chưa cấu hình thì dùng khóa local ngẫu nhiên, token không tồn tại qua lần khởi động lại.
 

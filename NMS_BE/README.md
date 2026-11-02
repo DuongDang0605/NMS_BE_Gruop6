@@ -22,7 +22,7 @@ Luồng quên mật khẩu/mở khóa dùng chung cho cả tài khoản đang ho
 
 OTP hết hạn sau 5 phút, chỉ dùng một lần; sai 5 lần sẽ vô hiệu mã hiện tại. Mỗi tài khoản chỉ gửi lại sau 60 giây. Gửi lại sẽ thay mã cũ và vô hiệu quyền đổi mật khẩu đã cấp. OTP và reset token chỉ lưu dạng hash; API không trả OTP. Request gửi OTP trả thông báo chung, không tiết lộ email có tồn tại hay trạng thái khóa. Nếu gửi email thất bại, challenge được rollback để có thể thử lại.
 
-`Start-Backend.ps1` tự chạy `database/migrations/002-account-login-lock.sql` và `003-account-unlock-otp.sql`. Khi chạy IDE/JAR, chạy hai migration này trên database đích trước khi khởi động; script có thể chạy lại. Thời điểm hết hạn được lưu theo UTC.
+Spring Boot tự chạy các migration `001`–`006` trước Hibernate mỗi lần khởi động, bao gồm migration khóa tài khoản và OTP. Cơ chế này áp dụng cả khi chạy IntelliJ, Maven và JAR. Thời điểm hết hạn được lưu theo UTC.
 
 ### Cấu hình email OTP
 
@@ -74,17 +74,17 @@ Hibernate dùng `ddl-auto=update` để tạo/cập nhật bảng và giữ dữ
 
 ## Chạy thủ công hoặc bằng IDE
 
-Trước lần chạy đầu sau khi cập nhật Report 2, chạy các migration trong `database/migrations` theo thứ tự `001` đến `006` trên database đích. `006-article-editorial-workflow.sql` gỡ ràng buộc trạng thái `0/1` cũ, đổi `NewsStatus` sang `varchar(30)`, chuyển `1` thành `PUBLISHED`, `0` thành `ARCHIVED` và bổ sung thời điểm xuất bản. Script giữ nguyên bài viết và có thể chạy lại. Nếu bỏ qua bước này, Hibernate bị chặn ở `ALTER COLUMN NewsStatus` bởi `CK_NewsArticle_Status`.
+Chỉ cần database đích đã tồn tại và tài khoản kết nối có quyền chạy migration. Khi khởi động, Spring Boot tự chạy lại các script trong `database/migrations` theo thứ tự `001` đến `006`, trước khi Hibernate khởi tạo schema. Các script được đóng gói trong JAR tại `db/migrations`, nên không phụ thuộc working directory. Khi mở dự án bằng IntelliJ, reload Maven để nhận cấu hình resource mới.
+
+`006-article-editorial-workflow.sql` gỡ ràng buộc trạng thái `0/1` cũ, đổi `NewsStatus` sang `varchar(30)`, chuyển `1` thành `PUBLISHED`, `0` thành `ARCHIVED` và bổ sung thời điểm xuất bản. Các migration có thể chạy lại và giữ dữ liệu hiện có, không đặt lại password, trạng thái khóa/Verify hoặc bộ đếm tương tác đã tồn tại. Migration lỗi sẽ dừng khởi động, không bị bỏ qua.
+
+Cấu hình trong `application.properties`: `spring.sql.init.mode=always`, `spring.sql.init.schema-locations` liệt kê các script theo thứ tự và `spring.jpa.defer-datasource-initialization=false`. Mỗi file T-SQL được chạy thành một batch để giữ nguyên các khối `BEGIN/END` và câu SQL động. Khi thêm migration mới, bổ sung vào danh sách `schema-locations`; script phải hỗ trợ chạy lặp lại. Có thể tắt riêng cho môi trường do công cụ khác quản lý schema bằng `SPRING_SQL_INIT_MODE=never`.
 
 ```powershell
 $env:JAVA_HOME = 'C:\path\to\jdk-21'
 $env:DB_PASSWORD = '<mật khẩu sa trong SQL Server>'
 $env:SQLCMDPASSWORD = $env:DB_PASSWORD
 sqlcmd -S 'tcp:localhost,1433' -U sa -C -b -i .\database\create-database.sql
-Get-ChildItem .\database\migrations\*.sql | Sort-Object Name | ForEach-Object {
-    sqlcmd -S 'tcp:localhost,1433' -d FUNewsManagementSystem -U sa -C -b -i $_.FullName
-    if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($_.Name)" }
-}
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -110,7 +110,7 @@ $env:DB_PASSWORD = '<password>'
 .\mvnw.cmd spring-boot:run
 ```
 
-Không cần bật profile `sql-auth`; profile này vẫn được giữ để tương thích với cấu hình chạy cũ. Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Server local có chứng chỉ tự ký. Có thể đổi cổng HTTP bằng `SERVER_PORT` và bật SQL log bằng `SHOW_SQL=true`. Script `Start-Backend.ps1` chuẩn bị database trên `localhost:1433`; khi dùng instance khác, chạy các SQL script trên instance đích trước rồi chạy Maven như ví dụ trên.
+Không cần bật profile `sql-auth`; profile này vẫn được giữ để tương thích với cấu hình chạy cũ. Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Server local có chứng chỉ tự ký. Có thể đổi cổng HTTP bằng `SERVER_PORT` và bật SQL log bằng `SHOW_SQL=true`. Script `Start-Backend.ps1` tạo database trên `localhost:1433`; khi dùng instance khác, tạo database đích trước rồi chạy Maven với `DB_URL` tương ứng. Các migration tự chạy trên datasource được cấu hình.
 
 ## Entity và quy tắc
 
@@ -125,7 +125,7 @@ Không cần bật profile `sql-auth`; profile này vẫn được giữ để t
 
 Giữ nguyên tên bảng/cột trong sơ đồ report. Entity dùng `@Column` cho các trường chuỗi; nội dung bài viết chỉ định `nvarchar(max)`. Trạng thái bài viết theo Report 2: `DRAFT`, `PENDING_REVIEW`, `CHANGES_REQUESTED`, `APPROVED`, `SCHEDULED`, `PUBLISHED`, `ARCHIVED`; trạng thái danh mục vẫn là `0/1`. ID do SQL Server sinh, không dùng `Date.now()` từ frontend.
 
-Các cột văn bản đa ngôn ngữ được khai báo `nvarchar` rõ ràng. `Start-Backend.ps1` chạy migration `database/migrations/001-unicode-text-columns.sql` cho database cũ trước khi khởi động; khi chạy IDE/JAR, chạy script này trên database đích trước. Script giữ nguyên bản ghi và bỏ qua cột đã là `nvarchar`.
+Các cột văn bản đa ngôn ngữ được khai báo `nvarchar` rõ ràng. Migration `database/migrations/001-unicode-text-columns.sql` tự chạy trước Hibernate cho cả IDE/Maven/JAR. Script giữ nguyên bản ghi và bỏ qua cột đã là `nvarchar`.
 
 Quan hệ tag theo sơ đồ nhiều–nhiều: một tag được dùng bởi nhiều bài. Phần chữ trong report nói tag thuộc tối đa một bài và mâu thuẫn với sơ đồ; thiết kế hiện tại ưu tiên sơ đồ.
 
