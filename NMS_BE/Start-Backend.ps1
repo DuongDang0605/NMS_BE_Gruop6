@@ -69,6 +69,11 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw 'Article engagement-counter migration failed.'
     }
+    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
+        -i (Join-Path $PSScriptRoot 'database\migrations\006-article-editorial-workflow.sql')
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Article editorial-workflow migration failed.'
+    }
     & .\mvnw.cmd spring-boot:run
     if ($LASTEXITCODE -ne 0) {
         throw "Backend exited with code $LASTEXITCODE."

@@ -74,11 +74,17 @@ Hibernate dùng `ddl-auto=update` để tạo/cập nhật bảng và giữ dữ
 
 ## Chạy thủ công hoặc bằng IDE
 
+Trước lần chạy đầu sau khi cập nhật Report 2, chạy các migration trong `database/migrations` theo thứ tự `001` đến `006` trên database đích. `006-article-editorial-workflow.sql` gỡ ràng buộc trạng thái `0/1` cũ, đổi `NewsStatus` sang `varchar(30)`, chuyển `1` thành `PUBLISHED`, `0` thành `ARCHIVED` và bổ sung thời điểm xuất bản. Script giữ nguyên bài viết và có thể chạy lại. Nếu bỏ qua bước này, Hibernate bị chặn ở `ALTER COLUMN NewsStatus` bởi `CK_NewsArticle_Status`.
+
 ```powershell
 $env:JAVA_HOME = 'C:\path\to\jdk-21'
 $env:DB_PASSWORD = '<mật khẩu sa trong SQL Server>'
 $env:SQLCMDPASSWORD = $env:DB_PASSWORD
 sqlcmd -S 'tcp:localhost,1433' -U sa -C -b -i .\database\create-database.sql
+Get-ChildItem .\database\migrations\*.sql | Sort-Object Name | ForEach-Object {
+    sqlcmd -S 'tcp:localhost,1433' -d FUNewsManagementSystem -U sa -C -b -i $_.FullName
+    if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($_.Name)" }
+}
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -117,7 +123,7 @@ Không cần bật profile `sql-auth`; profile này vẫn được giữ để t
 | `NewsTag` | Khóa ghép `(NewsArticleID, TagID)` bằng `NewsTagId`, `@EmbeddedId` và `@MapsId` |
 | `Notification` | `NotificationID` tự tăng; FK bắt buộc tới người nhận; FK bài viết có thể NULL; `IsRead` chỉ nhận `0/1` |
 
-Giữ nguyên tên bảng/cột trong sơ đồ report. Entity dùng `@Column` cho các trường chuỗi; nội dung bài viết chỉ định `nvarchar(max)`. Trạng thái bài/danh mục chỉ nhận `0/1`. ID do SQL Server sinh, không dùng `Date.now()` từ frontend.
+Giữ nguyên tên bảng/cột trong sơ đồ report. Entity dùng `@Column` cho các trường chuỗi; nội dung bài viết chỉ định `nvarchar(max)`. Trạng thái bài viết theo Report 2: `DRAFT`, `PENDING_REVIEW`, `CHANGES_REQUESTED`, `APPROVED`, `SCHEDULED`, `PUBLISHED`, `ARCHIVED`; trạng thái danh mục vẫn là `0/1`. ID do SQL Server sinh, không dùng `Date.now()` từ frontend.
 
 Các cột văn bản đa ngôn ngữ được khai báo `nvarchar` rõ ràng. `Start-Backend.ps1` chạy migration `database/migrations/001-unicode-text-columns.sql` cho database cũ trước khi khởi động; khi chạy IDE/JAR, chạy script này trên database đích trước. Script giữ nguyên bản ghi và bỏ qua cột đã là `nvarchar`.
 
