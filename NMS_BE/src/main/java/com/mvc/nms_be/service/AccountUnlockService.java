@@ -35,8 +35,9 @@ public class AccountUnlockService {
     @Transactional
     public void requestOtp(UnlockRequestDto request) {
         SystemAccount account = find(request.accountEmail());
-        // Return the same success message for unknown, unlocked and recently requested accounts.
-        if (account == null || !account.isAccountLocked()) return;
+        // Password recovery is available whether or not the account is locked.
+        // Keep the same public response for unknown and recently requested accounts.
+        if (account == null) return;
         LocalDateTime now = now();
         if (account.getUnlockOtpSentAt() != null && account.getUnlockOtpSentAt().plusSeconds(60).isAfter(now)) return;
         String otp = String.format(Locale.ROOT, "%06d", RANDOM.nextInt(1_000_000));
@@ -53,7 +54,7 @@ public class AccountUnlockService {
     @Transactional(noRollbackFor = UnauthorizedException.class)
     public UnlockVerificationResponseDto verifyOtp(UnlockVerifyRequestDto request) {
         SystemAccount account = find(request.accountEmail());
-        if (account == null || !account.isAccountLocked() || account.getUnlockOtpHash() == null
+        if (account == null || account.getUnlockOtpHash() == null
                 || account.getUnlockOtpExpiresAt() == null || !account.getUnlockOtpExpiresAt().isAfter(now())
                 || account.getUnlockOtpAttempts() >= 5) {
             throw new UnauthorizedException(INVALID_OTP);
@@ -69,14 +70,14 @@ public class AccountUnlockService {
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         account.setUnlockResetTokenHash(hash(token));
         account.setUnlockResetExpiresAt(now().plusMinutes(5));
-        // Verification alone must never unlock the account.
+        // Verification alone must not change the password or account lock state.
         return new UnlockVerificationResponseDto(token, 300);
     }
 
     @Transactional
     public void resetPassword(UnlockResetRequestDto request) {
         SystemAccount account = find(request.accountEmail());
-        if (account == null || !account.isAccountLocked() || account.getUnlockResetTokenHash() == null
+        if (account == null || account.getUnlockResetTokenHash() == null
                 || account.getUnlockResetExpiresAt() == null || !account.getUnlockResetExpiresAt().isAfter(now())
                 || !MessageDigest.isEqual(hash(request.resetToken()).getBytes(StandardCharsets.US_ASCII),
                         account.getUnlockResetTokenHash().getBytes(StandardCharsets.US_ASCII))) {

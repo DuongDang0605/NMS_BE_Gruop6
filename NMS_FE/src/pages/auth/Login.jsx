@@ -86,7 +86,7 @@ const Login = () => {
           </Form>
           <Button variant={locked ? 'warning' : 'link'} className="w-100 mt-3" disabled={submitting}
             onClick={() => setShowUnlock(true)}>
-            {locked ? 'Request account unlock' : 'Account locked? Unlock with email OTP'}
+            {locked ? 'Request account unlock' : 'Unlock Account/Forgot password'}
           </Button>
           <div className="text-center mt-3"><Link to="/register">Create a Reader account</Link> · <Link to="/portal">Read campus news</Link></div>
           </Card.Body>

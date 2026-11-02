@@ -35,7 +35,7 @@ Lỗi filter trả JSON `ApiErrorResponse`: 401 kèm `WWW-Authenticate: Bearer` 
 - Đăng ký Reader tuân thủ giới hạn 6–50 ký tự trong kế hoạch và tối đa 72 byte UTF-8; đổi mật khẩu/Admin CRUD giữ giới hạn BCrypt 6–72 ký tự, tối đa 72 byte.
 - Response login/profile có `roleName`, `isVerified`; không trả mật khẩu hoặc thông tin OTP.
 
-Luồng khóa ở lần sai mật khẩu thứ 4 và mở khóa bằng email OTP được giữ nguyên. Xem README để cấu hình SMTP.
+Tài khoản bị khóa ở lần sai mật khẩu thứ 4. Luồng email OTP tại `/api/v1/auth/unlock/*` phục vụ cả quên mật khẩu khi chưa bị khóa và mở khóa tài khoản. Cả hai đều phải xác thực OTP rồi đặt mật khẩu mới; chỉ xác thực OTP chưa thay đổi mật khẩu hoặc trạng thái khóa. Reset thành công vô hiệu Access/Refresh Token cũ, xóa challenge và đặt lại bộ đếm đăng nhập sai. Xem README để cấu hình SMTP.
 
 ## Bài viết và giới hạn triển khai
 

@@ -10,17 +10,17 @@ Chi tiết cấu hình JWT/CORS, ma trận quyền, tích hợp frontend và ki�
 
 ### Khóa tài khoản khi đăng nhập sai
 
-Sai mật khẩu quá 3 lần liên tiếp (lần sai thứ 4) sẽ khóa tài khoản hẳn, không tự hết hạn. Đăng nhập thành công trước khi bị khóa sẽ đặt `FailedLoginAttempts` về 0. Bộ đếm và `AccountLocked` được lưu trong database; tài khoản bị khóa không thể đăng nhập, dùng Access Token hoặc Refresh Token trên các API có bảo vệ. Frontend Login hiển thị thông báo lỗi và nút **Request account unlock**. Người dùng cũng có thể chọn **Account locked? Unlock with email OTP** tại trang đăng nhập.
+Sai mật khẩu quá 3 lần liên tiếp (lần sai thứ 4) sẽ khóa tài khoản hẳn, không tự hết hạn. Đăng nhập thành công trước khi bị khóa sẽ đặt `FailedLoginAttempts` về 0. Bộ đếm và `AccountLocked` được lưu trong database; tài khoản bị khóa không thể đăng nhập, dùng Access Token hoặc Refresh Token trên các API có bảo vệ. Người dùng chọn **Forgot password** tại trang đăng nhập để đặt lại mật khẩu bằng email OTP, dù tài khoản có đang bị khóa hay không.
 
-Luồng khôi phục: nhập email tài khoản → nhận OTP 6 chữ số qua email → xác thực OTP → nhập và xác nhận mật khẩu mới → lưu mật khẩu và mở khóa. Xác thực OTP chưa mở khóa ngay. Người dùng phải đặt mật khẩu khác mật khẩu cũ rồi đăng nhập lại. Đổi mật khẩu vô hiệu hóa Access/Refresh Token cũ.
+Luồng quên mật khẩu/mở khóa dùng chung cho cả tài khoản đang hoạt động và tài khoản bị khóa: nhập email tài khoản → nhận OTP 6 chữ số qua email → xác thực OTP → nhập và xác nhận mật khẩu mới → lưu mật khẩu; nếu đang bị khóa thì đồng thời mở khóa. Xác thực OTP chưa thay đổi mật khẩu hoặc trạng thái khóa. Người dùng phải đặt mật khẩu khác mật khẩu cũ rồi đăng nhập lại. Đổi mật khẩu vô hiệu hóa Access/Refresh Token cũ. Giữ các endpoint `/unlock/*` để tương thích với frontend hiện tại.
 
 | Endpoint POST | Request | Kết quả |
 | --- | --- | --- |
-| `/api/v1/auth/unlock/request` | `accountEmail` | Gửi OTP đến email trong database nếu tài khoản đang bị khóa |
+| `/api/v1/auth/unlock/request` | `accountEmail` | Gửi OTP đến email trong database, kể cả tài khoản chưa bị khóa |
 | `/api/v1/auth/unlock/verify` | `accountEmail`, `otp` | Trả `resetToken` dùng một lần, hiệu lực 5 phút |
 | `/api/v1/auth/unlock/reset-password` | `accountEmail`, `resetToken`, `newPassword` | Đổi mật khẩu BCrypt, xóa thông tin khôi phục, đặt bộ đếm về 0 và mở khóa |
 
-OTP hết hạn sau 5 phút, chỉ dùng một lần; sai 5 lần sẽ vô hiệu mã hiện tại. Mỗi tài khoản chỉ gửi lại sau 60 giây. Gửi lại sẽ thay mã cũ và vô hiệu quyền đổi mật khẩu đã cấp. OTP và reset token chỉ lưu dạng hash; API không trả OTP. Request gửi OTP trả thông báo chung cho email không tồn tại/tài khoản chưa khóa. Nếu gửi email thất bại, challenge được rollback để có thể thử lại.
+OTP hết hạn sau 5 phút, chỉ dùng một lần; sai 5 lần sẽ vô hiệu mã hiện tại. Mỗi tài khoản chỉ gửi lại sau 60 giây. Gửi lại sẽ thay mã cũ và vô hiệu quyền đổi mật khẩu đã cấp. OTP và reset token chỉ lưu dạng hash; API không trả OTP. Request gửi OTP trả thông báo chung, không tiết lộ email có tồn tại hay trạng thái khóa. Nếu gửi email thất bại, challenge được rollback để có thể thử lại.
 
 `Start-Backend.ps1` tự chạy `database/migrations/002-account-login-lock.sql` và `003-account-unlock-otp.sql`. Khi chạy IDE/JAR, chạy hai migration này trên database đích trước khi khởi động; script có thể chạy lại. Thời điểm hết hạn được lưu theo UTC.
 
@@ -37,7 +37,7 @@ $env:MAIL_FROM = 'noreply@example.com'
 # Sau đó chạy backend với cấu hình database như bên dưới.
 ```
 
-Mặc định bật SMTP authentication và STARTTLS (bắt buộc). `MAIL_SMTP_AUTH=false` và `MAIL_STARTTLS=false` chỉ dùng cho SMTP local phục vụ kiểm thử nếu cần. Backend vẫn khởi động khi chưa cấu hình email; yêu cầu gửi OTP cho tài khoản bị khóa sẽ trả HTTP 503 nếu chưa cấu hình hoặc SMTP không gửi được. Không có mã OTP giả hoặc fallback ghi OTP ra log.
+Mặc định bật SMTP authentication và STARTTLS (bắt buộc). `MAIL_SMTP_AUTH=false` và `MAIL_STARTTLS=false` chỉ dùng cho SMTP local phục vụ kiểm thử nếu cần. Backend vẫn khởi động khi chưa cấu hình email; yêu cầu gửi OTP cho tài khoản tồn tại sẽ trả HTTP 503 nếu chưa cấu hình hoặc SMTP không gửi được. Không có mã OTP giả hoặc fallback ghi OTP ra log.
 
 ## Swagger UI
 

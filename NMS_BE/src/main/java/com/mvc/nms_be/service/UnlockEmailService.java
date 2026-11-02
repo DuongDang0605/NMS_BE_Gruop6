@@ -29,10 +29,10 @@ public class UnlockEmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(email);
-        message.setSubject("NMS - Account unlock verification code");
-        message.setText("Your account unlock code is: " + otp
+        message.setSubject("NMS - Password reset verification code");
+        message.setText("Your password reset code is: " + otp
                 + "\nThis code expires in 5 minutes and can only be used once."
-                + "\nAfter verification, set a new password to unlock your account."
+                + "\nAfter verification, set a new password. If your account is locked, it will also be unlocked."
                 + "\nIf you did not request this, ignore this email.");
         try {
             mailSender.send(message);
