@@ -13,7 +13,7 @@ import Profile from './pages/auth/Profile'
 import PortalLayout from './components/PortalLayout';
 import PortalHome from './pages/portal/PortalHome';
 import ArticleDetail from './pages/portal/ArticleDetail';
-
+import ModeratorDashboard from './pages/moderation/ModeratorDashboard';
 function App() {
   return (
     <Routes>
@@ -33,6 +33,7 @@ function App() {
         <Route path="news" element={<RequireRoles roles={[1, 2, 3]}><NewsManager /></RequireRoles>} />
         <Route path="users" element={<RequireAdmin><UserManager /></RequireAdmin>} />
         <Route path="settings" element={<RequireAdmin><Settings /></RequireAdmin>} />
+          <Route path="moderation" element={<RequireRoles roles={[1, 4]}><ModeratorDashboard /></RequireRoles>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/portal" replace />} />

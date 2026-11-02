@@ -4,7 +4,7 @@ import { Badge, Button, Spinner, Alert, Breadcrumb } from 'react-bootstrap';
 import { getArticleDetail } from '../../api/portal';
 import { recordView, toggleLike } from '../../api/engagement';
 import { getSession } from '../../services/session';
-
+import CommentSection from '../../components/CommentSection';
 const ArticleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -255,6 +255,7 @@ const ArticleDetail = () => {
           </Button>
         </div>
       </div>
+        <CommentSection articleId={article.articleId} />
     </article>
   );
 };

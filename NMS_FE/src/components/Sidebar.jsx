@@ -24,6 +24,11 @@ const Sidebar = ({ user }) => {
               <i className="bi bi-people me-2"></i>Users
             </Nav.Link>
           )}
+            {canAccess(user, [1, 4]) && (
+                <Nav.Link as={NavLink} to="/moderation">
+                    <i className="bi bi-shield-check me-2"></i>Moderation
+                </Nav.Link>
+            )}
           <hr />
           <Nav.Link as={NavLink} to="/portal">
             <i className="bi bi-globe me-2 text-primary"></i>Public Portal

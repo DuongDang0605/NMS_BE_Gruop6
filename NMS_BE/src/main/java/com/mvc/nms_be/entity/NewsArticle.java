@@ -70,6 +70,12 @@ public class NewsArticle {
     @Column(name = "LikeCount", nullable = false, columnDefinition = "int default 0")
     private Integer likeCount = 0;
 
+    @Column(name = "AllowComments", nullable = false, columnDefinition = "bit default 1")
+    private Boolean allowComments = true;
+
+    @Column(name = "CommentCount", nullable = false, columnDefinition = "int default 0")
+    private Integer commentCount = 0;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "CreatedByID", nullable = false, foreignKey = @ForeignKey(name = "FK_NewsArticle_Creator"))
     private SystemAccount createdBy;
