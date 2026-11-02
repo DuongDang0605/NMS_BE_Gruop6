@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/portal", "/api/v1/portal/**",
                                 "/api/v1/news/public", "/api/v1/news/public/**",
                                 "/api/v1/categories", "/api/v1/categories/**", "/api/v1/tags", "/api/v1/tags/**",
-                                "/api/v1/settings/public-configs").permitAll()
+                                "/api/v1/settings/public-configs","/api/v1/comments/**").permitAll()
                         // Business roles and ownership belong to method security in each module.
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
