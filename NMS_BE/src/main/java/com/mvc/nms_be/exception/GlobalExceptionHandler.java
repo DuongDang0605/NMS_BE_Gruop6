@@ -158,4 +158,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ApiErrorResponse(Instant.now(), status.value(),
                 resolved == null ? "Error" : resolved.getReasonPhrase(), message, path, errors);
     }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleBadRequest(IllegalArgumentException ex, WebRequest request) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), Map.of(), request);
+    }
 }

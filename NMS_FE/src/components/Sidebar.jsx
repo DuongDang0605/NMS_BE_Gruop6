@@ -1,6 +1,6 @@
-import { Nav } from 'react-bootstrap';
-import { NavLink } from 'react-router-dom';
-import { canAccess } from '../services/roles';
+import { Nav } from "react-bootstrap";
+import { NavLink } from "react-router-dom";
+import { canAccess } from "../services/roles";
 
 const Sidebar = ({ user }) => {
   return (
@@ -14,13 +14,15 @@ const Sidebar = ({ user }) => {
 
           {canAccess(user, [1, 2]) && (
             <Nav.Link as={NavLink} to="/author/articles">
-              <i className="bi bi-journal-text me-2 text-primary"></i>Bài viết của tôi
+              <i className="bi bi-journal-text me-2 text-primary"></i>Bài viết
+              của tôi
             </Nav.Link>
           )}
 
           {canAccess(user, [1, 3]) && (
             <Nav.Link as={NavLink} to="/editorial/queue">
-              <i className="bi bi-clipboard-check me-2 text-warning"></i>Duyệt xuất bản
+              <i className="bi bi-clipboard-check me-2 text-warning"></i>Duyệt
+              xuất bản
             </Nav.Link>
           )}
 
@@ -38,6 +40,12 @@ const Sidebar = ({ user }) => {
           {canAccess(user, [1]) && (
             <Nav.Link as={NavLink} to="/users">
               <i className="bi bi-people me-2"></i>Users
+            </Nav.Link>
+          )}
+
+          {canAccess(user, [1, 4]) && (
+            <Nav.Link as={NavLink} to="/moderation">
+              <i className="bi bi-shield-check me-2"></i>Moderation
             </Nav.Link>
           )}
 
