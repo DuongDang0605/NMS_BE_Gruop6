@@ -1,0 +1,30 @@
+package com.mvc.nms_be.service;
+
+import com.mvc.nms_be.dto.request.NewsArticleRequestDto;
+import com.mvc.nms_be.dto.response.NewsArticleResponseDto;
+import java.util.List;
+
+public interface NewsArticleService {
+
+    List<NewsArticleResponseDto> publishedArticles(String keyword, Integer categoryId, Integer tagId);
+
+    NewsArticleResponseDto publishedArticle(Integer id);
+
+    List<NewsArticleResponseDto> getAllArticles();
+
+    List<NewsArticleResponseDto> searchArticles(String keyword, Integer categoryId, String newsStatus, Integer tagId);
+
+    NewsArticleResponseDto getArticleById(Integer id);
+
+    NewsArticleResponseDto createArticle(NewsArticleRequestDto request);
+
+    NewsArticleResponseDto updateArticle(Integer id, NewsArticleRequestDto request);
+
+    void deleteArticle(Integer id);
+
+    NewsArticleResponseDto updateArticleStatus(Integer id, String status);
+
+    List<NewsArticleResponseDto> getArticlesByCategory(Integer categoryId);
+
+    List<NewsArticleResponseDto> getArticlesByTag(Integer tagId);
+}
