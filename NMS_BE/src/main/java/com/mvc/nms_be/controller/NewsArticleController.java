@@ -33,10 +33,12 @@ public class NewsArticleController {
     public ResponseEntity<List<NewsArticleResponseDto>> getAllArticles(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) Integer newsStatus,
+            @RequestParam(required = false) String newsStatus,
             @RequestParam(required = false) Integer tagId) {
-        if (keyword != null || categoryId != null || newsStatus != null || tagId != null) {
-            return ResponseEntity.ok(newsArticleService.searchArticles(keyword, categoryId, newsStatus, tagId));
+        String cleanKeyword = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
+        String cleanStatus = (newsStatus != null && !newsStatus.isBlank() && !"ALL".equalsIgnoreCase(newsStatus.trim())) ? newsStatus.trim() : null;
+        if (cleanKeyword != null || categoryId != null || cleanStatus != null || tagId != null) {
+            return ResponseEntity.ok(newsArticleService.searchArticles(cleanKeyword, categoryId, cleanStatus, tagId));
         }
         return ResponseEntity.ok(newsArticleService.getAllArticles());
     }
@@ -77,7 +79,7 @@ public class NewsArticleController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public ResponseEntity<NewsArticleResponseDto> updateStatus(
             @PathVariable Integer id,
-            @RequestParam Integer status) {
+            @RequestParam String status) {
         return ResponseEntity.ok(newsArticleService.updateArticleStatus(id, status));
     }
 

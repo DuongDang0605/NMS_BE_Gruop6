@@ -1,3 +1,5 @@
+import { normalizeStatus, STATUS_CONFIG } from './constants';
+
 export const formatDate = (isoString) => {
   if (!isoString) return '—';
   try {
@@ -50,6 +52,8 @@ export const exportArticlesToCSV = (articles, categoryMap, tagMap) => {
       : Array.isArray(a.tags)
       ? a.tags.map((t) => t.tagName).join('; ')
       : '';
+    const norm = normalizeStatus(a.newsStatus);
+    const statusLabel = STATUS_CONFIG[norm]?.label || a.newsStatus;
 
     return [
       a.newsArticleId,
@@ -59,7 +63,7 @@ export const exportArticlesToCSV = (articles, categoryMap, tagMap) => {
       esc(a.newsSource),
       esc(a.createdByName),
       esc(a.createdDate),
-      a.newsStatus === 1 ? 'Active' : 'Inactive',
+      esc(statusLabel),
       esc(tagNames),
     ];
   });

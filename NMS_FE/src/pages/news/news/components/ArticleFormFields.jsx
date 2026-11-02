@@ -1,6 +1,7 @@
 import { Col, Form, Row } from "react-bootstrap";
 import ContentEditor from "./ContentEditor";
 import TagPicker from "./TagPicker";
+import { normalizeStatus, STATUS_CONFIG, ARTICLE_STATUS } from "../constants";
 
 // Tab "Soạn thảo nội dung"
 const ArticleFormFields = ({
@@ -13,6 +14,9 @@ const ArticleFormFields = ({
 }) => {
   const setField = (field) => (e) =>
     setFormData({ ...formData, [field]: e.target.value });
+
+  const currentStatus = normalizeStatus(formData.newsStatus);
+  const statusMeta = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.DRAFT;
 
   return (
     <>
@@ -103,33 +107,34 @@ const ArticleFormFields = ({
         }
       />
 
-      <Form.Group className="mb-2 p-3 border rounded-3 bg-light d-flex justify-content-between align-items-center">
-        <div>
-          <div className="fw-bold">Trạng thái phát hành bài viết</div>
-          <div className="text-muted small">
-            {formData.newsStatus === 1
-              ? "Bài viết sẽ được hiển thị công khai trên Cổng bạn đọc (Portal)."
-              : "Lưu ở chế độ Nháp / Ẩn, chỉ biên tập viên nhìn thấy."}
-          </div>
-        </div>
-
-        <Form.Check
-          type="switch"
-          id="modal-article-status-switch"
-          checked={formData.newsStatus === 0}
-          onChange={(e) =>
-            setFormData({ ...formData, newsStatus: e.target.checked ? 0 : 1 })
-          }
-          label={
-            <span
-              className={`fw-bold ${formData.newsStatus === 1 ? "text-success" : "text-secondary"}`}
+      <Form.Group className="mb-2 p-3 border rounded-3 bg-light">
+        <Row className="align-items-center">
+          <Col md={7}>
+            <div className="fw-bold mb-1 d-flex align-items-center gap-2">
+              <i className={`bi ${statusMeta.icon} text-${statusMeta.badgeVariant}`}></i>
+              Trạng thái bài viết
+            </div>
+            <div className="text-muted small">
+              {currentStatus === ARTICLE_STATUS.PUBLISHED
+                ? "Bài viết sẽ được hiển thị công khai trên Cổng bạn đọc (Portal)."
+                : `Bài viết ở chế độ "${statusMeta.label}", chỉ người có thẩm quyền/tác giả nhìn thấy.`}
+            </div>
+          </Col>
+          <Col md={5} className="mt-2 mt-md-0">
+            <Form.Select
+              value={currentStatus}
+              onChange={(e) =>
+                setFormData({ ...formData, newsStatus: e.target.value })
+              }
             >
-              {formData.newsStatus === 0
-                ? "Đang hoạt động (Active)"
-                : "Đang ẩn (Inactive)"}
-            </span>
-          }
-        />
+              {Object.values(STATUS_CONFIG).map((sc) => (
+                <option key={sc.key} value={sc.key}>
+                  {sc.label} ({sc.key})
+                </option>
+              ))}
+            </Form.Select>
+          </Col>
+        </Row>
       </Form.Group>
     </>
   );

@@ -22,7 +22,13 @@ public class NewsArticleResponseDto {
     private String newsSource;
     private Integer categoryId;
     private String categoryName;
-    private Integer newsStatus;
+    private String newsStatus;
+    private LocalDateTime scheduledPublishDate;
+    private LocalDateTime publishedDate;
+    private Integer viewCount;
+    private Integer likeCount;
+    private Integer commentCount;
+    private Boolean allowComments;
     private Integer createdById;
     private String createdByName;
     private Integer updatedById;

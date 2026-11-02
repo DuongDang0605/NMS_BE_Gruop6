@@ -1,4 +1,5 @@
 import { Button, Col, Form, InputGroup, Row } from 'react-bootstrap';
+import { STATUS_CONFIG } from '../constants';
 
 const NewsFilters = ({ filters, categories, tags }) => {
   const {
@@ -60,8 +61,11 @@ const NewsFilters = ({ filters, categories, tags }) => {
         <Col lg={2} sm={6}>
           <Form.Select value={filterStatus} onChange={onFilterChange(setFilterStatus)}>
             <option value="">-- Tất cả trạng thái --</option>
-            <option value="1">Đang hoạt động (Active)</option>
-            <option value="0">Đang ẩn / Nháp (Inactive)</option>
+            {Object.values(STATUS_CONFIG).map((sc) => (
+              <option key={sc.key} value={sc.key}>
+                {sc.label}
+              </option>
+            ))}
           </Form.Select>
         </Col>
 

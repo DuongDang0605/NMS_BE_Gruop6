@@ -1,6 +1,7 @@
 package com.mvc.nms_be.service.impl;
 
 import com.mvc.nms_be.dto.response.TrendingArticleDto;
+import com.mvc.nms_be.entity.NewsArticle;
 import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.repository.CategoryRepository;
 import com.mvc.nms_be.repository.NewsArticleRepository;
@@ -39,7 +40,7 @@ public class DashboardServiceImpl implements DashboardService {
     public Map<String, Object> overview() {
         if (SecurityUtils.hasRole("CONTRIBUTOR")) {
             var articles = articleRepository.findByCreatedBy_AccountId(SecurityUtils.getCurrentAccountId());
-            long active = articles.stream().filter(article -> Integer.valueOf(1).equals(article.getNewsStatus())).count();
+            long active = articles.stream().filter(article -> NewsArticle.STATUS_PUBLISHED.equalsIgnoreCase(article.getNewsStatus()) || "1".equals(article.getNewsStatus())).count();
             return Map.of("scope", "personal", "totalArticles", articles.size(),
                     "activeArticles", active, "inactiveArticles", articles.size() - active);
         }
@@ -49,7 +50,7 @@ public class DashboardServiceImpl implements DashboardService {
             return result;
         }
         long totalArticles = articleRepository.count();
-        long activeArticles = articleRepository.countByNewsStatus(1);
+        long activeArticles = articleRepository.countByNewsStatus(NewsArticle.STATUS_PUBLISHED);
         if (SecurityUtils.hasRole("EDITOR")) {
             return Map.of("scope", "editorial", "totalArticles", totalArticles, "activeArticles", activeArticles,
                     "inactiveArticles", totalArticles - activeArticles, "totalCategories", categoryRepository.count(),
@@ -128,7 +129,7 @@ public class DashboardServiceImpl implements DashboardService {
         if (SecurityUtils.hasRole("CONTRIBUTOR")) {
             var ownArticles = articleRepository.findByCreatedBy_AccountId(SecurityUtils.getCurrentAccountId());
             List<TrendingArticleDto> trending = ownArticles.stream()
-                    .filter(article -> Integer.valueOf(1).equals(article.getNewsStatus()))
+                    .filter(article -> NewsArticle.STATUS_PUBLISHED.equalsIgnoreCase(article.getNewsStatus()) || "1".equals(article.getNewsStatus()))
                     .sorted(java.util.Comparator.comparingInt(com.mvc.nms_be.entity.NewsArticle::getViewCount).reversed()
                             .thenComparing(java.util.Comparator.comparingInt(com.mvc.nms_be.entity.NewsArticle::getLikeCount).reversed()))
                     .limit(5).map(article -> new TrendingArticleDto(article.getNewsArticleId(), article.getNewsTitle(),
@@ -148,7 +149,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         // top 5 bài trending theo viewCount - type-safe từ Spring Data JPA
         List<TrendingArticleDto> trending = articleRepository
-                .findTop5ByNewsStatusOrderByViewCountDescLikeCountDesc(1)
+                .findTop5ByNewsStatusOrderByViewCountDescLikeCountDesc(NewsArticle.STATUS_PUBLISHED)
                 .stream()
                 .map(a -> new TrendingArticleDto(
                         a.getNewsArticleId(),

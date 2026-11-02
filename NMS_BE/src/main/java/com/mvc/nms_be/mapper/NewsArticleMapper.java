@@ -10,6 +10,8 @@ import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.entity.Tag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -23,7 +25,12 @@ public class NewsArticleMapper {
         article.setNewsContent(request.getNewsContent());
         article.setNewsSource(request.getNewsSource());
         article.setCategory(category);
-        article.setNewsStatus(request.getNewsStatus() != null ? request.getNewsStatus() : 1);
+        article.setNewsStatus(request.getNewsStatus() != null && !request.getNewsStatus().isBlank()
+                ? request.getNewsStatus() : NewsArticle.STATUS_DRAFT);
+        article.setScheduledPublishDate(request.getScheduledPublishDate());
+        if (request.getAllowComments() != null) {
+            article.setAllowComments(request.getAllowComments());
+        }
         article.setCreatedBy(createdBy);
 
         if (tags != null) {
@@ -51,17 +58,37 @@ public class NewsArticleMapper {
         if (category != null) {
             article.setCategory(category);
         }
-        if (request.getNewsStatus() != null) {
+        if (request.getNewsStatus() != null && !request.getNewsStatus().isBlank()) {
             article.setNewsStatus(request.getNewsStatus());
+        }
+        if (request.getScheduledPublishDate() != null) {
+            article.setScheduledPublishDate(request.getScheduledPublishDate());
+        }
+        if (request.getAllowComments() != null) {
+            article.setAllowComments(request.getAllowComments());
         }
         if (updatedBy != null) {
             article.setUpdatedBy(updatedBy);
         }
 
         if (tags != null) {
-            article.getNewsTags().clear();
+            Set<Integer> newTagIds = tags.stream()
+                    .map(Tag::getTagId)
+                    .collect(Collectors.toSet());
+
+            // 1. Xóa các thẻ không còn được chọn
+            article.getNewsTags().removeIf(nt -> !newTagIds.contains(nt.getTag().getTagId()));
+
+            // 2. Tìm danh sách ID thẻ đã có sẵn
+            Set<Integer> existingTagIds = article.getNewsTags().stream()
+                    .map(nt -> nt.getTag().getTagId())
+                    .collect(Collectors.toSet());
+
+            // 3. Chỉ thêm các thẻ mới chưa tồn tại để tránh vi phạm Primary Key constraint
             for (Tag tag : tags) {
-                article.getNewsTags().add(new NewsTag(article, tag));
+                if (!existingTagIds.contains(tag.getTagId())) {
+                    article.getNewsTags().add(new NewsTag(article, tag));
+                }
             }
         }
     }
@@ -90,6 +117,12 @@ public class NewsArticleMapper {
                 article.getCategory() != null ? article.getCategory().getCategoryId() : null,
                 article.getCategory() != null ? article.getCategory().getCategoryName() : null,
                 article.getNewsStatus(),
+                article.getScheduledPublishDate(),
+                article.getPublishedDate(),
+                article.getViewCount() != null ? article.getViewCount() : 0,
+                article.getLikeCount() != null ? article.getLikeCount() : 0,
+                article.getCommentCount() != null ? article.getCommentCount() : 0,
+                article.getAllowComments() != null ? article.getAllowComments() : true,
                 article.getCreatedBy() != null ? article.getCreatedBy().getAccountId() : null,
                 article.getCreatedBy() != null ? article.getCreatedBy().getAccountName() : null,
                 article.getUpdatedBy() != null ? article.getUpdatedBy().getAccountId() : null,

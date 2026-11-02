@@ -19,16 +19,24 @@ import org.springframework.stereotype.Repository;
 public interface NewsArticleRepository extends JpaRepository<NewsArticle, Integer> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select article from NewsArticle article where article.newsArticleId = :id and article.newsStatus = 1")
+    @Query("select article from NewsArticle article where article.newsArticleId = :id and (article.newsStatus = 'PUBLISHED' or article.newsStatus = '1')")
     Optional<NewsArticle> findPublishedForUpdate(@Param("id") Integer id);
 
     // ==================== QUERY & SEARCH METHODS ====================
 
     List<NewsArticle> findByCategory_CategoryId(Integer categoryId);
 
-    List<NewsArticle> findByNewsStatus(Integer newsStatus);
+    List<NewsArticle> findByNewsStatus(String newsStatus);
+
+    Page<NewsArticle> findByNewsStatus(String newsStatus, Pageable pageable);
 
     List<NewsArticle> findByCreatedBy_AccountId(Integer accountId);
+
+    Page<NewsArticle> findByCreatedBy_AccountId(Integer accountId, Pageable pageable);
+
+    Page<NewsArticle> findByCreatedBy_AccountIdAndNewsStatus(Integer accountId, String newsStatus, Pageable pageable);
+
+    List<NewsArticle> findAllByNewsStatusAndScheduledPublishDateLessThanEqual(String newsStatus, LocalDateTime dateTime);
 
     @Query("SELECT DISTINCT n FROM NewsArticle n JOIN n.newsTags nt WHERE nt.tag.tagId = :tagId")
     List<NewsArticle> findByTagId(@Param("tagId") Integer tagId);
@@ -39,12 +47,15 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
             " LOWER(n.headline) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             " LOWER(n.newsContent) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
             "(:categoryId IS NULL OR n.category.categoryId = :categoryId) AND " +
-            "(:newsStatus IS NULL OR n.newsStatus = :newsStatus) AND " +
+            "(:newsStatus IS NULL OR :newsStatus = '' OR " +
+            " UPPER(n.newsStatus) = UPPER(:newsStatus) OR " +
+            " (UPPER(:newsStatus) = 'PUBLISHED' AND n.newsStatus = '1') OR " +
+            " (UPPER(:newsStatus) = 'ARCHIVED' AND n.newsStatus = '0')) AND " +
             "(:tagId IS NULL OR nt.tag.tagId = :tagId) " +
             "ORDER BY n.createdDate DESC")
     List<NewsArticle> searchArticles(@Param("keyword") String keyword,
                                      @Param("categoryId") Integer categoryId,
-                                     @Param("newsStatus") Integer newsStatus,
+                                     @Param("newsStatus") String newsStatus,
                                      @Param("tagId") Integer tagId);
 
     // ==================== VALIDATION & COUNTING METHODS ====================
@@ -52,7 +63,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
     // dùng khi xóa category: còn bài viết thuộc danh mục thì không cho xóa
     boolean existsByCategory_CategoryId(Integer categoryId);
 
-    long countByNewsStatus(Integer newsStatus);
+    long countByNewsStatus(String newsStatus);
 
     long countByCreatedDateGreaterThanEqual(LocalDateTime start);
 
@@ -75,7 +86,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
                                             @Param("since7") LocalDateTime since7);
 
     // top 5 bài viết có lượt xem cao nhất (trending) trong trạng thái đã xuất bản - Spring Data JPA derived query
-    List<NewsArticle> findTop5ByNewsStatusOrderByViewCountDescLikeCountDesc(Integer newsStatus);
+    List<NewsArticle> findTop5ByNewsStatusOrderByViewCountDescLikeCountDesc(String newsStatus);
 
     // tổng ViewCount và tổng LikeCount toàn hệ thống cho Dashboard
     @Query(value = "SELECT ISNULL(SUM(ViewCount), 0), ISNULL(SUM(LikeCount), 0) FROM NewsArticle",
@@ -88,11 +99,11 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Intege
             nativeQuery = true)
     int incrementViewCount(@Param("articleId") Integer articleId);
 
-    // public portal: lấy bài đã active (newsStatus=1) theo keyword, category, tag, phân trang bằng Pageable
+    // public portal: lấy bài đã active (newsStatus='PUBLISHED' or '1') theo keyword, category, tag, phân trang bằng Pageable
     @EntityGraph(attributePaths = {"category", "createdBy"})
     @Query("SELECT DISTINCT a FROM NewsArticle a " +
             "LEFT JOIN a.newsTags nt " +
-            "WHERE a.newsStatus = 1 " +
+            "WHERE (a.newsStatus = 'PUBLISHED' OR a.newsStatus = '1') " +
             "AND (:keyword IS NULL OR :keyword = '' OR " +
             "     LOWER(a.newsTitle) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "     LOWER(a.headline) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +

@@ -33,7 +33,7 @@ import java.util.Map;
 public class CommentServiceImpl implements CommentService {
 
     /** NewsStatus = 1: bài viết đang hoạt động (giá trị mặc định trong NewsArticle). */
-    private static final int ARTICLE_STATUS_ACTIVE = 1;
+    private static final String ARTICLE_STATUS_ACTIVE = "STATUS_PUBLISHED";
 
     private final CommentRepository commentRepository;
     private final CommentReportRepository commentReportRepository;
@@ -89,6 +89,8 @@ public class CommentServiceImpl implements CommentService {
 
     // ------------------------------------------------------------------ Đăng bình luận
 
+    // ------------------------------------------------------------------ Đăng bình luận
+
     @Override
     @Transactional
     public CommentResponseDto postComment(CreateCommentRequestDto request) {
@@ -99,7 +101,8 @@ public class CommentServiceImpl implements CommentService {
         NewsArticle article = newsArticleRepository.findById(request.newsArticleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bài viết không tồn tại: " + request.newsArticleId()));
 
-        if (article.getNewsStatus() == null || article.getNewsStatus() != ARTICLE_STATUS_ACTIVE) {
+        // SỬ DỤNG TRỰC TIẾP NewsArticle.STATUS_PUBLISHED
+        if (article.getNewsStatus() == null || !NewsArticle.STATUS_PUBLISHED.equals(article.getNewsStatus())) {
             throw new IllegalArgumentException("Bài viết hiện không khả dụng để bình luận");
         }
         if (Boolean.FALSE.equals(article.getAllowComments())) {

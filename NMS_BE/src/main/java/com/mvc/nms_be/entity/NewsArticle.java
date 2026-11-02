@@ -29,13 +29,23 @@ import org.hibernate.annotations.Check;
         @Index(name = "IX_NewsArticle_Category", columnList = "CategoryID"),
         @Index(name = "IX_NewsArticle_Creator", columnList = "CreatedByID"),
         @Index(name = "IX_NewsArticle_Updater", columnList = "UpdatedByID"),
-        @Index(name = "IX_NewsArticle_CreatedDate", columnList = "CreatedDate")
+        @Index(name = "IX_NewsArticle_CreatedDate", columnList = "CreatedDate"),
+        @Index(name = "IX_NewsArticle_Status_Date", columnList = "NewsStatus, PublishedDate"),
+        @Index(name = "IX_NewsArticle_Scheduled", columnList = "NewsStatus, ScheduledPublishDate")
 })
-@Check(name = "CK_NewsArticle_Status", constraints = "NewsStatus IN (0, 1)")
+@Check(name = "CK_NewsArticle_Status", constraints = "NewsStatus IN ('DRAFT', 'PENDING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED')")
 @Getter
 @Setter
 @NoArgsConstructor
 public class NewsArticle {
+
+    public static final String STATUS_DRAFT = "DRAFT";
+    public static final String STATUS_PENDING_REVIEW = "PENDING_REVIEW";
+    public static final String STATUS_CHANGES_REQUESTED = "CHANGES_REQUESTED";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_SCHEDULED = "SCHEDULED";
+    public static final String STATUS_PUBLISHED = "PUBLISHED";
+    public static final String STATUS_ARCHIVED = "ARCHIVED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,8 +71,14 @@ public class NewsArticle {
     @JoinColumn(name = "CategoryID", nullable = false, foreignKey = @ForeignKey(name = "FK_NewsArticle_Category"))
     private Category category;
 
-    @Column(name = "NewsStatus", nullable = false)
-    private Integer newsStatus = 1;
+    @Column(name = "NewsStatus", nullable = false, length = 30)
+    private String newsStatus = STATUS_DRAFT;
+
+    @Column(name = "ScheduledPublishDate")
+    private LocalDateTime scheduledPublishDate;
+
+    @Column(name = "PublishedDate")
+    private LocalDateTime publishedDate;
 
     @Column(name = "ViewCount", nullable = false, columnDefinition = "int default 0")
     private Integer viewCount = 0;
@@ -70,11 +86,11 @@ public class NewsArticle {
     @Column(name = "LikeCount", nullable = false, columnDefinition = "int default 0")
     private Integer likeCount = 0;
 
-    @Column(name = "AllowComments", nullable = false, columnDefinition = "bit default 1")
-    private Boolean allowComments = true;
-
     @Column(name = "CommentCount", nullable = false, columnDefinition = "int default 0")
     private Integer commentCount = 0;
+
+    @Column(name = "AllowComments", nullable = false, columnDefinition = "bit default 1")
+    private Boolean allowComments = true;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "CreatedByID", nullable = false, foreignKey = @ForeignKey(name = "FK_NewsArticle_Creator"))
@@ -94,6 +110,21 @@ public class NewsArticle {
     private void onCreate() {
         if (createdDate == null) {
             createdDate = LocalDateTime.now(ZoneOffset.UTC);
+        }
+        if (viewCount == null) {
+            viewCount = 0;
+        }
+        if (likeCount == null) {
+            likeCount = 0;
+        }
+        if (commentCount == null) {
+            commentCount = 0;
+        }
+        if (allowComments == null) {
+            allowComments = true;
+        }
+        if (newsStatus == null || newsStatus.isBlank()) {
+            newsStatus = STATUS_DRAFT;
         }
     }
 
