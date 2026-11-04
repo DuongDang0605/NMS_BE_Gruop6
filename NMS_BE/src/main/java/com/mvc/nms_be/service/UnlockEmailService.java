@@ -13,27 +13,30 @@ import org.springframework.web.server.ResponseStatusException;
 public class UnlockEmailService {
     private final ObjectProvider<JavaMailSender> sender;
     private final String from;
+    private final String otpSubject;
+    private final String otpBody;
 
     public UnlockEmailService(ObjectProvider<JavaMailSender> sender,
-            @Value("${app.mail.from:${spring.mail.username:}}") String from) {
+            @Value("${app.mail.from:${spring.mail.username:}}") String from,
+            @Value("${app.mail.otp-subject}") String otpSubject,
+            @Value("${app.mail.otp-body}") String otpBody) {
         this.sender = sender;
         this.from = from;
+        this.otpSubject = otpSubject;
+        this.otpBody = otpBody;
     }
 
     public void sendOtp(String email, String otp) {
         JavaMailSender mailSender = sender.getIfAvailable();
-        if (mailSender == null || from.isBlank()) {
+        if (mailSender == null || from.isBlank() || otpSubject.isBlank() || !otpBody.contains("{otp}")) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                     "Email service is not configured. Please contact an administrator.");
         }
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(email);
-        message.setSubject("NMS - Password reset verification code");
-        message.setText("Your password reset code is: " + otp
-                + "\nThis code expires in 5 minutes and can only be used once."
-                + "\nAfter verification, set a new password. If your account is locked, it will also be unlocked."
-                + "\nIf you did not request this, ignore this email.");
+        message.setSubject(otpSubject);
+        message.setText(otpBody.replace("{otp}", otp));
         try {
             mailSender.send(message);
         } catch (MailException ex) {

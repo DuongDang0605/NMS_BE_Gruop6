@@ -26,6 +26,13 @@ Spring Boot tự chạy các migration `001`–`006` trước Hibernate mỗi l�
 
 ### Cấu hình email OTP
 
+Tiêu đề và nội dung thư nằm trong file `.env` tại thư mục backend (cùng cấp `pom.xml`). Backend tự đọc file này khi khởi động từ thư mục backend; nếu chưa có `.env`, dùng nội dung mẫu trong `.env.example`. Khi clone project, có thể tạo file riêng bằng `Copy-Item .env.example .env`.
+
+- `MAIL_OTP_SUBJECT`: tiêu đề email.
+- `MAIL_OTP_BODY`: toàn bộ nội dung email; giữ `{otp}` để backend chèn mã xác thực, dùng `\n` để xuống dòng.
+
+File dùng UTF-8, hỗ trợ tiếng Việt có dấu, theo dạng `KEY=value` không bọc giá trị trong dấu nháy. Sau khi sửa, khởi động lại backend; không cần sửa Java hoặc build lại JAR. Biến môi trường hệ điều hành/IDE được ưu tiên hơn file. `.env` được Git ignore, `.env.example` được lưu trong Git. Nội dung email rỗng hoặc thiếu `{otp}` sẽ được coi là chưa cấu hình khi gửi mail.
+
 Gửi mail dùng [Spring Boot Mail / JavaMailSender](https://docs.spring.io/spring-boot/reference/io/email.html). Cấu hình SMTP trong biến môi trường của backend (hoặc Run Configuration của IDE), ví dụ:
 
 ```powershell
