@@ -44,36 +44,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw 'Database setup failed. Check SQL Server Authentication and SQL login permissions.'
     }
-    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
-        -i (Join-Path $PSScriptRoot 'database\migrations\001-unicode-text-columns.sql')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Unicode schema migration failed.'
-    }
-    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
-        -i (Join-Path $PSScriptRoot 'database\migrations\002-account-login-lock.sql')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Account login-lock migration failed.'
-    }
-    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
-        -i (Join-Path $PSScriptRoot 'database\migrations\003-account-unlock-otp.sql')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Account unlock OTP migration failed.'
-    }
-    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
-        -i (Join-Path $PSScriptRoot 'database\migrations\004-report2-account-roles.sql')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Report 2 account-role migration failed.'
-    }
-    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
-        -i (Join-Path $PSScriptRoot 'database\migrations\005-article-engagement-counters.sql')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Article engagement-counter migration failed.'
-    }
-    & sqlcmd -S 'tcp:localhost,1433' -d 'FUNewsManagementSystem' -U $sqlLogin -C -b -l 10 `
-        -i (Join-Path $PSScriptRoot 'database\migrations\006-article-editorial-workflow.sql')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Article editorial-workflow migration failed.'
-    }
+    # Spring Boot runs the packaged migrations before Hibernate for every launch mode.
     & .\mvnw.cmd spring-boot:run
     if ($LASTEXITCODE -ne 0) {
         throw "Backend exited with code $LASTEXITCODE."

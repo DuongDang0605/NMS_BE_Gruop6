@@ -10,21 +10,28 @@ Chi tiết cấu hình JWT/CORS, ma trận quyền, tích hợp frontend và ki�
 
 ### Khóa tài khoản khi đăng nhập sai
 
-Sai mật khẩu quá 3 lần liên tiếp (lần sai thứ 4) sẽ khóa tài khoản hẳn, không tự hết hạn. Đăng nhập thành công trước khi bị khóa sẽ đặt `FailedLoginAttempts` về 0. Bộ đếm và `AccountLocked` được lưu trong database; tài khoản bị khóa không thể đăng nhập, dùng Access Token hoặc Refresh Token trên các API có bảo vệ. Frontend Login hiển thị thông báo lỗi và nút **Request account unlock**. Người dùng cũng có thể chọn **Account locked? Unlock with email OTP** tại trang đăng nhập.
+Sai mật khẩu quá 3 lần liên tiếp (lần sai thứ 4) sẽ khóa tài khoản hẳn, không tự hết hạn. Đăng nhập thành công trước khi bị khóa sẽ đặt `FailedLoginAttempts` về 0. Bộ đếm và `AccountLocked` được lưu trong database; tài khoản bị khóa không thể đăng nhập, dùng Access Token hoặc Refresh Token trên các API có bảo vệ. Người dùng chọn **Forgot password** tại trang đăng nhập để đặt lại mật khẩu bằng email OTP, dù tài khoản có đang bị khóa hay không.
 
-Luồng khôi phục: nhập email tài khoản → nhận OTP 6 chữ số qua email → xác thực OTP → nhập và xác nhận mật khẩu mới → lưu mật khẩu và mở khóa. Xác thực OTP chưa mở khóa ngay. Người dùng phải đặt mật khẩu khác mật khẩu cũ rồi đăng nhập lại. Đổi mật khẩu vô hiệu hóa Access/Refresh Token cũ.
+Luồng quên mật khẩu/mở khóa dùng chung cho cả tài khoản đang hoạt động và tài khoản bị khóa: nhập email tài khoản → nhận OTP 6 chữ số qua email → xác thực OTP → nhập và xác nhận mật khẩu mới → lưu mật khẩu; nếu đang bị khóa thì đồng thời mở khóa. Xác thực OTP chưa thay đổi mật khẩu hoặc trạng thái khóa. Người dùng phải đặt mật khẩu khác mật khẩu cũ rồi đăng nhập lại. Đổi mật khẩu vô hiệu hóa Access/Refresh Token cũ. Giữ các endpoint `/unlock/*` để tương thích với frontend hiện tại.
 
 | Endpoint POST | Request | Kết quả |
 | --- | --- | --- |
-| `/api/v1/auth/unlock/request` | `accountEmail` | Gửi OTP đến email trong database nếu tài khoản đang bị khóa |
+| `/api/v1/auth/unlock/request` | `accountEmail` | Gửi OTP đến email trong database, kể cả tài khoản chưa bị khóa |
 | `/api/v1/auth/unlock/verify` | `accountEmail`, `otp` | Trả `resetToken` dùng một lần, hiệu lực 5 phút |
 | `/api/v1/auth/unlock/reset-password` | `accountEmail`, `resetToken`, `newPassword` | Đổi mật khẩu BCrypt, xóa thông tin khôi phục, đặt bộ đếm về 0 và mở khóa |
 
-OTP hết hạn sau 5 phút, chỉ dùng một lần; sai 5 lần sẽ vô hiệu mã hiện tại. Mỗi tài khoản chỉ gửi lại sau 60 giây. Gửi lại sẽ thay mã cũ và vô hiệu quyền đổi mật khẩu đã cấp. OTP và reset token chỉ lưu dạng hash; API không trả OTP. Request gửi OTP trả thông báo chung cho email không tồn tại/tài khoản chưa khóa. Nếu gửi email thất bại, challenge được rollback để có thể thử lại.
+OTP hết hạn sau 5 phút, chỉ dùng một lần; sai 5 lần sẽ vô hiệu mã hiện tại. Mỗi tài khoản chỉ gửi lại sau 60 giây. Gửi lại sẽ thay mã cũ và vô hiệu quyền đổi mật khẩu đã cấp. OTP và reset token chỉ lưu dạng hash; API không trả OTP. Request gửi OTP trả thông báo chung, không tiết lộ email có tồn tại hay trạng thái khóa. Nếu gửi email thất bại, challenge được rollback để có thể thử lại.
 
-`Start-Backend.ps1` tự chạy `database/migrations/002-account-login-lock.sql` và `003-account-unlock-otp.sql`. Khi chạy IDE/JAR, chạy hai migration này trên database đích trước khi khởi động; script có thể chạy lại. Thời điểm hết hạn được lưu theo UTC.
+Spring Boot tự chạy các migration `001`–`006` trước Hibernate mỗi lần khởi động, bao gồm migration khóa tài khoản và OTP. Cơ chế này áp dụng cả khi chạy IntelliJ, Maven và JAR. Thời điểm hết hạn được lưu theo UTC.
 
 ### Cấu hình email OTP
+
+Tiêu đề và nội dung thư nằm trong file `.env` tại thư mục backend (cùng cấp `pom.xml`). Backend tự đọc file này khi khởi động từ thư mục backend; nếu chưa có `.env`, dùng nội dung mẫu trong `.env.example`. Khi clone project, có thể tạo file riêng bằng `Copy-Item .env.example .env`.
+
+- `MAIL_OTP_SUBJECT`: tiêu đề email.
+- `MAIL_OTP_BODY`: toàn bộ nội dung email; giữ `{otp}` để backend chèn mã xác thực, dùng `\n` để xuống dòng.
+
+File dùng UTF-8, hỗ trợ tiếng Việt có dấu, theo dạng `KEY=value` không bọc giá trị trong dấu nháy. Sau khi sửa, khởi động lại backend; không cần sửa Java hoặc build lại JAR. Biến môi trường hệ điều hành/IDE được ưu tiên hơn file. `.env` được Git ignore, `.env.example` được lưu trong Git. Nội dung email rỗng hoặc thiếu `{otp}` sẽ được coi là chưa cấu hình khi gửi mail.
 
 Gửi mail dùng [Spring Boot Mail / JavaMailSender](https://docs.spring.io/spring-boot/reference/io/email.html). Cấu hình SMTP trong biến môi trường của backend (hoặc Run Configuration của IDE), ví dụ:
 
@@ -37,7 +44,7 @@ $env:MAIL_FROM = 'noreply@example.com'
 # Sau đó chạy backend với cấu hình database như bên dưới.
 ```
 
-Mặc định bật SMTP authentication và STARTTLS (bắt buộc). `MAIL_SMTP_AUTH=false` và `MAIL_STARTTLS=false` chỉ dùng cho SMTP local phục vụ kiểm thử nếu cần. Backend vẫn khởi động khi chưa cấu hình email; yêu cầu gửi OTP cho tài khoản bị khóa sẽ trả HTTP 503 nếu chưa cấu hình hoặc SMTP không gửi được. Không có mã OTP giả hoặc fallback ghi OTP ra log.
+Mặc định bật SMTP authentication và STARTTLS (bắt buộc). `MAIL_SMTP_AUTH=false` và `MAIL_STARTTLS=false` chỉ dùng cho SMTP local phục vụ kiểm thử nếu cần. Backend vẫn khởi động khi chưa cấu hình email; yêu cầu gửi OTP cho tài khoản tồn tại sẽ trả HTTP 503 nếu chưa cấu hình hoặc SMTP không gửi được. Không có mã OTP giả hoặc fallback ghi OTP ra log.
 
 ## Swagger UI
 
@@ -74,17 +81,17 @@ Hibernate dùng `ddl-auto=update` để tạo/cập nhật bảng và giữ dữ
 
 ## Chạy thủ công hoặc bằng IDE
 
-Trước lần chạy đầu sau khi cập nhật Report 2, chạy các migration trong `database/migrations` theo thứ tự `001` đến `006` trên database đích. `006-article-editorial-workflow.sql` gỡ ràng buộc trạng thái `0/1` cũ, đổi `NewsStatus` sang `varchar(30)`, chuyển `1` thành `PUBLISHED`, `0` thành `ARCHIVED` và bổ sung thời điểm xuất bản. Script giữ nguyên bài viết và có thể chạy lại. Nếu bỏ qua bước này, Hibernate bị chặn ở `ALTER COLUMN NewsStatus` bởi `CK_NewsArticle_Status`.
+Chỉ cần database đích đã tồn tại và tài khoản kết nối có quyền chạy migration. Khi khởi động, Spring Boot tự chạy lại các script trong `database/migrations` theo thứ tự `001` đến `006`, trước khi Hibernate khởi tạo schema. Các script được đóng gói trong JAR tại `db/migrations`, nên không phụ thuộc working directory. Khi mở dự án bằng IntelliJ, reload Maven để nhận cấu hình resource mới.
+
+`006-article-editorial-workflow.sql` gỡ ràng buộc trạng thái `0/1` cũ, đổi `NewsStatus` sang `varchar(30)`, chuyển `1` thành `PUBLISHED`, `0` thành `ARCHIVED` và bổ sung thời điểm xuất bản. Các migration có thể chạy lại và giữ dữ liệu hiện có, không đặt lại password, trạng thái khóa/Verify hoặc bộ đếm tương tác đã tồn tại. Migration lỗi sẽ dừng khởi động, không bị bỏ qua.
+
+Cấu hình trong `application.properties`: `spring.sql.init.mode=always`, `spring.sql.init.schema-locations` liệt kê các script theo thứ tự và `spring.jpa.defer-datasource-initialization=false`. Mỗi file T-SQL được chạy thành một batch để giữ nguyên các khối `BEGIN/END` và câu SQL động. Khi thêm migration mới, bổ sung vào danh sách `schema-locations`; script phải hỗ trợ chạy lặp lại. Có thể tắt riêng cho môi trường do công cụ khác quản lý schema bằng `SPRING_SQL_INIT_MODE=never`.
 
 ```powershell
 $env:JAVA_HOME = 'C:\path\to\jdk-21'
 $env:DB_PASSWORD = '<mật khẩu sa trong SQL Server>'
 $env:SQLCMDPASSWORD = $env:DB_PASSWORD
 sqlcmd -S 'tcp:localhost,1433' -U sa -C -b -i .\database\create-database.sql
-Get-ChildItem .\database\migrations\*.sql | Sort-Object Name | ForEach-Object {
-    sqlcmd -S 'tcp:localhost,1433' -d FUNewsManagementSystem -U sa -C -b -i $_.FullName
-    if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($_.Name)" }
-}
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -110,7 +117,7 @@ $env:DB_PASSWORD = '<password>'
 .\mvnw.cmd spring-boot:run
 ```
 
-Không cần bật profile `sql-auth`; profile này vẫn được giữ để tương thích với cấu hình chạy cũ. Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Server local có chứng chỉ tự ký. Có thể đổi cổng HTTP bằng `SERVER_PORT` và bật SQL log bằng `SHOW_SQL=true`. Script `Start-Backend.ps1` chuẩn bị database trên `localhost:1433`; khi dùng instance khác, chạy các SQL script trên instance đích trước rồi chạy Maven như ví dụ trên.
+Không cần bật profile `sql-auth`; profile này vẫn được giữ để tương thích với cấu hình chạy cũ. Không commit mật khẩu. `trustServerCertificate=true` chỉ dùng cho SQL Server local có chứng chỉ tự ký. Có thể đổi cổng HTTP bằng `SERVER_PORT` và bật SQL log bằng `SHOW_SQL=true`. Script `Start-Backend.ps1` tạo database trên `localhost:1433`; khi dùng instance khác, tạo database đích trước rồi chạy Maven với `DB_URL` tương ứng. Các migration tự chạy trên datasource được cấu hình.
 
 ## Entity và quy tắc
 
@@ -125,7 +132,7 @@ Không cần bật profile `sql-auth`; profile này vẫn được giữ để t
 
 Giữ nguyên tên bảng/cột trong sơ đồ report. Entity dùng `@Column` cho các trường chuỗi; nội dung bài viết chỉ định `nvarchar(max)`. Trạng thái bài viết theo Report 2: `DRAFT`, `PENDING_REVIEW`, `CHANGES_REQUESTED`, `APPROVED`, `SCHEDULED`, `PUBLISHED`, `ARCHIVED`; trạng thái danh mục vẫn là `0/1`. ID do SQL Server sinh, không dùng `Date.now()` từ frontend.
 
-Các cột văn bản đa ngôn ngữ được khai báo `nvarchar` rõ ràng. `Start-Backend.ps1` chạy migration `database/migrations/001-unicode-text-columns.sql` cho database cũ trước khi khởi động; khi chạy IDE/JAR, chạy script này trên database đích trước. Script giữ nguyên bản ghi và bỏ qua cột đã là `nvarchar`.
+Các cột văn bản đa ngôn ngữ được khai báo `nvarchar` rõ ràng. Migration `database/migrations/001-unicode-text-columns.sql` tự chạy trước Hibernate cho cả IDE/Maven/JAR. Script giữ nguyên bản ghi và bỏ qua cột đã là `nvarchar`.
 
 Quan hệ tag theo sơ đồ nhiều–nhiều: một tag được dùng bởi nhiều bài. Phần chữ trong report nói tag thuộc tối đa một bài và mâu thuẫn với sơ đồ; thiết kế hiện tại ưu tiên sơ đồ.
 

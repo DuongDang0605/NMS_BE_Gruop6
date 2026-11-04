@@ -42,11 +42,11 @@ public class AuthController {
     }
 
     @PostMapping("/unlock/request")
-    @Operation(summary = "Email a one-time code to a locked account")
+    @Operation(summary = "Email a password reset code to an existing account, locked or unlocked")
     @SecurityRequirements
     public Map<String, String> requestUnlock(@Valid @RequestBody UnlockRequestDto request) {
         accountUnlockService.requestOtp(request);
-        return Map.of("message", "If this email belongs to a locked account, an OTP has been sent. Please wait 60 seconds before requesting another code.");
+        return Map.of("message", "If this email belongs to an account, an OTP has been sent. Please wait 60 seconds before requesting another code.");
     }
 
     @PostMapping("/unlock/verify")
@@ -57,11 +57,11 @@ public class AuthController {
     }
 
     @PostMapping("/unlock/reset-password")
-    @Operation(summary = "Set a new password and unlock the account after OTP verification")
+    @Operation(summary = "Reset the password after OTP verification and unlock the account if needed")
     @SecurityRequirements
     public Map<String, String> resetAndUnlock(@Valid @RequestBody UnlockResetRequestDto request) {
         accountUnlockService.resetPassword(request);
-        return Map.of("message", "Password changed and account unlocked. Sign in with your new password.");
+        return Map.of("message", "Password reset successfully. Sign in with your new password.");
     }
 
     @PostMapping("/login")
