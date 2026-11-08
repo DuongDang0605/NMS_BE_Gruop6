@@ -37,10 +37,14 @@ const useArticleActions = ({ articles, setArticles, setActionError, onSuccess, r
     }
   };
 
-  // Toggle nhanh: Nếu đang PUBLISHED -> đổi sang ARCHIVED, ngược lại -> PUBLISHED
+  // Toggle nhanh: Chỉ cho phép chuyển đổi hợp lệ giữa PUBLISHED <-> ARCHIVED
   const toggleStatus = async (article, e) => {
     if (e) e.stopPropagation();
     const current = normalizeStatus(article.newsStatus);
+    if (current !== ARTICLE_STATUS.PUBLISHED && current !== ARTICLE_STATUS.ARCHIVED) {
+      setActionError('Chỉ có thể chuyển đổi nhanh giữa trạng thái Đã xuất bản (PUBLISHED) và Lưu trữ (ARCHIVED). Các trạng thái khác cần xử lý theo quy trình biên tập.');
+      return;
+    }
     const newStatus =
       current === ARTICLE_STATUS.PUBLISHED
         ? ARTICLE_STATUS.ARCHIVED

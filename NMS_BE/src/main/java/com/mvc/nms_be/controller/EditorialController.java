@@ -73,6 +73,7 @@ public class EditorialController {
     }
 
     @GetMapping("/articles/{id}/audit-trail")
+    @PreAuthorize("hasAnyRole('EDITOR', 'ADMIN', 'CONTRIBUTOR')")
     public ResponseEntity<List<ArticleAuditLogResponseDto>> getArticleAuditTrail(@PathVariable Integer id) {
         return ResponseEntity.ok(editorialService.getArticleAuditTrail(id));
     }

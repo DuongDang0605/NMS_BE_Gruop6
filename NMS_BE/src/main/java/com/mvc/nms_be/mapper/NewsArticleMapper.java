@@ -58,12 +58,6 @@ public class NewsArticleMapper {
         if (category != null) {
             article.setCategory(category);
         }
-        if (request.getNewsStatus() != null && !request.getNewsStatus().isBlank()) {
-            article.setNewsStatus(request.getNewsStatus());
-        }
-        if (request.getScheduledPublishDate() != null) {
-            article.setScheduledPublishDate(request.getScheduledPublishDate());
-        }
         if (request.getAllowComments() != null) {
             article.setAllowComments(request.getAllowComments());
         }
