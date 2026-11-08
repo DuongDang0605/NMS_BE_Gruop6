@@ -21,6 +21,8 @@ public interface AuthorArticleService {
 
     List<ArticleReviewNoteResponseDto> getFeedbackNotes(Integer articleId);
 
+    List<ArticleAuditLogResponseDto> getArticleAuditTrail(Integer articleId);
+
     void deleteDraft(Integer articleId);
 }
 

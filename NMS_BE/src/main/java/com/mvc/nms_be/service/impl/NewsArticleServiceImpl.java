@@ -161,12 +161,8 @@ public class NewsArticleServiceImpl implements NewsArticleService {
                 requestedStatus = NewsArticle.STATUS_DRAFT;
             }
 
-            if (!canPublish && !requestedStatus.equalsIgnoreCase(article.getNewsStatus())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Use the Editor publication endpoint to change status");
-            }
-            request.setNewsStatus(requestedStatus);
-            if (NewsArticle.STATUS_PUBLISHED.equals(requestedStatus) && article.getPublishedDate() == null) {
-                article.setPublishedDate(LocalDateTime.now(ZoneOffset.UTC));
+            if (!requestedStatus.equalsIgnoreCase(article.getNewsStatus())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không được phép thay đổi trạng thái bài viết qua API cập nhật nội dung. Vui lòng sử dụng các chức năng quy trình biên tập.");
             }
         }
 
@@ -236,13 +232,54 @@ public class NewsArticleServiceImpl implements NewsArticleService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "News article not found with id: " + id));
 
         String oldStatus = article.getNewsStatus();
+        if (oldStatus != null && oldStatus.equalsIgnoreCase(normalizedStatus)) {
+            return newsArticleMapper.toResponseDto(article);
+        }
+
+        // Bắt buộc tuân thủ máy trạng thái biên tập (Editorial Workflow State Machine)
+        if (NewsArticle.STATUS_CHANGES_REQUESTED.equals(normalizedStatus)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Yêu cầu sửa đổi (CHANGES_REQUESTED) bắt buộc phải có ghi chú phản hồi. Vui lòng sử dụng API /api/v1/editorial/articles/" + id + "/request-changes");
+        }
+
+        if (NewsArticle.STATUS_SCHEDULED.equals(normalizedStatus)) {
+            if (article.getScheduledPublishDate() == null || article.getScheduledPublishDate().isBefore(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1))) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Hẹn giờ xuất bản (SCHEDULED) bắt buộc phải có thời gian xuất bản hợp lệ trong tương lai. Vui lòng sử dụng API /api/v1/editorial/articles/" + id + "/schedule");
+            }
+        }
+
+        // Kiểm tra tính hợp lệ của luồng chuyển trạng thái
+        boolean validTransition = false;
+        if (NewsArticle.STATUS_DRAFT.equalsIgnoreCase(oldStatus)) {
+            validTransition = NewsArticle.STATUS_PENDING_REVIEW.equals(normalizedStatus);
+        } else if (NewsArticle.STATUS_CHANGES_REQUESTED.equalsIgnoreCase(oldStatus)) {
+            validTransition = NewsArticle.STATUS_PENDING_REVIEW.equals(normalizedStatus);
+        } else if (NewsArticle.STATUS_PENDING_REVIEW.equalsIgnoreCase(oldStatus)) {
+            validTransition = NewsArticle.STATUS_PUBLISHED.equals(normalizedStatus)
+                    || NewsArticle.STATUS_SCHEDULED.equals(normalizedStatus);
+        } else if (NewsArticle.STATUS_SCHEDULED.equalsIgnoreCase(oldStatus)) {
+            validTransition = NewsArticle.STATUS_PUBLISHED.equals(normalizedStatus)
+                    || NewsArticle.STATUS_ARCHIVED.equals(normalizedStatus);
+        } else if (NewsArticle.STATUS_PUBLISHED.equalsIgnoreCase(oldStatus)) {
+            validTransition = NewsArticle.STATUS_ARCHIVED.equals(normalizedStatus);
+        } else if (NewsArticle.STATUS_ARCHIVED.equalsIgnoreCase(oldStatus)) {
+            validTransition = NewsArticle.STATUS_PUBLISHED.equals(normalizedStatus);
+        }
+
+        if (!validTransition) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    String.format("Không thể chuyển đổi trạng thái từ %s sang %s. Chuyển đổi không hợp lệ theo quy trình biên tập.", oldStatus, normalizedStatus));
+        }
+
         article.setNewsStatus(normalizedStatus);
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         if (NewsArticle.STATUS_PUBLISHED.equals(normalizedStatus) && article.getPublishedDate() == null) {
-            article.setPublishedDate(LocalDateTime.now(ZoneOffset.UTC));
+            article.setPublishedDate(now);
         }
         SystemAccount currentUser = SecurityUtils.getCurrentUser().getAccount();
         article.setUpdatedBy(currentUser);
-        article.setModifiedDate(LocalDateTime.now(ZoneOffset.UTC));
+        article.setModifiedDate(now);
         NewsArticle saved = newsArticleRepository.save(article);
 
         if (auditLogService != null) {

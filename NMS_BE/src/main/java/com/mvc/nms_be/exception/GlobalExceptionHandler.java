@@ -129,6 +129,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 Map.of(), request);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalState(IllegalStateException ex, WebRequest request) {
+        return error(HttpStatus.CONFLICT, ex.getMessage(), Map.of(), request);
+    }
+
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {

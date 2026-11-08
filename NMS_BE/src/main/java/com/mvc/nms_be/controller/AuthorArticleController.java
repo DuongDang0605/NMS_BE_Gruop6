@@ -1,6 +1,7 @@
 package com.mvc.nms_be.controller;
 
 import com.mvc.nms_be.dto.request.NewsArticleRequestDto;
+import com.mvc.nms_be.dto.response.ArticleAuditLogResponseDto;
 import com.mvc.nms_be.dto.response.ArticleReviewNoteResponseDto;
 import com.mvc.nms_be.dto.response.NewsArticleResponseDto;
 import com.mvc.nms_be.service.AuthorArticleService;
@@ -66,6 +67,11 @@ public class AuthorArticleController {
     @GetMapping("/{id}/feedback")
     public ResponseEntity<List<ArticleReviewNoteResponseDto>> getFeedbackNotes(@PathVariable Integer id) {
         return ResponseEntity.ok(authorArticleService.getFeedbackNotes(id));
+    }
+
+    @GetMapping("/{id}/audit-trail")
+    public ResponseEntity<List<ArticleAuditLogResponseDto>> getArticleAuditTrail(@PathVariable Integer id) {
+        return ResponseEntity.ok(authorArticleService.getArticleAuditTrail(id));
     }
 
     @DeleteMapping("/{id}")
