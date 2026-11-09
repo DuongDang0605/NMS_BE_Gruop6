@@ -11,6 +11,8 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
   const [formError, setFormError] = useState('');
   const isDelete = mode === 'delete';
   const isEdit = mode === 'edit';
+  const isAdminUser = Number(user?.accountRole) === 1;
+  const availableRoles = ROLES.filter((role) => isEdit && isAdminUser ? role.id === 1 : role.id !== 1);
   const title = isDelete ? 'Confirm Delete' : isEdit ? 'Edit User' : 'Add User';
 
   const close = () => {
@@ -26,8 +28,12 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
     event.preventDefault();
     if (saving) return;
     setFormError('');
+    if (isDelete && isAdminUser) {
+      setFormError('Admin accounts cannot be deleted.');
+      return;
+    }
     if (!isDelete) {
-      const errors = validateUser(currentUser);
+      const errors = validateUser(currentUser, isEdit ? user : null);
       setFieldErrors(errors);
       if (Object.keys(errors).length) return;
     }
@@ -72,18 +78,19 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
               ))}
               <Form.Group controlId="user-accountRole">
                 <Form.Label>Role</Form.Label>
-                <Form.Select value={currentUser.accountRole} isInvalid={!!fieldErrors.accountRole}
+                <Form.Select value={currentUser.accountRole} isInvalid={!!fieldErrors.accountRole} disabled={isEdit && isAdminUser}
                   onChange={(event) => editField('accountRole', Number(event.target.value))}>
-                  {ROLES.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
+                  {availableRoles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
                 </Form.Select>
                 <Form.Control.Feedback type="invalid">{fieldErrors.accountRole}</Form.Control.Feedback>
+                {isEdit && isAdminUser && <Form.Text>Admin role is fixed. You can update account details or reset the password.</Form.Text>}
               </Form.Group>
             </fieldset>
           )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={close} disabled={saving}>Cancel</Button>
-          <Button type="submit" variant={isDelete ? 'danger' : 'primary'} disabled={saving}>
+          <Button type="submit" variant={isDelete ? 'danger' : 'primary'} disabled={saving || (isDelete && isAdminUser)}>
             {saving ? (isDelete ? 'Deleting...' : 'Saving...') : (isDelete ? 'Delete' : 'Save')}
           </Button>
         </Modal.Footer>

@@ -107,6 +107,9 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     @Transactional
     public SystemAccountResponseDto create(SystemAccountRequestDto request) {
         SecurityUtils.requireAdmin();
+        if (Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(request.getAccountRole())) {
+            throw new ResourceConflictException("Admin accounts cannot be created", "accountRole");
+        }
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCase(email)) {
             throw duplicateEmail();
@@ -121,6 +124,13 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     public SystemAccountResponseDto update(Integer id, SystemAccountUpdateRequestDto request) {
         SecurityUtils.requireAdmin();
         SystemAccount account = findAccountForUpdate(id);
+        boolean isAdmin = Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(account.getAccountRole());
+        boolean requestsAdmin = Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(request.getAccountRole());
+        if (isAdmin != requestsAdmin) {
+            throw new ResourceConflictException(isAdmin
+                    ? "The role of an Admin account cannot be changed"
+                    : "Accounts cannot be changed to the Admin role", "accountRole");
+        }
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCaseAndAccountIdNot(email, id)) {
             throw duplicateEmail();
@@ -139,6 +149,9 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     public void delete(Integer id) {
         SecurityUtils.requireAdmin();
         SystemAccount account = findAccountForUpdate(id);
+        if (Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(account.getAccountRole())) {
+            throw new ResourceConflictException("Admin accounts cannot be deleted");
+        }
         accountRepository.delete(account);
         // Flush inside the request so FK conflicts can be returned as HTTP 409.
         accountRepository.flush();

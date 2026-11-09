@@ -180,7 +180,9 @@ const UserManager = () => {
               <td className="text-nowrap">
                 <Button variant="outline-secondary" size="sm" className="me-2" disabled={busy} onClick={() => toggleVerification(user)}>{user.isVerified ? 'Unverify' : 'Verify'}</Button>
                 <Button variant="warning" size="sm" className="me-2" disabled={busy} onClick={() => setModal({ mode: 'edit', user })}><i className="bi bi-pencil me-1" />Edit</Button>
-                <Button variant="danger" size="sm" disabled={busy} onClick={() => setModal({ mode: 'delete', user })}><i className="bi bi-trash me-1" />Delete</Button>
+                <Button variant="danger" size="sm" disabled={busy || Number(user.accountRole) === 1}
+                  title={Number(user.accountRole) === 1 ? 'Admin accounts cannot be deleted.' : undefined}
+                  onClick={() => setModal({ mode: 'delete', user })}><i className="bi bi-trash me-1" />Delete</Button>
               </td>
             </tr>
           ))}

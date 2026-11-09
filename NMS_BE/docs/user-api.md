@@ -69,7 +69,7 @@ Body POST/PUT:
 
 - `accountName`: bắt buộc, không chỉ chứa khoảng trắng, tối đa 100 ký tự. Bỏ khoảng trắng đầu/cuối khi lưu.
 - `accountEmail`: bắt buộc, đúng định dạng email, tối đa 254 ký tự. Lưu chữ thường, kiểm tra trùng không phân biệt hoa/thường.
-- `accountRole`: chấp nhận `1=Admin`, `2=Contributor`, `3=Editor`, `4=Moderator`, `5=Reader`. Khi bỏ qua thuộc tính, mặc định là `2`; không nhận `null`.
+- `accountRole`: khi tạo hoặc đổi role, chỉ chấp nhận `2=Contributor`, `3=Editor`, `4=Moderator`, `5=Reader`. Không được tạo tài khoản Admin hoặc đổi tài khoản khác sang Admin. Tài khoản Admin hiện có phải giữ `accountRole=1` khi cập nhật; vẫn được sửa tên, email và reset mật khẩu. Khi bỏ qua thuộc tính, mặc định là `2`; không nhận `null`.
 - `accountPassword`: POST bắt buộc; PUT có thể bỏ qua hoặc truyền `null` để giữ nguyên hash hiện tại. Khi cung cấp mật khẩu mới, không được chỉ chứa khoảng trắng, dài 6–72 ký tự và tối đa 72 byte UTF-8 (giới hạn BCrypt). Service luôn BCrypt encode mật khẩu mới trước khi lưu.
 - ID trong URL phải là số nguyên dương.
 
@@ -85,10 +85,10 @@ Các mã lỗi hiện áp dụng cho User:
 | 401 | Thiếu JWT, JWT không hợp lệ/hết hạn hoặc tài khoản không còn hợp lệ |
 | 403 | Tài khoản không có role Admin |
 | 404 | User không tồn tại |
-| 409 | Email trùng hoặc xung đột ràng buộc database, gồm xóa user đang được tham chiếu |
+| 409 | Email trùng; tạo Admin, đổi sang/đổi khỏi role Admin, xóa Admin; hoặc xung đột ràng buộc database, gồm xóa user đang được tham chiếu |
 | 500 | Lỗi ngoài dự kiến, trả thông báo chung |
 
-Khi xóa, database kiểm tra khóa ngoại; repository flush trong transaction để lỗi được xử lý ngay trong request. Service chỉ phụ thuộc repository và mapper của User.
+Service chặn xóa mọi tài khoản Admin, kể cả Admin hiện tại. Các tài khoản còn lại được database kiểm tra khóa ngoại; repository flush trong transaction để lỗi được xử lý ngay trong request.
 
 Ví dụ lỗi validation:
 
@@ -116,7 +116,7 @@ Lỗi không chứa mật khẩu hoặc giá trị đầu vào bị từ chối.
 | PUT | `/api/v1/users/me/password` | Mọi tài khoản đã đăng nhập; `{currentPassword, newPassword}`, trả 204 |
 | POST | `/api/v1/auth/register-reader` | Công khai; `{accountName, accountEmail, accountPassword}`, trả 201 |
 
-Đăng ký luôn tạo Reader chưa xác minh; bỏ qua role/isVerified giả mạo trong body. Mật khẩu đăng ký dài 6–50 ký tự, tối đa 72 byte UTF-8. Admin tạo tài khoản qua POST `/users` thì mặc định đã xác minh.
+Đăng ký luôn tạo Reader chưa xác minh; bỏ qua role/isVerified giả mạo trong body. Mật khẩu đăng ký dài 6–50 ký tự, tối đa 72 byte UTF-8. Các role Contributor, Editor, Moderator chỉ do Admin tạo hoặc phân quyền tại trang quản lý user qua API `/users`; tài khoản do Admin tạo mặc định đã xác minh.
 
 Đổi mật khẩu yêu cầu mật khẩu cũ đúng và mật khẩu mới khác mật khẩu cũ, dài 6–72 ký tự, tối đa 72 byte UTF-8. Sai mật khẩu cũ trả 400 và giữ phiên, không trả 401 để tránh refresh/logout nhầm. Thành công vô hiệu cả token cũ và mã khôi phục đang tồn tại; frontend yêu cầu đăng nhập lại. Admin thay email hoặc mật khẩu cũng vô hiệu challenge OTP/reset cũ. Thay đổi này không tự mở khóa tài khoản đang khóa.
 
