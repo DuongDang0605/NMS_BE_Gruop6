@@ -8,6 +8,7 @@ import com.mvc.nms_be.exception.ResourceConflictException;
 import com.mvc.nms_be.dto.response.TokenRefreshResponseDto;
 import com.mvc.nms_be.exception.UnauthorizedException;
 import com.mvc.nms_be.exception.AccountLockedException;
+import com.mvc.nms_be.exception.AccountInactiveException;
 import com.mvc.nms_be.repository.SystemAccountRepository;
 import com.mvc.nms_be.security.CustomUserDetailsService;
 import io.jsonwebtoken.JwtException;
@@ -25,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Locale;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
@@ -64,6 +66,9 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(noRollbackFor = UnauthorizedException.class)
     public LoginResponseDto login(LoginRequestDto request) {
         var account = accountRepository.findForLoginByEmail(request.getAccountEmail().strip()).orElse(null);
+        if (account != null && !account.isActive()) {
+            throw new AccountInactiveException();
+        }
         if (account != null && account.isAccountLocked()) {
             throw new AccountLockedException();
         }
@@ -82,6 +87,8 @@ public class AuthServiceImpl implements AuthService {
             return new LoginResponseDto(tokenProvider.generateAccessToken(user), tokenProvider.generateRefreshToken(user),
                     "Bearer", tokenProvider.getExpiresInSeconds(),
                     user.getAccountId(), user.getAccountName(), user.getAccountEmail(), user.getAccountRole(), user.getRoleName(), user.isVerified());
+        } catch (DisabledException ex) {
+            throw new AccountInactiveException();
         } catch (LockedException ex) {
             throw new AccountLockedException();
         } catch (BadCredentialsException ex) {

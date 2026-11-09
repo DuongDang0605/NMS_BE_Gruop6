@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Button, Form, Modal } from 'react-bootstrap';
-import { createUser, deleteUser, updateUser } from '../../api/user';
+import { activateUser, createUser, deactivateUser, updateUser } from '../../api/user';
 import { apiErrorMessage, emptyUser, userPayload, validateUser } from './userForm';
 import { ROLES } from '../../services/roles';
 
@@ -9,11 +9,13 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
   const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
-  const isDelete = mode === 'delete';
+  const isDeactivate = mode === 'deactivate';
+  const isActivate = mode === 'activate';
+  const isStatusChange = isDeactivate || isActivate;
   const isEdit = mode === 'edit';
   const isAdminUser = Number(user?.accountRole) === 1;
   const availableRoles = ROLES.filter((role) => isEdit && isAdminUser ? role.id === 1 : role.id !== 1);
-  const title = isDelete ? 'Confirm Delete' : isEdit ? 'Edit User' : 'Add User';
+  const title = isActivate ? 'Confirm Activation' : isDeactivate ? 'Confirm Deactivation' : isEdit ? 'Edit User' : 'Add User';
 
   const close = () => {
     if (!saving) onHide();
@@ -28,27 +30,28 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
     event.preventDefault();
     if (saving) return;
     setFormError('');
-    if (isDelete && isAdminUser) {
-      setFormError('Admin accounts cannot be deleted.');
+    if (isDeactivate && isAdminUser) {
+      setFormError('Admin accounts cannot be deactivated.');
       return;
     }
-    if (!isDelete) {
+    if (!isStatusChange) {
       const errors = validateUser(currentUser, isEdit ? user : null);
       setFieldErrors(errors);
       if (Object.keys(errors).length) return;
     }
     setSaving(true);
     try {
-      if (isDelete) await deleteUser(user.accountId);
+      if (isActivate) await activateUser(user.accountId);
+      else if (isDeactivate) await deactivateUser(user.accountId);
       else if (isEdit) await updateUser(user.accountId, userPayload(currentUser));
       else await createUser(userPayload(currentUser));
     } catch (error) {
       setFieldErrors(error.response?.data?.errors || {});
-      setFormError(apiErrorMessage(error, isDelete ? 'Unable to delete user.' : 'Unable to save user.'));
+      setFormError(apiErrorMessage(error, isActivate ? 'Unable to activate user.' : isDeactivate ? 'Unable to deactivate user.' : 'Unable to save user.'));
       setSaving(false);
       return;
     }
-    onSuccess(isDelete ? 'User deleted successfully.' : isEdit ? 'User updated successfully.' : 'User created successfully.');
+    onSuccess(isActivate ? 'User activated successfully.' : isDeactivate ? 'User deactivated successfully.' : isEdit ? 'User updated successfully.' : 'User created successfully.');
   };
 
   return (
@@ -59,8 +62,12 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
       <Form onSubmit={submit} noValidate>
         <Modal.Body>
           {formError && <Alert variant="danger">{formError}</Alert>}
-          {isDelete ? (
-            <p className="mb-0">Delete user <strong>{user.accountName}</strong> ({user.accountEmail})?</p>
+          {isActivate ? (
+            <p className="mb-0">Activate user <strong>{user.accountName}</strong> ({user.accountEmail})?
+              They will be able to sign in again unless their account is locked.</p>
+          ) : isDeactivate ? (
+            <p className="mb-0">Deactivate user <strong>{user.accountName}</strong> ({user.accountEmail})?
+              Their account and related data will be kept, and they will no longer be able to sign in.</p>
           ) : (
             <fieldset disabled={saving}>
               {[
@@ -90,8 +97,8 @@ const UserModel = ({ mode, user, onHide, onSuccess }) => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={close} disabled={saving}>Cancel</Button>
-          <Button type="submit" variant={isDelete ? 'danger' : 'primary'} disabled={saving || (isDelete && isAdminUser)}>
-            {saving ? (isDelete ? 'Deleting...' : 'Saving...') : (isDelete ? 'Delete' : 'Save')}
+          <Button type="submit" variant={isActivate ? 'success' : isDeactivate ? 'danger' : 'primary'} disabled={saving || (isDeactivate && isAdminUser)}>
+            {saving ? (isActivate ? 'Activating...' : isDeactivate ? 'Deactivating...' : 'Saving...') : (isActivate ? 'Activate' : isDeactivate ? 'Deactivate' : 'Save')}
           </Button>
         </Modal.Footer>
       </Form>

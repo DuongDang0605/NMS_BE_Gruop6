@@ -34,7 +34,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleUnauthorized(UnauthorizedException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
                 .body(body(HttpStatus.UNAUTHORIZED, ex.getMessage(),
-                        ex instanceof AccountLockedException ? Map.of("account", "ACCOUNT_LOCKED") : Map.of(), request));
+                        ex instanceof AccountInactiveException ? Map.of("account", "ACCOUNT_INACTIVE")
+                                : ex instanceof AccountLockedException ? Map.of("account", "ACCOUNT_LOCKED") : Map.of(), request));
     }
 
     @ExceptionHandler(ForbiddenException.class)

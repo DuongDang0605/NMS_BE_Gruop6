@@ -47,6 +47,9 @@ public class CustomUserDetails implements UserDetails {
     public boolean isAccountNonLocked() { return !account.isAccountLocked(); }
 
     @Override
+    public boolean isEnabled() { return account.isActive(); }
+
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + getRoleName()));
     }

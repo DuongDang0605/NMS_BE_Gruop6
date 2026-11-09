@@ -17,4 +17,5 @@ public class SystemAccountResponseDto {
     private Integer accountRole;
     private String roleName;
     private Boolean isVerified;
+    private Boolean isActive;
 }

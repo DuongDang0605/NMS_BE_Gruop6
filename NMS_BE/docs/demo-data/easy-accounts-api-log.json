@@ -1,0 +1,551 @@
+{
+  "createdAt": "2026-11-09T07:23:58.956Z",
+  "baseUrl": "http://localhost:8080",
+  "created": 12,
+  "successfulLogins": 12,
+  "accounts": [
+    {
+      "accountId": 3237,
+      "accountName": "Contributor 1 (Demo)",
+      "accountEmail": "contributor1@example.com",
+      "accountRole": 2,
+      "roleName": "CONTRIBUTOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3238,
+      "accountName": "Contributor 2 (Demo)",
+      "accountEmail": "contributor2@example.com",
+      "accountRole": 2,
+      "roleName": "CONTRIBUTOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3239,
+      "accountName": "Contributor 3 (Demo)",
+      "accountEmail": "contributor3@example.com",
+      "accountRole": 2,
+      "roleName": "CONTRIBUTOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3240,
+      "accountName": "Editor 1 (Demo)",
+      "accountEmail": "editor1@example.com",
+      "accountRole": 3,
+      "roleName": "EDITOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3241,
+      "accountName": "Editor 2 (Demo)",
+      "accountEmail": "editor2@example.com",
+      "accountRole": 3,
+      "roleName": "EDITOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3242,
+      "accountName": "Editor 3 (Demo)",
+      "accountEmail": "editor3@example.com",
+      "accountRole": 3,
+      "roleName": "EDITOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3243,
+      "accountName": "Moderator 1 (Demo)",
+      "accountEmail": "moderator1@example.com",
+      "accountRole": 4,
+      "roleName": "MODERATOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3244,
+      "accountName": "Moderator 2 (Demo)",
+      "accountEmail": "moderator2@example.com",
+      "accountRole": 4,
+      "roleName": "MODERATOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3245,
+      "accountName": "Moderator 3 (Demo)",
+      "accountEmail": "moderator3@example.com",
+      "accountRole": 4,
+      "roleName": "MODERATOR",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3246,
+      "accountName": "Reader 1 (Demo)",
+      "accountEmail": "reader1@example.com",
+      "accountRole": 5,
+      "roleName": "READER",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3247,
+      "accountName": "Reader 2 (Demo)",
+      "accountEmail": "reader2@example.com",
+      "accountRole": 5,
+      "roleName": "READER",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    },
+    {
+      "accountId": 3248,
+      "accountName": "Reader 3 (Demo)",
+      "accountEmail": "reader3@example.com",
+      "accountRole": 5,
+      "roleName": "READER",
+      "isVerified": true,
+      "isActive": true,
+      "loginVerified": true
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Contributor 1 (Demo)",
+        "accountEmail": "contributor1@example.com",
+        "accountRole": 2,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3237,
+        "accountName": "Contributor 1 (Demo)",
+        "accountEmail": "contributor1@example.com",
+        "accountRole": 2,
+        "roleName": "CONTRIBUTOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "contributor1@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3237,
+        "accountRole": 2,
+        "roleName": "CONTRIBUTOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Contributor 2 (Demo)",
+        "accountEmail": "contributor2@example.com",
+        "accountRole": 2,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3238,
+        "accountName": "Contributor 2 (Demo)",
+        "accountEmail": "contributor2@example.com",
+        "accountRole": 2,
+        "roleName": "CONTRIBUTOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "contributor2@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3238,
+        "accountRole": 2,
+        "roleName": "CONTRIBUTOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Contributor 3 (Demo)",
+        "accountEmail": "contributor3@example.com",
+        "accountRole": 2,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3239,
+        "accountName": "Contributor 3 (Demo)",
+        "accountEmail": "contributor3@example.com",
+        "accountRole": 2,
+        "roleName": "CONTRIBUTOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "contributor3@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3239,
+        "accountRole": 2,
+        "roleName": "CONTRIBUTOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Editor 1 (Demo)",
+        "accountEmail": "editor1@example.com",
+        "accountRole": 3,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3240,
+        "accountName": "Editor 1 (Demo)",
+        "accountEmail": "editor1@example.com",
+        "accountRole": 3,
+        "roleName": "EDITOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "editor1@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3240,
+        "accountRole": 3,
+        "roleName": "EDITOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Editor 2 (Demo)",
+        "accountEmail": "editor2@example.com",
+        "accountRole": 3,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3241,
+        "accountName": "Editor 2 (Demo)",
+        "accountEmail": "editor2@example.com",
+        "accountRole": 3,
+        "roleName": "EDITOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "editor2@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3241,
+        "accountRole": 3,
+        "roleName": "EDITOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Editor 3 (Demo)",
+        "accountEmail": "editor3@example.com",
+        "accountRole": 3,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3242,
+        "accountName": "Editor 3 (Demo)",
+        "accountEmail": "editor3@example.com",
+        "accountRole": 3,
+        "roleName": "EDITOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "editor3@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3242,
+        "accountRole": 3,
+        "roleName": "EDITOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Moderator 1 (Demo)",
+        "accountEmail": "moderator1@example.com",
+        "accountRole": 4,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3243,
+        "accountName": "Moderator 1 (Demo)",
+        "accountEmail": "moderator1@example.com",
+        "accountRole": 4,
+        "roleName": "MODERATOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "moderator1@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3243,
+        "accountRole": 4,
+        "roleName": "MODERATOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Moderator 2 (Demo)",
+        "accountEmail": "moderator2@example.com",
+        "accountRole": 4,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3244,
+        "accountName": "Moderator 2 (Demo)",
+        "accountEmail": "moderator2@example.com",
+        "accountRole": 4,
+        "roleName": "MODERATOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "moderator2@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3244,
+        "accountRole": 4,
+        "roleName": "MODERATOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Moderator 3 (Demo)",
+        "accountEmail": "moderator3@example.com",
+        "accountRole": 4,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3245,
+        "accountName": "Moderator 3 (Demo)",
+        "accountEmail": "moderator3@example.com",
+        "accountRole": 4,
+        "roleName": "MODERATOR",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "moderator3@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3245,
+        "accountRole": 4,
+        "roleName": "MODERATOR"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Reader 1 (Demo)",
+        "accountEmail": "reader1@example.com",
+        "accountRole": 5,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3246,
+        "accountName": "Reader 1 (Demo)",
+        "accountEmail": "reader1@example.com",
+        "accountRole": 5,
+        "roleName": "READER",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "reader1@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3246,
+        "accountRole": 5,
+        "roleName": "READER"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Reader 2 (Demo)",
+        "accountEmail": "reader2@example.com",
+        "accountRole": 5,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3247,
+        "accountName": "Reader 2 (Demo)",
+        "accountEmail": "reader2@example.com",
+        "accountRole": 5,
+        "roleName": "READER",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "reader2@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3247,
+        "accountRole": 5,
+        "roleName": "READER"
+      },
+      "verified": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 201,
+      "request": {
+        "accountName": "Reader 3 (Demo)",
+        "accountEmail": "reader3@example.com",
+        "accountRole": 5,
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3248,
+        "accountName": "Reader 3 (Demo)",
+        "accountEmail": "reader3@example.com",
+        "accountRole": 5,
+        "roleName": "READER",
+        "isVerified": true,
+        "isActive": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "request": {
+        "accountEmail": "reader3@example.com",
+        "accountPassword": "[REDACTED]"
+      },
+      "response": {
+        "accountId": 3248,
+        "accountRole": 5,
+        "roleName": "READER"
+      },
+      "verified": true
+    }
+  ]
+}

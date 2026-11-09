@@ -6,6 +6,7 @@ import com.mvc.nms_be.dto.request.UnlockResetRequestDto;
 import com.mvc.nms_be.dto.response.UnlockVerificationResponseDto;
 import com.mvc.nms_be.entity.SystemAccount;
 import com.mvc.nms_be.exception.UnauthorizedException;
+import com.mvc.nms_be.exception.AccountInactiveException;
 import com.mvc.nms_be.repository.SystemAccountRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -35,9 +36,9 @@ public class AccountUnlockService {
     @Transactional
     public void requestOtp(UnlockRequestDto request) {
         SystemAccount account = find(request.accountEmail());
-        // Password recovery is available whether or not the account is locked.
+        // Only active accounts can recover a password, whether or not they are locked.
         // Keep the same public response for unknown and recently requested accounts.
-        if (account == null) return;
+        if (account == null || !account.isActive()) return;
         LocalDateTime now = now();
         if (account.getUnlockOtpSentAt() != null && account.getUnlockOtpSentAt().plusSeconds(60).isAfter(now)) return;
         String otp = String.format(Locale.ROOT, "%06d", RANDOM.nextInt(1_000_000));
@@ -54,6 +55,7 @@ public class AccountUnlockService {
     @Transactional(noRollbackFor = UnauthorizedException.class)
     public UnlockVerificationResponseDto verifyOtp(UnlockVerifyRequestDto request) {
         SystemAccount account = find(request.accountEmail());
+        if (account != null && !account.isActive()) throw new AccountInactiveException();
         if (account == null || account.getUnlockOtpHash() == null
                 || account.getUnlockOtpExpiresAt() == null || !account.getUnlockOtpExpiresAt().isAfter(now())
                 || account.getUnlockOtpAttempts() >= 5) {
@@ -77,6 +79,7 @@ public class AccountUnlockService {
     @Transactional
     public void resetPassword(UnlockResetRequestDto request) {
         SystemAccount account = find(request.accountEmail());
+        if (account != null && !account.isActive()) throw new AccountInactiveException();
         if (account == null || account.getUnlockResetTokenHash() == null
                 || account.getUnlockResetExpiresAt() == null || !account.getUnlockResetExpiresAt().isAfter(now())
                 || !MessageDigest.isEqual(hash(request.resetToken()).getBytes(StandardCharsets.US_ASCII),

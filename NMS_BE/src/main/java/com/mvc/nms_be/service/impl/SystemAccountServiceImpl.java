@@ -43,6 +43,10 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     public SystemAccountResponseDto toggleVerify(Integer id) {
         SecurityUtils.requireAdmin();
         SystemAccount account = findAccountForUpdate(id);
+        if (Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(account.getAccountRole())
+                && Boolean.TRUE.equals(account.getIsVerified())) {
+            throw new ResourceConflictException("Admin accounts cannot be unverified", "isVerified");
+        }
         account.setIsVerified(!Boolean.TRUE.equals(account.getIsVerified()));
         return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
@@ -150,11 +154,20 @@ public class SystemAccountServiceImpl implements SystemAccountService {
         SecurityUtils.requireAdmin();
         SystemAccount account = findAccountForUpdate(id);
         if (Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(account.getAccountRole())) {
-            throw new ResourceConflictException("Admin accounts cannot be deleted");
+            throw new ResourceConflictException("Admin accounts cannot be deactivated");
         }
-        accountRepository.delete(account);
-        // Flush inside the request so FK conflicts can be returned as HTTP 409.
-        accountRepository.flush();
+        account.setActive(false);
+        account.clearUnlockChallenge();
+        accountRepository.saveAndFlush(account);
+    }
+
+    @Override
+    @Transactional
+    public SystemAccountResponseDto activate(Integer id) {
+        SecurityUtils.requireAdmin();
+        SystemAccount account = findAccountForUpdate(id);
+        account.setActive(true);
+        return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
 
     private SystemAccount findAccount(Integer id) {

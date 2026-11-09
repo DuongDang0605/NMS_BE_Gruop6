@@ -31,5 +31,8 @@ public interface SystemAccountService {
     SystemAccountResponseDto update(@NotNull @Positive Integer id,
                                    @NotNull @Valid SystemAccountUpdateRequestDto request);
 
+    // The existing DELETE endpoint deactivates the account and preserves related records.
     void delete(@NotNull @Positive Integer id);
+
+    SystemAccountResponseDto activate(@NotNull @Positive Integer id);
 }

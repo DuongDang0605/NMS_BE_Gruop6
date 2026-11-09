@@ -8,7 +8,8 @@ Luồng: `UserController` → `SystemAccountService` → `SystemAccountServiceIm
 | GET | `/api/v1/users/{id}` | `200`, chi tiết user |
 | POST | `/api/v1/users` | `201`, user mới và header `Location` |
 | PUT | `/api/v1/users/{id}` | `200`, cập nhật đầy đủ user, giữ nguyên ID |
-| DELETE | `/api/v1/users/{id}` | `204`, không có body |
+| DELETE | `/api/v1/users/{id}` | `204`, chuyển sang inactive, giữ tài khoản và dữ liệu liên quan |
+| PATCH | `/api/v1/users/{id}/activate` | Chỉ Admin; `200`, chuyển sang active và trả profile mới |
 
 ## Phân trang, tìm kiếm và lọc
 
@@ -40,7 +41,7 @@ Response luôn là object phân trang (thay cho mảng user trước đây):
 ```json
 {
   "content": [
-    { "accountId": 12, "accountName": "Nguyen Van A", "accountEmail": "a@example.com", "accountRole": 2, "roleName": "CONTRIBUTOR", "isVerified": true }
+    { "accountId": 12, "accountName": "Nguyen Van A", "accountEmail": "a@example.com", "accountRole": 2, "roleName": "CONTRIBUTOR", "isVerified": true, "isActive": true }
   ],
   "totalElements": 1,
   "totalPages": 1,
@@ -51,8 +52,7 @@ Response luôn là object phân trang (thay cho mảng user trước đây):
 }
 ```
 
-Trang vượt phạm vi trả `content: []` cùng tổng số kết quả thật. FE tự chuyển về trang cuối hợp lệ
-khi xóa hết dòng trong trang cuối. Đổi bộ lọc, sắp xếp hoặc số dòng/trang sẽ về trang đầu.
+Trang vượt phạm vi trả `content: []` cùng tổng số kết quả thật. Tài khoản inactive vẫn xuất hiện trong danh sách cùng trạng thái Active/Inactive. Đổi bộ lọc, sắp xếp hoặc số dòng/trang sẽ về trang đầu.
 
 ## Thêm và sửa User
 
@@ -85,10 +85,16 @@ Các mã lỗi hiện áp dụng cho User:
 | 401 | Thiếu JWT, JWT không hợp lệ/hết hạn hoặc tài khoản không còn hợp lệ |
 | 403 | Tài khoản không có role Admin |
 | 404 | User không tồn tại |
-| 409 | Email trùng; tạo Admin, đổi sang/đổi khỏi role Admin, xóa Admin; hoặc xung đột ràng buộc database, gồm xóa user đang được tham chiếu |
+| 409 | Email trùng; tạo Admin, đổi sang/đổi khỏi role Admin, vô hiệu hóa Admin; hoặc xung đột ràng buộc database |
 | 500 | Lỗi ngoài dự kiến, trả thông báo chung |
 
-Service chặn xóa mọi tài khoản Admin, kể cả Admin hiện tại. Các tài khoản còn lại được database kiểm tra khóa ngoại; repository flush trong transaction để lỗi được xử lý ngay trong request.
+Service chặn vô hiệu hóa mọi tài khoản Admin, kể cả Admin hiện tại. Với tài khoản khác, DELETE giữ nguyên bản ghi và các liên kết, chỉ đặt `isActive=false` và xóa challenge OTP/reset đang tồn tại. Gọi lại DELETE vẫn giữ inactive. Cập nhật thông tin, reset mật khẩu hoặc đổi trạng thái xác minh không kích hoạt lại tài khoản. Email của tài khoản inactive vẫn được giữ và không dùng để đăng ký tài khoản mới.
+
+Admin kích hoạt lại bằng PATCH `/api/v1/users/{id}/activate`, không cần body. API chỉ đặt `isActive=true`, giữ nguyên thông tin, mật khẩu, role và trạng thái khóa do nhập sai mật khẩu. Gọi lại trên tài khoản đã active vẫn trả active. Trên giao diện, tài khoản inactive có nút **Activate** màu xanh; sau khi xác nhận thành công, trạng thái đổi thành Active và nút đổi về **Deactivate**. Admin đang active vẫn được bảo vệ khỏi vô hiệu hóa.
+
+Tài khoản mới mặc định active. Migration `007-account-active-status.sql` thêm cột `IsActive` và đặt tài khoản hiện có thành active khi cột chưa tồn tại; chạy lại không kích hoạt lại tài khoản đã bị vô hiệu hóa.
+
+Đăng nhập tài khoản inactive trả HTTP 401 với `errors.account=ACCOUNT_INACTIVE` và thông báo: “Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ Admin để biết thêm chi tiết.” Frontend hiển thị thông báo bằng popup. Trạng thái này độc lập với khóa do nhập sai mật khẩu, được ưu tiên khi tài khoản vừa khóa vừa inactive. Access/Refresh Token cũ bị từ chối ngay khi tài khoản inactive. Khôi phục mật khẩu qua OTP không thể bỏ qua trạng thái inactive.
 
 Ví dụ lỗi validation:
 
@@ -111,7 +117,7 @@ Lỗi không chứa mật khẩu hoặc giá trị đầu vào bị từ chối.
 
 | Method | Endpoint | Quyền / Body |
 | --- | --- | --- |
-| PATCH | `/api/v1/users/{id}/verify` | Chỉ Admin; đảo trạng thái xác minh, trả profile mới |
+| PATCH | `/api/v1/users/{id}/verify` | Chỉ Admin; đảo trạng thái xác minh, trả profile mới. Không được Unverify tài khoản Admin (409); Admin chưa xác minh vẫn được Verify |
 | GET | `/api/v1/users/me` | Mọi tài khoản đã đăng nhập; ID lấy từ SecurityContext |
 | PUT | `/api/v1/users/me/password` | Mọi tài khoản đã đăng nhập; `{currentPassword, newPassword}`, trả 204 |
 | POST | `/api/v1/auth/register-reader` | Công khai; `{accountName, accountEmail, accountPassword}`, trả 201 |
@@ -120,4 +126,4 @@ Lỗi không chứa mật khẩu hoặc giá trị đầu vào bị từ chối.
 
 Đổi mật khẩu yêu cầu mật khẩu cũ đúng và mật khẩu mới khác mật khẩu cũ, dài 6–72 ký tự, tối đa 72 byte UTF-8. Sai mật khẩu cũ trả 400 và giữ phiên, không trả 401 để tránh refresh/logout nhầm. Thành công vô hiệu cả token cũ và mã khôi phục đang tồn tại; frontend yêu cầu đăng nhập lại. Admin thay email hoặc mật khẩu cũng vô hiệu challenge OTP/reset cũ. Thay đổi này không tự mở khóa tài khoản đang khóa.
 
-Response profile có `accountId`, `accountName`, `accountEmail`, `accountRole`, `roleName`, `isVerified`; không có hash, mật khẩu hoặc thông tin OTP/reset. Frontend truy cập hồ sơ tại `/account`.
+Response profile có `accountId`, `accountName`, `accountEmail`, `accountRole`, `roleName`, `isVerified`, `isActive`; không có hash, mật khẩu hoặc thông tin OTP/reset. Frontend truy cập hồ sơ tại `/account`.

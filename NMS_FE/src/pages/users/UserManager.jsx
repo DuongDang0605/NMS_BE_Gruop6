@@ -169,24 +169,32 @@ const UserManager = () => {
       </Collapse>
       {listError && <Alert variant="danger">{listError} <Button variant="outline-danger" size="sm" onClick={refresh}>Retry</Button></Alert>}
       <Table striped bordered hover responsive aria-busy={loading}>
-        <thead className="table-brand"><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Verification</th><th>Actions</th></tr></thead>
+        <thead className="table-brand"><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Verification</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
-          {loading && <tr><td colSpan={6} className="text-center p-4"><Spinner size="sm" animation="border" role="status" /> Loading users...</td></tr>}
+          {loading && <tr><td colSpan={7} className="text-center p-4"><Spinner size="sm" animation="border" role="status" /> Loading users...</td></tr>}
           {data?.content.map((user) => (
             <tr key={user.accountId}>
               <td>{user.accountId}</td><td>{user.accountName}</td><td>{user.accountEmail}</td>
               <td><Badge bg={user.accountRole === 1 ? 'primary' : 'secondary'}>{roleName(user.accountRole)}</Badge></td>
               <td><Badge bg={user.isVerified ? 'success' : 'warning'}>{user.isVerified ? 'Verified' : 'Unverified'}</Badge></td>
+              <td><Badge bg={user.isActive ? 'success' : 'secondary'}>{user.isActive ? 'Active' : 'Inactive'}</Badge></td>
               <td className="text-nowrap">
-                <Button variant="outline-secondary" size="sm" className="me-2" disabled={busy} onClick={() => toggleVerification(user)}>{user.isVerified ? 'Unverify' : 'Verify'}</Button>
+                {!(Number(user.accountRole) === 1 && user.isVerified) && (
+                  <Button variant="outline-secondary" size="sm" className="me-2" disabled={busy}
+                    onClick={() => toggleVerification(user)}>{user.isVerified ? 'Unverify' : 'Verify'}</Button>
+                )}
                 <Button variant="warning" size="sm" className="me-2" disabled={busy} onClick={() => setModal({ mode: 'edit', user })}><i className="bi bi-pencil me-1" />Edit</Button>
-                <Button variant="danger" size="sm" disabled={busy || Number(user.accountRole) === 1}
-                  title={Number(user.accountRole) === 1 ? 'Admin accounts cannot be deleted.' : undefined}
-                  onClick={() => setModal({ mode: 'delete', user })}><i className="bi bi-trash me-1" />Delete</Button>
+                <Button variant={user.isActive ? 'danger' : 'success'} size="sm"
+                  disabled={busy || (user.isActive && Number(user.accountRole) === 1)}
+                  title={user.isActive && Number(user.accountRole) === 1 ? 'Admin accounts cannot be deactivated.' : undefined}
+                  onClick={() => setModal({ mode: user.isActive ? 'deactivate' : 'activate', user })}>
+                  <i className={`bi ${user.isActive ? 'bi-person-slash' : 'bi-person-check'} me-1`} />
+                  {user.isActive ? 'Deactivate' : 'Activate'}
+                </Button>
               </td>
             </tr>
           ))}
-          {data?.content.length === 0 && <tr><td colSpan={6} className="text-center p-4">No users match these filters.</td></tr>}
+          {data?.content.length === 0 && <tr><td colSpan={7} className="text-center p-4">No users match these filters.</td></tr>}
         </tbody>
       </Table>
       {data && (

@@ -24,8 +24,13 @@ export async function updateUser(id, payload) {
   return data;
 }
 
-export async function deleteUser(id) {
+export async function deactivateUser(id) {
   await api.delete(`/users/${id}`);
+}
+
+export async function activateUser(id) {
+  const { data } = await api.patch(`/users/${id}/activate`);
+  return data;
 }
 
 export async function toggleUserVerification(id) {

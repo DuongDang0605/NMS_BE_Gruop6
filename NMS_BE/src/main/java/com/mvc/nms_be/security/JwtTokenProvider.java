@@ -90,8 +90,8 @@ public class JwtTokenProvider {
     }
 
     public boolean matchesCurrentAccount(Claims claims, CustomUserDetails user) {
-        // Reloaded database state blocks locked accounts and applies role/password changes immediately.
-        return user.isAccountNonLocked()
+        // Reloaded database state blocks inactive/locked accounts and applies role/password changes immediately.
+        return user.isEnabled() && user.isAccountNonLocked()
                 && user.getAccountId().equals(getAccountId(claims))
                 && (user.getUsername().equals(claims.getSubject())
                     || user.getAccountId().toString().equals(claims.getSubject()))

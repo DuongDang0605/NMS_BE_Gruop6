@@ -39,7 +39,8 @@ public class SystemAccountMapper {
                 account.getAccountEmail(),
                 account.getAccountRole(),
                 new CustomUserDetails(account).getRoleName(),
-                Boolean.TRUE.equals(account.getIsVerified())
+                Boolean.TRUE.equals(account.getIsVerified()),
+                account.isActive()
         );
     }
 }

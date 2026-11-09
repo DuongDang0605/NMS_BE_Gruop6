@@ -1,0 +1,4244 @@
+{
+  "runId": "demo-20261109-team-02",
+  "baseUrl": "http://localhost:8080",
+  "generatedAt": "2026-11-09T07:18:05.939Z",
+  "fatal": null,
+  "requests": 473,
+  "passed": 472,
+  "failures": 1,
+  "backendFailures": 0,
+  "seedInputFailures": 1,
+  "skipped": 20,
+  "tables": [
+    {
+      "table": "SystemAccount",
+      "before": 5,
+      "after": 17,
+      "inserted": 12,
+      "observedDemoRecords": 12
+    },
+    {
+      "table": "Category",
+      "before": 0,
+      "after": 8,
+      "inserted": 8,
+      "observedDemoRecords": 8
+    },
+    {
+      "table": "Tag",
+      "before": 0,
+      "after": 12,
+      "inserted": 12,
+      "observedDemoRecords": 12
+    },
+    {
+      "table": "SystemSetting",
+      "before": 0,
+      "after": 3,
+      "inserted": 3,
+      "observedDemoRecords": 3
+    },
+    {
+      "table": "BannedKeyword",
+      "before": 0,
+      "after": 4,
+      "inserted": 4,
+      "observedDemoRecords": 4
+    },
+    {
+      "table": "NewsArticle",
+      "before": 0,
+      "after": 29,
+      "inserted": 29,
+      "observedDemoRecords": 29
+    },
+    {
+      "table": "NewsTag",
+      "before": 0,
+      "after": 59,
+      "inserted": 59,
+      "observedDemoRecords": 59
+    },
+    {
+      "table": "Comment",
+      "before": 0,
+      "after": 32,
+      "inserted": 32,
+      "observedDemoRecords": 32
+    },
+    {
+      "table": "CommentReport",
+      "before": 0,
+      "after": 8,
+      "inserted": 8,
+      "observedDemoRecords": 8
+    },
+    {
+      "table": "ArticleReaction",
+      "before": 0,
+      "after": 40,
+      "inserted": 40,
+      "observedDemoRecords": 40
+    },
+    {
+      "table": "Notification",
+      "before": 0,
+      "after": 24,
+      "inserted": 24,
+      "observedDemoRecords": 24
+    },
+    {
+      "table": "ArticleReviewNote",
+      "before": 0,
+      "after": 2,
+      "inserted": 2,
+      "observedDemoRecords": 2
+    },
+    {
+      "table": "ArticleAuditLog",
+      "before": 0,
+      "after": 81,
+      "inserted": 81,
+      "observedDemoRecords": 81
+    }
+  ],
+  "checks": [],
+  "failedEndpoints": [
+    {
+      "at": "2026-11-09T07:15:33.292Z",
+      "method": "POST",
+      "path": "/api/v1/notifications",
+      "actor": "admin",
+      "label": "Create notification for contributor1",
+      "request": {
+        "recipientId": 3225,
+        "newsArticleId": 967,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1
+      },
+      "status": 400,
+      "elapsedMs": 7,
+      "outcome": "FAILED",
+      "response": {
+        "timestamp": "2026-11-09T07:15:33.296450800Z",
+        "status": 400,
+        "error": "Bad Request",
+        "message": "isRead must be 0 when creating a notification",
+        "path": "/api/v1/notifications",
+        "errors": {}
+      },
+      "failureCategory": "SEED_INPUT",
+      "explanation": "The seed script submitted isRead=1. The API correctly rejected it; create unread, then call the read endpoint."
+    }
+  ],
+  "inventory": [
+    {
+      "method": "GET",
+      "path": "/api/v1/users/{id}",
+      "covered": true
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/users/{id}",
+      "covered": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/users/{id}",
+      "covered": true
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/users/me/password",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tags/{id}",
+      "covered": true
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/tags/{id}",
+      "covered": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/tags/{id}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings/{id}",
+      "covered": true
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/settings/{id}",
+      "covered": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/settings/{id}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/news/{id}",
+      "covered": true
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/news/{id}",
+      "covered": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/news/{id}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/moderation/settings",
+      "covered": true
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/moderation/settings",
+      "covered": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/moderation/keywords/{keywordId}",
+      "covered": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/moderation/keywords/{keywordId}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/categories/{id}",
+      "covered": true
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/categories/{id}",
+      "covered": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/categories/{id}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/author/articles/{id}",
+      "covered": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/author/articles/{id}",
+      "covered": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/author/articles/{id}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tags",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tags",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/settings",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/news",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/news",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/news/{id}/views",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/news/{id}/reactions",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/moderation/keywords",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/moderation/keywords",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/editorial/articles/{id}/schedule",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/editorial/articles/{id}/restore",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/editorial/articles/{id}/request-changes",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/editorial/articles/{id}/publish-now",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/editorial/articles/{id}/archive",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/comments",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/comments/{commentId}/report",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/categories",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/categories",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/author/articles",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/author/articles",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/author/articles/{id}/submit",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/unlock/verify",
+      "covered": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/unlock/reset-password",
+      "covered": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/unlock/request",
+      "covered": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register-reader",
+      "covered": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "covered": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "covered": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/{id}/verify",
+      "covered": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/{id}/activate",
+      "covered": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/notifications/{id}/read",
+      "covered": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/notifications/read-all",
+      "covered": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/news/{id}/status",
+      "covered": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/moderation/comments/{commentId}/reject",
+      "covered": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/moderation/comments/{commentId}/keep",
+      "covered": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/moderation/comments/{commentId}/approve",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tags/search",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings/key/{key}",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/portal/articles",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/portal/articles/{id}",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/{id}",
+      "covered": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/notifications/{id}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/news/tag/{tagId}",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/news/search",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/portal/news/{id}",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/news/public/{id}",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/portal/news",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/news/public",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/news/category/{categoryId}",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/moderation/reports",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/moderation/comments/pending",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/editorial/queue",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/editorial/articles/{id}",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/editorial/articles/{id}/audit-trail",
+      "covered": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dashboard/overview",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dashboard/notifications",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dashboard/news",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dashboard/engagement",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/comments/article/{articleId}",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/categories/tree",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/author/articles/{id}/feedback",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/author/articles/{id}/audit-trail",
+      "covered": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "covered": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/moderation/comments/{commentId}",
+      "covered": false
+    }
+  ],
+  "records": {
+    "SystemAccount": [
+      {
+        "accountId": 3225,
+        "accountName": "Nguyễn Minh Anh (Demo)",
+        "accountEmail": "demo.contributor1.20261109-team-02@example.com",
+        "accountRole": 2,
+        "roleName": "Contributor",
+        "isVerified": true,
+        "isActive": true,
+        "key": "contributor1",
+        "publicRegistration": false,
+        "loginEmail": "demo.contributor1.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3226,
+        "accountName": "Trần Gia Bảo (Demo)",
+        "accountEmail": "demo.contributor2.20261109-team-02@example.com",
+        "accountRole": 2,
+        "roleName": "Contributor",
+        "isVerified": true,
+        "isActive": true,
+        "key": "contributor2",
+        "publicRegistration": false,
+        "loginEmail": "demo.contributor2.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3227,
+        "accountName": "Lê Hoàng Phúc (Demo)",
+        "accountEmail": "demo.contributor3.20261109-team-02@example.com",
+        "accountRole": 2,
+        "roleName": "Contributor",
+        "isVerified": true,
+        "isActive": true,
+        "key": "contributor3",
+        "publicRegistration": false,
+        "loginEmail": "demo.contributor3.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3228,
+        "accountName": "Phạm Thu Hà (Demo)",
+        "accountEmail": "demo.editor1.20261109-team-02@example.com",
+        "accountRole": 3,
+        "roleName": "Editor",
+        "isVerified": true,
+        "isActive": true,
+        "key": "editor1",
+        "publicRegistration": false,
+        "loginEmail": "demo.editor1.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3229,
+        "accountName": "Võ Khánh Linh (Demo)",
+        "accountEmail": "demo.editor2.20261109-team-02@example.com",
+        "accountRole": 3,
+        "roleName": "Editor",
+        "isVerified": true,
+        "isActive": true,
+        "key": "editor2",
+        "publicRegistration": false,
+        "loginEmail": "demo.editor2.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3230,
+        "accountName": "Bùi Đức Huy (Demo)",
+        "accountEmail": "demo.moderator1.20261109-team-02@example.com",
+        "accountRole": 4,
+        "roleName": "Moderator",
+        "isVerified": true,
+        "isActive": true,
+        "key": "moderator1",
+        "publicRegistration": false,
+        "loginEmail": "demo.moderator1.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3231,
+        "accountName": "Đặng Ngọc Mai (Demo)",
+        "accountEmail": "demo.moderator2.20261109-team-02@example.com",
+        "accountRole": 4,
+        "roleName": "Moderator",
+        "isVerified": true,
+        "isActive": true,
+        "key": "moderator2",
+        "publicRegistration": false,
+        "loginEmail": "demo.moderator2.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3232,
+        "accountName": "Đỗ Hải Yến (Demo)",
+        "accountEmail": "demo.reader1.20261109-team-02@example.com",
+        "accountRole": 5,
+        "roleName": "Reader",
+        "isVerified": true,
+        "isActive": true,
+        "key": "reader1",
+        "publicRegistration": false,
+        "loginEmail": "demo.reader1.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3233,
+        "accountName": "Ngô Quốc An — Bạn đọc demo",
+        "accountEmail": "demo.reader2.20261109-team-02@example.com",
+        "accountRole": 5,
+        "roleName": "Reader",
+        "isVerified": true,
+        "isActive": true,
+        "key": "reader2",
+        "publicRegistration": false,
+        "loginEmail": "demo.reader2.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3234,
+        "accountName": "Hoàng Bảo Ngọc (Demo)",
+        "accountEmail": "demo.reader3.20261109-team-02@example.com",
+        "accountRole": 5,
+        "roleName": "Reader",
+        "isVerified": false,
+        "isActive": true,
+        "key": "reader3",
+        "publicRegistration": true,
+        "loginEmail": "demo.reader3.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3235,
+        "accountName": "Dương Nhật Minh (Demo)",
+        "accountEmail": "demo.reader4.20261109-team-02@example.com",
+        "accountRole": 5,
+        "roleName": "Reader",
+        "isVerified": false,
+        "isActive": true,
+        "key": "reader4",
+        "publicRegistration": true,
+        "loginEmail": "demo.reader4.20261109-team-02@example.com"
+      },
+      {
+        "accountId": 3236,
+        "accountName": "Tài khoản demo bị vô hiệu hóa (Demo)",
+        "accountEmail": "demo.inactive.20261109-team-02@example.com",
+        "accountRole": 5,
+        "roleName": "Reader",
+        "isVerified": true,
+        "isActive": false,
+        "key": "inactive",
+        "publicRegistration": false,
+        "loginEmail": "demo.inactive.20261109-team-02@example.com"
+      }
+    ],
+    "Category": [
+      {
+        "categoryId": 377,
+        "categoryName": "Demo 20261109-team-02 • Học tập và công nghệ",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: Học tập và công nghệ.",
+        "parentCategoryId": null,
+        "isActive": 1
+      },
+      {
+        "categoryId": 378,
+        "categoryName": "Demo 20261109-team-02 • Đời sống sinh viên",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: Đời sống sinh viên.",
+        "parentCategoryId": null,
+        "isActive": 1
+      },
+      {
+        "categoryId": 379,
+        "categoryName": "Demo 20261109-team-02 • Sự kiện học đường",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: Sự kiện học đường.",
+        "parentCategoryId": null,
+        "isActive": 1
+      },
+      {
+        "categoryId": 380,
+        "categoryName": "Demo 20261109-team-02 • Cơ hội nghề nghiệp",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: Cơ hội nghề nghiệp.",
+        "parentCategoryId": null,
+        "isActive": 1
+      },
+      {
+        "categoryId": 381,
+        "categoryName": "Demo 20261109-team-02 • AI và dữ liệu",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: AI và dữ liệu.",
+        "parentCategoryId": 377,
+        "isActive": 1
+      },
+      {
+        "categoryId": 382,
+        "categoryName": "Demo 20261109-team-02 • Thể thao",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: Thể thao.",
+        "parentCategoryId": 378,
+        "isActive": 1
+      },
+      {
+        "categoryId": 383,
+        "categoryName": "Demo 20261109-team-02 • Hoạt động cộng đồng",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: Hoạt động cộng đồng.",
+        "parentCategoryId": 379,
+        "isActive": 1
+      },
+      {
+        "categoryId": 384,
+        "categoryName": "Demo 20261109-team-02 • Thực tập doanh nghiệp",
+        "categoryDescription": "Danh mục phục vụ trình diễn demo-20261109-team-02: Thực tập doanh nghiệp.",
+        "parentCategoryId": 380,
+        "isActive": 1
+      }
+    ],
+    "Tag": [
+      {
+        "tagId": 70,
+        "tagName": "demo-20261109-team-02-cong-nghe",
+        "note": "Nhãn nội dung cong-nghe, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 71,
+        "tagName": "demo-20261109-team-02-tri-tue-nhan-tao",
+        "note": "Nhãn nội dung tri-tue-nhan-tao, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 72,
+        "tagName": "demo-20261109-team-02-lap-trinh",
+        "note": "Nhãn nội dung lap-trinh, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 73,
+        "tagName": "demo-20261109-team-02-sinh-vien",
+        "note": "Nhãn nội dung sinh-vien, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 74,
+        "tagName": "demo-20261109-team-02-cau-lac-bo",
+        "note": "Nhãn nội dung cau-lac-bo, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 75,
+        "tagName": "demo-20261109-team-02-the-thao",
+        "note": "Nhãn nội dung the-thao, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 76,
+        "tagName": "demo-20261109-team-02-su-kien",
+        "note": "Nhãn nội dung su-kien, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 77,
+        "tagName": "demo-20261109-team-02-tinh-nguyen",
+        "note": "Nhãn nội dung tinh-nguyen, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 78,
+        "tagName": "demo-20261109-team-02-hoc-bong",
+        "note": "Nhãn nội dung hoc-bong, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 79,
+        "tagName": "demo-20261109-team-02-nghe-nghiep",
+        "note": "Nhãn nội dung nghe-nghiep, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 80,
+        "tagName": "demo-20261109-team-02-thuc-tap",
+        "note": "Nhãn nội dung thuc-tap, bộ demo demo-20261109-team-02"
+      },
+      {
+        "tagId": 81,
+        "tagName": "demo-20261109-team-02-ky-nang",
+        "note": "Nhãn nội dung ky-nang, bộ demo demo-20261109-team-02"
+      }
+    ],
+    "SystemSetting": [
+      {
+        "settingId": 1,
+        "settingKey": "DEMO_20261109-team-02_EVENT_NAME",
+        "settingValue": "Ngày hội trải nghiệm sinh viên",
+        "description": "Tên sự kiện giả lập — demo-20261109-team-02"
+      },
+      {
+        "settingId": 2,
+        "settingKey": "DEMO_20261109-team-02_SUPPORT_CONTACT",
+        "settingValue": "demo-support@example.com",
+        "description": "Địa chỉ hỗ trợ giả lập, không gửi thư — demo-20261109-team-02"
+      },
+      {
+        "settingId": 3,
+        "settingKey": "DEMO_20261109-team-02_SEMESTER",
+        "settingValue": "Fall 2026",
+        "description": "Học kỳ trình diễn — demo-20261109-team-02"
+      }
+    ],
+    "BannedKeyword": [
+      {
+        "keywordId": 1,
+        "word": "demoquangcao20261109-team-02",
+        "severity": "FLAG",
+        "isActive": true,
+        "createdDate": "2026-11-09T14:15:29.8701912"
+      },
+      {
+        "keywordId": 2,
+        "word": "demospam20261109-team-02",
+        "severity": "BLOCK",
+        "isActive": true,
+        "createdDate": "2026-11-09T14:15:29.8951851"
+      },
+      {
+        "keywordId": 3,
+        "word": "demolienket20261109-team-02",
+        "severity": "FLAG",
+        "isActive": true,
+        "createdDate": "2026-11-09T14:15:29.9051848"
+      },
+      {
+        "keywordId": 4,
+        "word": "demotuluu20261109-team-02",
+        "severity": "FLAG",
+        "isActive": false,
+        "createdDate": "2026-11-09T14:15:29.9151843"
+      }
+    ],
+    "NewsArticle": [
+      {
+        "newsArticleId": 965,
+        "newsTitle": "Ngày hội câu lạc bộ: kết nối sở thích, mở rộng tình bạn [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: ngày hội câu lạc bộ: kết nối sở thích, mở rộng tình bạn.",
+        "createdDate": "2026-11-09T07:15:29.9381914",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nNgày hội câu lạc bộ: kết nối sở thích, mở rộng tình bạn. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 378,
+        "categoryName": "Demo 20261109-team-02 • Đời sống sinh viên",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.0152455",
+        "viewCount": 2,
+        "likeCount": 1,
+        "commentCount": 3,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.5801111",
+        "tagIds": [
+          70,
+          71,
+          73
+        ],
+        "tags": [
+          {
+            "tagId": 70,
+            "tagName": "demo-20261109-team-02-cong-nghe",
+            "note": "Nhãn nội dung cong-nghe, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 71,
+            "tagName": "demo-20261109-team-02-tri-tue-nhan-tao",
+            "note": "Nhãn nội dung tri-tue-nhan-tao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 73,
+            "tagName": "demo-20261109-team-02-sinh-vien",
+            "note": "Nhãn nội dung sinh-vien, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor1",
+        "ordinal": 1
+      },
+      {
+        "newsArticleId": 966,
+        "newsTitle": "Workshop AI: từ ý tưởng đến ứng dụng hỗ trợ học tập [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: workshop ai: từ ý tưởng đến ứng dụng hỗ trợ học tập.",
+        "createdDate": "2026-11-09T07:15:30.0337687",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nWorkshop AI: từ ý tưởng đến ứng dụng hỗ trợ học tập. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 381,
+        "categoryName": "Demo 20261109-team-02 • AI và dữ liệu",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.0602552",
+        "viewCount": 3,
+        "likeCount": 2,
+        "commentCount": 2,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.6807124",
+        "tagIds": [
+          71,
+          74
+        ],
+        "tags": [
+          {
+            "tagId": 71,
+            "tagName": "demo-20261109-team-02-tri-tue-nhan-tao",
+            "note": "Nhãn nội dung tri-tue-nhan-tao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 74,
+            "tagName": "demo-20261109-team-02-cau-lac-bo",
+            "note": "Nhãn nội dung cau-lac-bo, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor2",
+        "ordinal": 2
+      },
+      {
+        "newsArticleId": 967,
+        "newsTitle": "Giải bóng đá sinh viên khởi động mùa tranh tài mới [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: giải bóng đá sinh viên khởi động mùa tranh tài mới.",
+        "createdDate": "2026-11-09T07:15:30.077258",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nGiải bóng đá sinh viên khởi động mùa tranh tài mới. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 382,
+        "categoryName": "Demo 20261109-team-02 • Thể thao",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.1042378",
+        "viewCount": 4,
+        "likeCount": 3,
+        "commentCount": 2,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.7351739",
+        "tagIds": [
+          72,
+          75
+        ],
+        "tags": [
+          {
+            "tagId": 72,
+            "tagName": "demo-20261109-team-02-lap-trinh",
+            "note": "Nhãn nội dung lap-trinh, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 75,
+            "tagName": "demo-20261109-team-02-the-thao",
+            "note": "Nhãn nội dung the-thao, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor3",
+        "ordinal": 3
+      },
+      {
+        "newsArticleId": 968,
+        "newsTitle": "Ngày hội việc làm: chuẩn bị CV và phỏng vấn cùng doanh nghiệp [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: ngày hội việc làm: chuẩn bị cv và phỏng vấn cùng doanh nghiệp.",
+        "createdDate": "2026-11-09T07:15:30.1217546",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nNgày hội việc làm: chuẩn bị CV và phỏng vấn cùng doanh nghiệp. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 380,
+        "categoryName": "Demo 20261109-team-02 • Cơ hội nghề nghiệp",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.146754",
+        "viewCount": 5,
+        "likeCount": 4,
+        "commentCount": 2,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.7883917",
+        "tagIds": [
+          73,
+          76
+        ],
+        "tags": [
+          {
+            "tagId": 73,
+            "tagName": "demo-20261109-team-02-sinh-vien",
+            "note": "Nhãn nội dung sinh-vien, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 76,
+            "tagName": "demo-20261109-team-02-su-kien",
+            "note": "Nhãn nội dung su-kien, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor1",
+        "ordinal": 4
+      },
+      {
+        "newsArticleId": 969,
+        "newsTitle": "Sinh viên chung tay xây dựng thư viện sách cộng đồng [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: sinh viên chung tay xây dựng thư viện sách cộng đồng.",
+        "createdDate": "2026-11-09T07:15:30.1629705",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nSinh viên chung tay xây dựng thư viện sách cộng đồng. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 383,
+        "categoryName": "Demo 20261109-team-02 • Hoạt động cộng đồng",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.1859781",
+        "viewCount": 6,
+        "likeCount": 1,
+        "commentCount": 2,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.8190434",
+        "tagIds": [
+          74,
+          77
+        ],
+        "tags": [
+          {
+            "tagId": 74,
+            "tagName": "demo-20261109-team-02-cau-lac-bo",
+            "note": "Nhãn nội dung cau-lac-bo, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 77,
+            "tagName": "demo-20261109-team-02-tinh-nguyen",
+            "note": "Nhãn nội dung tinh-nguyen, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor2",
+        "ordinal": 5
+      },
+      {
+        "newsArticleId": 970,
+        "newsTitle": "Học bổng khuyến khích các dự án sáng tạo của sinh viên [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: học bổng khuyến khích các dự án sáng tạo của sinh viên.",
+        "createdDate": "2026-11-09T07:15:30.2009722",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nHọc bổng khuyến khích các dự án sáng tạo của sinh viên. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 377,
+        "categoryName": "Demo 20261109-team-02 • Học tập và công nghệ",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.2229716",
+        "viewCount": 7,
+        "likeCount": 2,
+        "commentCount": 3,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.861045",
+        "tagIds": [
+          75,
+          78
+        ],
+        "tags": [
+          {
+            "tagId": 75,
+            "tagName": "demo-20261109-team-02-the-thao",
+            "note": "Nhãn nội dung the-thao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 78,
+            "tagName": "demo-20261109-team-02-hoc-bong",
+            "note": "Nhãn nội dung hoc-bong, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor3",
+        "ordinal": 6
+      },
+      {
+        "newsArticleId": 971,
+        "newsTitle": "Cuộc thi lập trình đội nhóm mở đăng ký vòng sơ loại [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: cuộc thi lập trình đội nhóm mở đăng ký vòng sơ loại.",
+        "createdDate": "2026-11-09T07:15:30.243062",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nCuộc thi lập trình đội nhóm mở đăng ký vòng sơ loại. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 377,
+        "categoryName": "Demo 20261109-team-02 • Học tập và công nghệ",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.2670981",
+        "viewCount": 2,
+        "likeCount": 3,
+        "commentCount": 2,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.9180538",
+        "tagIds": [
+          76,
+          79
+        ],
+        "tags": [
+          {
+            "tagId": 76,
+            "tagName": "demo-20261109-team-02-su-kien",
+            "note": "Nhãn nội dung su-kien, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 79,
+            "tagName": "demo-20261109-team-02-nghe-nghiep",
+            "note": "Nhãn nội dung nghe-nghiep, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor1",
+        "ordinal": 7
+      },
+      {
+        "newsArticleId": 972,
+        "newsTitle": "Góc học tập: năm cách quản lý thời gian trong mùa thi [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: góc học tập: năm cách quản lý thời gian trong mùa thi.",
+        "createdDate": "2026-11-09T07:15:30.2814326",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nGóc học tập: năm cách quản lý thời gian trong mùa thi. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 378,
+        "categoryName": "Demo 20261109-team-02 • Đời sống sinh viên",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.3055638",
+        "viewCount": 3,
+        "likeCount": 4,
+        "commentCount": 2,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.9600928",
+        "tagIds": [
+          77,
+          80
+        ],
+        "tags": [
+          {
+            "tagId": 77,
+            "tagName": "demo-20261109-team-02-tinh-nguyen",
+            "note": "Nhãn nội dung tinh-nguyen, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 80,
+            "tagName": "demo-20261109-team-02-thuc-tap",
+            "note": "Nhãn nội dung thuc-tap, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor2",
+        "ordinal": 8
+      },
+      {
+        "newsArticleId": 973,
+        "newsTitle": "Chương trình thực tập: kết nối kiến thức với trải nghiệm thực tế [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: chương trình thực tập: kết nối kiến thức với trải nghiệm thực tế.",
+        "createdDate": "2026-11-09T07:15:30.3235636",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nChương trình thực tập: kết nối kiến thức với trải nghiệm thực tế. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 384,
+        "categoryName": "Demo 20261109-team-02 • Thực tập doanh nghiệp",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.348903",
+        "viewCount": 4,
+        "likeCount": 1,
+        "commentCount": 1,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:32.9800987",
+        "tagIds": [
+          78,
+          81
+        ],
+        "tags": [
+          {
+            "tagId": 78,
+            "tagName": "demo-20261109-team-02-hoc-bong",
+            "note": "Nhãn nội dung hoc-bong, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 81,
+            "tagName": "demo-20261109-team-02-ky-nang",
+            "note": "Nhãn nội dung ky-nang, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor3",
+        "ordinal": 9
+      },
+      {
+        "newsArticleId": 974,
+        "newsTitle": "Talkshow an toàn dữ liệu dành cho sinh viên năm nhất [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: talkshow an toàn dữ liệu dành cho sinh viên năm nhất.",
+        "createdDate": "2026-11-09T07:15:30.3623058",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nTalkshow an toàn dữ liệu dành cho sinh viên năm nhất. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 381,
+        "categoryName": "Demo 20261109-team-02 • AI và dữ liệu",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.3836442",
+        "viewCount": 5,
+        "likeCount": 2,
+        "commentCount": 1,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:33.0133303",
+        "tagIds": [
+          70,
+          79
+        ],
+        "tags": [
+          {
+            "tagId": 70,
+            "tagName": "demo-20261109-team-02-cong-nghe",
+            "note": "Nhãn nội dung cong-nghe, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 79,
+            "tagName": "demo-20261109-team-02-nghe-nghiep",
+            "note": "Nhãn nội dung nghe-nghiep, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor1",
+        "ordinal": 10
+      },
+      {
+        "newsArticleId": 975,
+        "newsTitle": "Đêm nhạc gây quỹ: lan tỏa tinh thần sẻ chia [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: đêm nhạc gây quỹ: lan tỏa tinh thần sẻ chia.",
+        "createdDate": "2026-11-09T07:15:30.3966457",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nĐêm nhạc gây quỹ: lan tỏa tinh thần sẻ chia. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 379,
+        "categoryName": "Demo 20261109-team-02 • Sự kiện học đường",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.4166555",
+        "viewCount": 6,
+        "likeCount": 3,
+        "commentCount": 1,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:33.0596792",
+        "tagIds": [
+          71,
+          80
+        ],
+        "tags": [
+          {
+            "tagId": 71,
+            "tagName": "demo-20261109-team-02-tri-tue-nhan-tao",
+            "note": "Nhãn nội dung tri-tue-nhan-tao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 80,
+            "tagName": "demo-20261109-team-02-thuc-tap",
+            "note": "Nhãn nội dung thuc-tap, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor2",
+        "ordinal": 11
+      },
+      {
+        "newsArticleId": 976,
+        "newsTitle": "Câu lạc bộ tiếng Anh ra mắt chuỗi giao lưu cuối tuần [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: câu lạc bộ tiếng anh ra mắt chuỗi giao lưu cuối tuần.",
+        "createdDate": "2026-11-09T07:15:30.4297652",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nCâu lạc bộ tiếng Anh ra mắt chuỗi giao lưu cuối tuần. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 378,
+        "categoryName": "Demo 20261109-team-02 • Đời sống sinh viên",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.4518659",
+        "viewCount": 7,
+        "likeCount": 4,
+        "commentCount": 1,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:33.115189",
+        "tagIds": [
+          72,
+          81
+        ],
+        "tags": [
+          {
+            "tagId": 72,
+            "tagName": "demo-20261109-team-02-lap-trinh",
+            "note": "Nhãn nội dung lap-trinh, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 81,
+            "tagName": "demo-20261109-team-02-ky-nang",
+            "note": "Nhãn nội dung ky-nang, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor3",
+        "ordinal": 12
+      },
+      {
+        "newsArticleId": 977,
+        "newsTitle": "Triển lãm đồ án: những ý tưởng số hướng đến cộng đồng [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: triển lãm đồ án: những ý tưởng số hướng đến cộng đồng.",
+        "createdDate": "2026-11-09T07:15:30.4648654",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nTriển lãm đồ án: những ý tưởng số hướng đến cộng đồng. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 377,
+        "categoryName": "Demo 20261109-team-02 • Học tập và công nghệ",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.4858769",
+        "viewCount": 2,
+        "likeCount": 1,
+        "commentCount": 1,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:33.1575315",
+        "tagIds": [
+          70,
+          73
+        ],
+        "tags": [
+          {
+            "tagId": 70,
+            "tagName": "demo-20261109-team-02-cong-nghe",
+            "note": "Nhãn nội dung cong-nghe, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 73,
+            "tagName": "demo-20261109-team-02-sinh-vien",
+            "note": "Nhãn nội dung sinh-vien, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor1",
+        "ordinal": 13
+      },
+      {
+        "newsArticleId": 978,
+        "newsTitle": "Ngày chạy bộ xanh khuyến khích thói quen vận động [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: ngày chạy bộ xanh khuyến khích thói quen vận động.",
+        "createdDate": "2026-11-09T07:15:30.5115748",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nNgày chạy bộ xanh khuyến khích thói quen vận động. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 382,
+        "categoryName": "Demo 20261109-team-02 • Thể thao",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.5474346",
+        "viewCount": 3,
+        "likeCount": 2,
+        "commentCount": 1,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:33.1864491",
+        "tagIds": [
+          71,
+          74
+        ],
+        "tags": [
+          {
+            "tagId": 71,
+            "tagName": "demo-20261109-team-02-tri-tue-nhan-tao",
+            "note": "Nhãn nội dung tri-tue-nhan-tao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 74,
+            "tagName": "demo-20261109-team-02-cau-lac-bo",
+            "note": "Nhãn nội dung cau-lac-bo, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor2",
+        "ordinal": 14
+      },
+      {
+        "newsArticleId": 979,
+        "newsTitle": "Gặp gỡ cựu sinh viên: hành trang cho công việc đầu tiên [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: gặp gỡ cựu sinh viên: hành trang cho công việc đầu tiên.",
+        "createdDate": "2026-11-09T07:15:30.5633562",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nGặp gỡ cựu sinh viên: hành trang cho công việc đầu tiên. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 380,
+        "categoryName": "Demo 20261109-team-02 • Cơ hội nghề nghiệp",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.5878523",
+        "viewCount": 4,
+        "likeCount": 3,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:33.2214466",
+        "tagIds": [
+          72,
+          75
+        ],
+        "tags": [
+          {
+            "tagId": 72,
+            "tagName": "demo-20261109-team-02-lap-trinh",
+            "note": "Nhãn nội dung lap-trinh, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 75,
+            "tagName": "demo-20261109-team-02-the-thao",
+            "note": "Nhãn nội dung the-thao, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor3",
+        "ordinal": 15
+      },
+      {
+        "newsArticleId": 980,
+        "newsTitle": "Văn hóa đọc trong thời đại số: cùng chia sẻ một cuốn sách [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: văn hóa đọc trong thời đại số: cùng chia sẻ một cuốn sách.",
+        "createdDate": "2026-11-09T07:15:30.6029271",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nVăn hóa đọc trong thời đại số: cùng chia sẻ một cuốn sách. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 383,
+        "categoryName": "Demo 20261109-team-02 • Hoạt động cộng đồng",
+        "newsStatus": "PUBLISHED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.6259591",
+        "viewCount": 5,
+        "likeCount": 4,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:33.2604453",
+        "tagIds": [
+          73,
+          76
+        ],
+        "tags": [
+          {
+            "tagId": 73,
+            "tagName": "demo-20261109-team-02-sinh-vien",
+            "note": "Nhãn nội dung sinh-vien, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 76,
+            "tagName": "demo-20261109-team-02-su-kien",
+            "note": "Nhãn nội dung su-kien, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "published",
+        "demoActor": "contributor1",
+        "ordinal": 16
+      },
+      {
+        "newsArticleId": 981,
+        "newsTitle": "Bản nháp: gợi ý xây dựng portfolio cá nhân [Demo]",
+        "headline": "Bản nháp đã được tác giả cập nhật qua API trong bộ demo.",
+        "createdDate": "2026-11-09T07:15:30.6409586",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nBản nháp: gợi ý xây dựng portfolio cá nhân. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 380,
+        "categoryName": "Demo 20261109-team-02 • Cơ hội nghề nghiệp",
+        "newsStatus": "DRAFT",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3225,
+        "updatedByName": "Nguyễn Minh Anh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:30.9809094",
+        "tagIds": [
+          74,
+          77
+        ],
+        "tags": [
+          {
+            "tagId": 74,
+            "tagName": "demo-20261109-team-02-cau-lac-bo",
+            "note": "Nhãn nội dung cau-lac-bo, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 77,
+            "tagName": "demo-20261109-team-02-tinh-nguyen",
+            "note": "Nhãn nội dung tinh-nguyen, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "draft",
+        "demoActor": "contributor1",
+        "ordinal": 17
+      },
+      {
+        "newsArticleId": 982,
+        "newsTitle": "Bản nháp: câu chuyện phía sau một dự án nhóm [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: bản nháp: câu chuyện phía sau một dự án nhóm.",
+        "createdDate": "2026-11-09T07:15:30.6529647",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nBản nháp: câu chuyện phía sau một dự án nhóm. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 377,
+        "categoryName": "Demo 20261109-team-02 • Học tập và công nghệ",
+        "newsStatus": "DRAFT",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": null,
+        "updatedByName": null,
+        "modifiedDate": null,
+        "tagIds": [
+          75,
+          78
+        ],
+        "tags": [
+          {
+            "tagId": 75,
+            "tagName": "demo-20261109-team-02-the-thao",
+            "note": "Nhãn nội dung the-thao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 78,
+            "tagName": "demo-20261109-team-02-hoc-bong",
+            "note": "Nhãn nội dung hoc-bong, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "draft",
+        "demoActor": "contributor2",
+        "ordinal": 18
+      },
+      {
+        "newsArticleId": 983,
+        "newsTitle": "Bản nháp: hành trình tham gia câu lạc bộ nhiếp ảnh [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: bản nháp: hành trình tham gia câu lạc bộ nhiếp ảnh.",
+        "createdDate": "2026-11-09T07:15:30.6639589",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nBản nháp: hành trình tham gia câu lạc bộ nhiếp ảnh. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 378,
+        "categoryName": "Demo 20261109-team-02 • Đời sống sinh viên",
+        "newsStatus": "DRAFT",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": null,
+        "updatedByName": null,
+        "modifiedDate": null,
+        "tagIds": [
+          76,
+          79
+        ],
+        "tags": [
+          {
+            "tagId": 76,
+            "tagName": "demo-20261109-team-02-su-kien",
+            "note": "Nhãn nội dung su-kien, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 79,
+            "tagName": "demo-20261109-team-02-nghe-nghiep",
+            "note": "Nhãn nội dung nghe-nghiep, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "draft",
+        "demoActor": "contributor3",
+        "ordinal": 19
+      },
+      {
+        "newsArticleId": 984,
+        "newsTitle": "Chờ duyệt: tuần lễ nghiên cứu khoa học sinh viên [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: chờ duyệt: tuần lễ nghiên cứu khoa học sinh viên.",
+        "createdDate": "2026-11-09T07:15:30.6749713",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nChờ duyệt: tuần lễ nghiên cứu khoa học sinh viên. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 379,
+        "categoryName": "Demo 20261109-team-02 • Sự kiện học đường",
+        "newsStatus": "PENDING_REVIEW",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": null,
+        "updatedByName": null,
+        "modifiedDate": "2026-11-09T07:15:30.6889577",
+        "tagIds": [
+          77,
+          80
+        ],
+        "tags": [
+          {
+            "tagId": 77,
+            "tagName": "demo-20261109-team-02-tinh-nguyen",
+            "note": "Nhãn nội dung tinh-nguyen, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 80,
+            "tagName": "demo-20261109-team-02-thuc-tap",
+            "note": "Nhãn nội dung thuc-tap, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "pending",
+        "demoActor": "contributor1",
+        "ordinal": 20
+      },
+      {
+        "newsArticleId": 985,
+        "newsTitle": "Chờ duyệt: chuyên đề thiết kế hệ thống Spring Boot [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: chờ duyệt: chuyên đề thiết kế hệ thống spring boot.",
+        "createdDate": "2026-11-09T07:15:30.6990351",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nChờ duyệt: chuyên đề thiết kế hệ thống Spring Boot. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 377,
+        "categoryName": "Demo 20261109-team-02 • Học tập và công nghệ",
+        "newsStatus": "PENDING_REVIEW",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": null,
+        "updatedByName": null,
+        "modifiedDate": "2026-11-09T07:15:30.7119651",
+        "tagIds": [
+          78,
+          81
+        ],
+        "tags": [
+          {
+            "tagId": 78,
+            "tagName": "demo-20261109-team-02-hoc-bong",
+            "note": "Nhãn nội dung hoc-bong, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 81,
+            "tagName": "demo-20261109-team-02-ky-nang",
+            "note": "Nhãn nội dung ky-nang, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "pending",
+        "demoActor": "contributor2",
+        "ordinal": 21
+      },
+      {
+        "newsArticleId": 986,
+        "newsTitle": "Chờ duyệt: hoạt động giao lưu giữa các câu lạc bộ [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: chờ duyệt: hoạt động giao lưu giữa các câu lạc bộ.",
+        "createdDate": "2026-11-09T07:15:30.7209582",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nChờ duyệt: hoạt động giao lưu giữa các câu lạc bộ. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 378,
+        "categoryName": "Demo 20261109-team-02 • Đời sống sinh viên",
+        "newsStatus": "PENDING_REVIEW",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": null,
+        "updatedByName": null,
+        "modifiedDate": "2026-11-09T07:15:30.7329756",
+        "tagIds": [
+          70,
+          79
+        ],
+        "tags": [
+          {
+            "tagId": 70,
+            "tagName": "demo-20261109-team-02-cong-nghe",
+            "note": "Nhãn nội dung cong-nghe, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 79,
+            "tagName": "demo-20261109-team-02-nghe-nghiep",
+            "note": "Nhãn nội dung nghe-nghiep, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "pending",
+        "demoActor": "contributor3",
+        "ordinal": 22
+      },
+      {
+        "newsArticleId": 987,
+        "newsTitle": "Cần chỉnh sửa: kế hoạch cuộc thi sáng tạo ứng dụng [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: cần chỉnh sửa: kế hoạch cuộc thi sáng tạo ứng dụng.",
+        "createdDate": "2026-11-09T07:15:30.7423681",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nCần chỉnh sửa: kế hoạch cuộc thi sáng tạo ứng dụng. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 381,
+        "categoryName": "Demo 20261109-team-02 • AI và dữ liệu",
+        "newsStatus": "CHANGES_REQUESTED",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:30.7703659",
+        "tagIds": [
+          71,
+          80
+        ],
+        "tags": [
+          {
+            "tagId": 71,
+            "tagName": "demo-20261109-team-02-tri-tue-nhan-tao",
+            "note": "Nhãn nội dung tri-tue-nhan-tao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 80,
+            "tagName": "demo-20261109-team-02-thuc-tap",
+            "note": "Nhãn nội dung thuc-tap, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "changes",
+        "demoActor": "contributor1",
+        "ordinal": 23
+      },
+      {
+        "newsArticleId": 988,
+        "newsTitle": "Cần chỉnh sửa: hướng dẫn đăng ký thực tập [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: cần chỉnh sửa: hướng dẫn đăng ký thực tập.",
+        "createdDate": "2026-11-09T07:15:30.7803793",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nCần chỉnh sửa: hướng dẫn đăng ký thực tập. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 384,
+        "categoryName": "Demo 20261109-team-02 • Thực tập doanh nghiệp",
+        "newsStatus": "CHANGES_REQUESTED",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:30.8023727",
+        "tagIds": [
+          72,
+          81
+        ],
+        "tags": [
+          {
+            "tagId": 72,
+            "tagName": "demo-20261109-team-02-lap-trinh",
+            "note": "Nhãn nội dung lap-trinh, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 81,
+            "tagName": "demo-20261109-team-02-ky-nang",
+            "note": "Nhãn nội dung ky-nang, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "changes",
+        "demoActor": "contributor2",
+        "ordinal": 24
+      },
+      {
+        "newsArticleId": 989,
+        "newsTitle": "Hẹn giờ: thông báo chương trình đào tạo kỹ năng thuyết trình [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: hẹn giờ: thông báo chương trình đào tạo kỹ năng thuyết trình.",
+        "createdDate": "2026-11-09T07:15:30.8113721",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nHẹn giờ: thông báo chương trình đào tạo kỹ năng thuyết trình. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 377,
+        "categoryName": "Demo 20261109-team-02 • Học tập và công nghệ",
+        "newsStatus": "SCHEDULED",
+        "scheduledPublishDate": "2026-11-10T07:15:30",
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3226,
+        "createdByName": "Trần Gia Bảo (Demo)",
+        "updatedById": 3229,
+        "updatedByName": "Võ Khánh Linh (Demo)",
+        "modifiedDate": "2026-11-09T07:15:30.8389219",
+        "tagIds": [
+          70,
+          73
+        ],
+        "tags": [
+          {
+            "tagId": 70,
+            "tagName": "demo-20261109-team-02-cong-nghe",
+            "note": "Nhãn nội dung cong-nghe, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 73,
+            "tagName": "demo-20261109-team-02-sinh-vien",
+            "note": "Nhãn nội dung sinh-vien, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "scheduled",
+        "demoActor": "contributor2",
+        "ordinal": 25
+      },
+      {
+        "newsArticleId": 990,
+        "newsTitle": "Hẹn giờ: lịch sinh hoạt câu lạc bộ thể thao [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: hẹn giờ: lịch sinh hoạt câu lạc bộ thể thao.",
+        "createdDate": "2026-11-09T07:15:30.8499226",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nHẹn giờ: lịch sinh hoạt câu lạc bộ thể thao. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 382,
+        "categoryName": "Demo 20261109-team-02 • Thể thao",
+        "newsStatus": "SCHEDULED",
+        "scheduledPublishDate": "2026-11-11T07:15:30",
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:30.873704",
+        "tagIds": [
+          71,
+          74
+        ],
+        "tags": [
+          {
+            "tagId": 71,
+            "tagName": "demo-20261109-team-02-tri-tue-nhan-tao",
+            "note": "Nhãn nội dung tri-tue-nhan-tao, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 74,
+            "tagName": "demo-20261109-team-02-cau-lac-bo",
+            "note": "Nhãn nội dung cau-lac-bo, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "scheduled",
+        "demoActor": "contributor3",
+        "ordinal": 26
+      },
+      {
+        "newsArticleId": 991,
+        "newsTitle": "Lưu trữ: tổng kết triển lãm công nghệ của học kỳ trước [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: lưu trữ: tổng kết triển lãm công nghệ của học kỳ trước.",
+        "createdDate": "2026-11-09T07:15:30.8826971",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nLưu trữ: tổng kết triển lãm công nghệ của học kỳ trước. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 379,
+        "categoryName": "Demo 20261109-team-02 • Sự kiện học đường",
+        "newsStatus": "ARCHIVED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.9038881",
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3225,
+        "createdByName": "Nguyễn Minh Anh (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:30.9999313",
+        "tagIds": [
+          72,
+          75
+        ],
+        "tags": [
+          {
+            "tagId": 72,
+            "tagName": "demo-20261109-team-02-lap-trinh",
+            "note": "Nhãn nội dung lap-trinh, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 75,
+            "tagName": "demo-20261109-team-02-the-thao",
+            "note": "Nhãn nội dung the-thao, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "archived",
+        "demoActor": "contributor1",
+        "ordinal": 27
+      },
+      {
+        "newsArticleId": 992,
+        "newsTitle": "Lưu trữ: nhìn lại chiến dịch tình nguyện sinh viên [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: lưu trữ: nhìn lại chiến dịch tình nguyện sinh viên.",
+        "createdDate": "2026-11-09T07:15:30.9257914",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nLưu trữ: nhìn lại chiến dịch tình nguyện sinh viên. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 383,
+        "categoryName": "Demo 20261109-team-02 • Hoạt động cộng đồng",
+        "newsStatus": "ARCHIVED",
+        "scheduledPublishDate": null,
+        "publishedDate": "2026-11-09T07:15:30.9439279",
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 3227,
+        "createdByName": "Lê Hoàng Phúc (Demo)",
+        "updatedById": 3228,
+        "updatedByName": "Phạm Thu Hà (Demo)",
+        "modifiedDate": "2026-11-09T07:15:30.9569268",
+        "tagIds": [
+          73,
+          76
+        ],
+        "tags": [
+          {
+            "tagId": 73,
+            "tagName": "demo-20261109-team-02-sinh-vien",
+            "note": "Nhãn nội dung sinh-vien, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 76,
+            "tagName": "demo-20261109-team-02-su-kien",
+            "note": "Nhãn nội dung su-kien, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "archived",
+        "demoActor": "contributor3",
+        "ordinal": 28
+      },
+      {
+        "newsArticleId": 993,
+        "newsTitle": "Đã phê duyệt: bản tin định hướng nghề nghiệp [Demo]",
+        "headline": "Bản tin mô phỏng dành cho buổi demo: đã phê duyệt: bản tin định hướng nghề nghiệp.",
+        "createdDate": "2026-11-09T07:15:30.96593",
+        "newsContent": "DỮ LIỆU DEMO — demo-20261109-team-02.\n\nĐã phê duyệt: bản tin định hướng nghề nghiệp. Đây là nội dung giả lập để nhóm trình diễn hệ thống quản lý tin tức, không phải thông báo chính thức.\n\nChương trình hướng đến việc kết nối sinh viên, phát triển kỹ năng và chia sẻ kinh nghiệm học tập. Người tham gia có thể theo dõi thông tin, đặt câu hỏi và trao đổi trong phần bình luận.\n\nBan tổ chức mô phỏng giới thiệu hoạt động trải nghiệm, phiên thảo luận và cơ hội hợp tác theo nhóm. Nội dung này phục vụ kiểm thử tạo bài, phân loại, tìm kiếm, gắn tag và quy trình biên tập.",
+        "newsSource": "NMS Demo • demo-20261109-team-02",
+        "categoryId": 380,
+        "categoryName": "Demo 20261109-team-02 • Cơ hội nghề nghiệp",
+        "newsStatus": "APPROVED",
+        "scheduledPublishDate": null,
+        "publishedDate": null,
+        "viewCount": 0,
+        "likeCount": 0,
+        "commentCount": 0,
+        "allowComments": true,
+        "createdById": 130,
+        "createdByName": "System Administrator",
+        "updatedById": null,
+        "updatedByName": null,
+        "modifiedDate": null,
+        "tagIds": [
+          74,
+          77
+        ],
+        "tags": [
+          {
+            "tagId": 74,
+            "tagName": "demo-20261109-team-02-cau-lac-bo",
+            "note": "Nhãn nội dung cau-lac-bo, bộ demo demo-20261109-team-02"
+          },
+          {
+            "tagId": 77,
+            "tagName": "demo-20261109-team-02-tinh-nguyen",
+            "note": "Nhãn nội dung tinh-nguyen, bộ demo demo-20261109-team-02"
+          }
+        ],
+        "scenario": "approved",
+        "demoActor": "admin",
+        "ordinal": 29
+      }
+    ],
+    "NewsTag": [
+      {
+        "newsArticleId": 965,
+        "tagId": 70
+      },
+      {
+        "newsArticleId": 965,
+        "tagId": 73
+      },
+      {
+        "newsArticleId": 966,
+        "tagId": 71
+      },
+      {
+        "newsArticleId": 966,
+        "tagId": 74
+      },
+      {
+        "newsArticleId": 967,
+        "tagId": 72
+      },
+      {
+        "newsArticleId": 967,
+        "tagId": 75
+      },
+      {
+        "newsArticleId": 968,
+        "tagId": 73
+      },
+      {
+        "newsArticleId": 968,
+        "tagId": 76
+      },
+      {
+        "newsArticleId": 969,
+        "tagId": 74
+      },
+      {
+        "newsArticleId": 969,
+        "tagId": 77
+      },
+      {
+        "newsArticleId": 970,
+        "tagId": 75
+      },
+      {
+        "newsArticleId": 970,
+        "tagId": 78
+      },
+      {
+        "newsArticleId": 971,
+        "tagId": 76
+      },
+      {
+        "newsArticleId": 971,
+        "tagId": 79
+      },
+      {
+        "newsArticleId": 972,
+        "tagId": 77
+      },
+      {
+        "newsArticleId": 972,
+        "tagId": 80
+      },
+      {
+        "newsArticleId": 973,
+        "tagId": 78
+      },
+      {
+        "newsArticleId": 973,
+        "tagId": 81
+      },
+      {
+        "newsArticleId": 974,
+        "tagId": 70
+      },
+      {
+        "newsArticleId": 974,
+        "tagId": 79
+      },
+      {
+        "newsArticleId": 975,
+        "tagId": 71
+      },
+      {
+        "newsArticleId": 975,
+        "tagId": 80
+      },
+      {
+        "newsArticleId": 976,
+        "tagId": 72
+      },
+      {
+        "newsArticleId": 976,
+        "tagId": 81
+      },
+      {
+        "newsArticleId": 977,
+        "tagId": 70
+      },
+      {
+        "newsArticleId": 977,
+        "tagId": 73
+      },
+      {
+        "newsArticleId": 978,
+        "tagId": 71
+      },
+      {
+        "newsArticleId": 978,
+        "tagId": 74
+      },
+      {
+        "newsArticleId": 979,
+        "tagId": 72
+      },
+      {
+        "newsArticleId": 979,
+        "tagId": 75
+      },
+      {
+        "newsArticleId": 980,
+        "tagId": 73
+      },
+      {
+        "newsArticleId": 980,
+        "tagId": 76
+      },
+      {
+        "newsArticleId": 981,
+        "tagId": 74
+      },
+      {
+        "newsArticleId": 981,
+        "tagId": 77
+      },
+      {
+        "newsArticleId": 982,
+        "tagId": 75
+      },
+      {
+        "newsArticleId": 982,
+        "tagId": 78
+      },
+      {
+        "newsArticleId": 983,
+        "tagId": 76
+      },
+      {
+        "newsArticleId": 983,
+        "tagId": 79
+      },
+      {
+        "newsArticleId": 984,
+        "tagId": 77
+      },
+      {
+        "newsArticleId": 984,
+        "tagId": 80
+      },
+      {
+        "newsArticleId": 985,
+        "tagId": 78
+      },
+      {
+        "newsArticleId": 985,
+        "tagId": 81
+      },
+      {
+        "newsArticleId": 986,
+        "tagId": 70
+      },
+      {
+        "newsArticleId": 986,
+        "tagId": 79
+      },
+      {
+        "newsArticleId": 987,
+        "tagId": 71
+      },
+      {
+        "newsArticleId": 987,
+        "tagId": 80
+      },
+      {
+        "newsArticleId": 988,
+        "tagId": 72
+      },
+      {
+        "newsArticleId": 988,
+        "tagId": 81
+      },
+      {
+        "newsArticleId": 989,
+        "tagId": 70
+      },
+      {
+        "newsArticleId": 989,
+        "tagId": 73
+      },
+      {
+        "newsArticleId": 990,
+        "tagId": 71
+      },
+      {
+        "newsArticleId": 990,
+        "tagId": 74
+      },
+      {
+        "newsArticleId": 991,
+        "tagId": 72
+      },
+      {
+        "newsArticleId": 991,
+        "tagId": 75
+      },
+      {
+        "newsArticleId": 992,
+        "tagId": 73
+      },
+      {
+        "newsArticleId": 992,
+        "tagId": 76
+      },
+      {
+        "newsArticleId": 993,
+        "tagId": 74
+      },
+      {
+        "newsArticleId": 993,
+        "tagId": 77
+      },
+      {
+        "newsArticleId": 965,
+        "tagId": 71
+      }
+    ],
+    "Comment": [
+      {
+        "commentId": 1,
+        "newsArticleId": 965,
+        "accountId": 3232,
+        "authorName": "Đỗ Hải Yến (Demo)",
+        "parentCommentId": null,
+        "content": "Bài viết rất hữu ích, mình sẽ chia sẻ với nhóm học tập. (demo-20261109-team-02, bình luận 1)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.0347633",
+        "updatedDate": null
+      },
+      {
+        "commentId": 2,
+        "newsArticleId": 966,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": null,
+        "content": "Mình mong có thêm hướng dẫn đăng ký chi tiết cho sinh viên mới. (demo-20261109-team-02, bình luận 2)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.0657354",
+        "updatedDate": null
+      },
+      {
+        "commentId": 3,
+        "newsArticleId": 967,
+        "accountId": 3234,
+        "authorName": "Hoàng Bảo Ngọc (Demo)",
+        "parentCommentId": null,
+        "content": "Nội dung trình bày rõ ràng, cảm ơn ban biên tập. (demo-20261109-team-02, bình luận 3)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.0781057",
+        "updatedDate": null
+      },
+      {
+        "commentId": 4,
+        "newsArticleId": 968,
+        "accountId": 3235,
+        "authorName": "Dương Nhật Minh (Demo)",
+        "parentCommentId": null,
+        "content": "Mình quan tâm đến hoạt động này và muốn tham gia cùng các bạn. (demo-20261109-team-02, bình luận 4)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.3866591",
+        "updatedDate": null
+      },
+      {
+        "commentId": 5,
+        "newsArticleId": 969,
+        "accountId": 3232,
+        "authorName": "Đỗ Hải Yến (Demo)",
+        "parentCommentId": null,
+        "content": "Có thể bổ sung phần hỏi đáp để mọi người dễ theo dõi không? (demo-20261109-team-02, bình luận 5)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.4158456",
+        "updatedDate": null
+      },
+      {
+        "commentId": 6,
+        "newsArticleId": 970,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": null,
+        "content": "Hy vọng chương trình sẽ có thêm nhiều hoạt động thực hành. (demo-20261109-team-02, bình luận 6)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.4322123",
+        "updatedDate": null
+      },
+      {
+        "commentId": 7,
+        "newsArticleId": 971,
+        "accountId": 3234,
+        "authorName": "Hoàng Bảo Ngọc (Demo)",
+        "parentCommentId": null,
+        "content": "Bài viết rất hữu ích, mình sẽ chia sẻ với nhóm học tập. (demo-20261109-team-02, bình luận 7)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.4484261",
+        "updatedDate": null
+      },
+      {
+        "commentId": 8,
+        "newsArticleId": 972,
+        "accountId": 3235,
+        "authorName": "Dương Nhật Minh (Demo)",
+        "parentCommentId": null,
+        "content": "Mình mong có thêm hướng dẫn đăng ký chi tiết cho sinh viên mới. (demo-20261109-team-02, bình luận 8)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.4817603",
+        "updatedDate": null
+      },
+      {
+        "commentId": 9,
+        "newsArticleId": 973,
+        "accountId": 3232,
+        "authorName": "Đỗ Hải Yến (Demo)",
+        "parentCommentId": null,
+        "content": "Nội dung trình bày rõ ràng, cảm ơn ban biên tập. (demo-20261109-team-02, bình luận 9)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.5265132",
+        "updatedDate": null
+      },
+      {
+        "commentId": 10,
+        "newsArticleId": 974,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": null,
+        "content": "Mình quan tâm đến hoạt động này và muốn tham gia cùng các bạn. (demo-20261109-team-02, bình luận 10)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.5672192",
+        "updatedDate": null
+      },
+      {
+        "commentId": 11,
+        "newsArticleId": 975,
+        "accountId": 3234,
+        "authorName": "Hoàng Bảo Ngọc (Demo)",
+        "parentCommentId": null,
+        "content": "Có thể bổ sung phần hỏi đáp để mọi người dễ theo dõi không? (demo-20261109-team-02, bình luận 11)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.6006698",
+        "updatedDate": null
+      },
+      {
+        "commentId": 12,
+        "newsArticleId": 976,
+        "accountId": 3235,
+        "authorName": "Dương Nhật Minh (Demo)",
+        "parentCommentId": null,
+        "content": "Hy vọng chương trình sẽ có thêm nhiều hoạt động thực hành. (demo-20261109-team-02, bình luận 12)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.6538971",
+        "updatedDate": null
+      },
+      {
+        "commentId": 13,
+        "newsArticleId": 977,
+        "accountId": 3232,
+        "authorName": "Đỗ Hải Yến (Demo)",
+        "parentCommentId": null,
+        "content": "Bài viết rất hữu ích, mình sẽ chia sẻ với nhóm học tập. (demo-20261109-team-02, bình luận 13)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.6756297",
+        "updatedDate": null
+      },
+      {
+        "commentId": 14,
+        "newsArticleId": 978,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": null,
+        "content": "Mình mong có thêm hướng dẫn đăng ký chi tiết cho sinh viên mới. (demo-20261109-team-02, bình luận 14)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.6899047",
+        "updatedDate": null
+      },
+      {
+        "commentId": 15,
+        "newsArticleId": 979,
+        "accountId": 3234,
+        "authorName": "Hoàng Bảo Ngọc (Demo)",
+        "parentCommentId": null,
+        "content": "Nội dung trình bày rõ ràng, cảm ơn ban biên tập. (demo-20261109-team-02, bình luận 15)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.7011647",
+        "updatedDate": null
+      },
+      {
+        "commentId": 16,
+        "newsArticleId": 980,
+        "accountId": 3235,
+        "authorName": "Dương Nhật Minh (Demo)",
+        "parentCommentId": null,
+        "content": "Mình quan tâm đến hoạt động này và muốn tham gia cùng các bạn. (demo-20261109-team-02, bình luận 16)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.7121505",
+        "updatedDate": null
+      },
+      {
+        "commentId": 17,
+        "newsArticleId": 965,
+        "accountId": 3232,
+        "authorName": "Đỗ Hải Yến (Demo)",
+        "parentCommentId": null,
+        "content": "Có thể bổ sung phần hỏi đáp để mọi người dễ theo dõi không? (demo-20261109-team-02, bình luận 17)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.7461491",
+        "updatedDate": null
+      },
+      {
+        "commentId": 18,
+        "newsArticleId": 966,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": null,
+        "content": "Hy vọng chương trình sẽ có thêm nhiều hoạt động thực hành. (demo-20261109-team-02, bình luận 18)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.7665608",
+        "updatedDate": null
+      },
+      {
+        "commentId": 19,
+        "newsArticleId": 967,
+        "accountId": 3234,
+        "authorName": "Hoàng Bảo Ngọc (Demo)",
+        "parentCommentId": null,
+        "content": "Bài viết rất hữu ích, mình sẽ chia sẻ với nhóm học tập. (demo-20261109-team-02, bình luận 19)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.7905651",
+        "updatedDate": null
+      },
+      {
+        "commentId": 20,
+        "newsArticleId": 968,
+        "accountId": 3235,
+        "authorName": "Dương Nhật Minh (Demo)",
+        "parentCommentId": null,
+        "content": "Mình mong có thêm hướng dẫn đăng ký chi tiết cho sinh viên mới. (demo-20261109-team-02, bình luận 20)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.807558",
+        "updatedDate": null
+      },
+      {
+        "commentId": 21,
+        "newsArticleId": 969,
+        "accountId": 3232,
+        "authorName": "Đỗ Hải Yến (Demo)",
+        "parentCommentId": null,
+        "content": "Nội dung trình bày rõ ràng, cảm ơn ban biên tập. (demo-20261109-team-02, bình luận 21) demoquangcao20261109-team-02",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": true,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.8245592",
+        "updatedDate": null
+      },
+      {
+        "commentId": 22,
+        "newsArticleId": 970,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": null,
+        "content": "Mình quan tâm đến hoạt động này và muốn tham gia cùng các bạn. (demo-20261109-team-02, bình luận 22)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.8410414",
+        "updatedDate": null
+      },
+      {
+        "commentId": 23,
+        "newsArticleId": 971,
+        "accountId": 3234,
+        "authorName": "Hoàng Bảo Ngọc (Demo)",
+        "parentCommentId": null,
+        "content": "Có thể bổ sung phần hỏi đáp để mọi người dễ theo dõi không? (demo-20261109-team-02, bình luận 23)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.8630677",
+        "updatedDate": null
+      },
+      {
+        "commentId": 24,
+        "newsArticleId": 972,
+        "accountId": 3235,
+        "authorName": "Dương Nhật Minh (Demo)",
+        "parentCommentId": null,
+        "content": "Hy vọng chương trình sẽ có thêm nhiều hoạt động thực hành. (demo-20261109-team-02, bình luận 24)",
+        "status": "PENDING_MODERATION",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.8790739",
+        "updatedDate": null
+      },
+      {
+        "commentId": 25,
+        "newsArticleId": 965,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 1,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 1)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.8940676",
+        "updatedDate": null
+      },
+      {
+        "commentId": 26,
+        "newsArticleId": 966,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 2,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 2)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.9090669",
+        "updatedDate": null
+      },
+      {
+        "commentId": 27,
+        "newsArticleId": 967,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 3,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 3)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.9200689",
+        "updatedDate": null
+      },
+      {
+        "commentId": 28,
+        "newsArticleId": 968,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 4,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 4)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.9305897",
+        "updatedDate": null
+      },
+      {
+        "commentId": 29,
+        "newsArticleId": 969,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 5,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 5)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.9425976",
+        "updatedDate": null
+      },
+      {
+        "commentId": 30,
+        "newsArticleId": 970,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 6,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 6)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.9546084",
+        "updatedDate": null
+      },
+      {
+        "commentId": 31,
+        "newsArticleId": 971,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 7,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 7)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.9706234",
+        "updatedDate": null
+      },
+      {
+        "commentId": 32,
+        "newsArticleId": 972,
+        "accountId": 3233,
+        "authorName": "Ngô Quốc An — Bạn đọc demo",
+        "parentCommentId": 8,
+        "content": "Mình đồng ý với bạn. Nhóm sẽ cập nhật thêm thông tin trong bản tin tiếp theo. (demo-20261109-team-02, trả lời 8)",
+        "status": "APPROVED",
+        "isFlaggedProfanity": false,
+        "reportCount": 0,
+        "createdDate": "2026-11-09T14:15:31.9860712",
+        "updatedDate": null
+      }
+    ],
+    "CommentReport": [
+      {
+        "commentId": 1,
+        "reporter": 3233
+      },
+      {
+        "commentId": 2,
+        "reporter": 3232
+      },
+      {
+        "commentId": 3,
+        "reporter": 3232
+      },
+      {
+        "commentId": 4,
+        "reporter": 3232
+      },
+      {
+        "commentId": 5,
+        "reporter": 3233
+      },
+      {
+        "commentId": 6,
+        "reporter": 3232
+      },
+      {
+        "commentId": 7,
+        "reporter": 3232
+      },
+      {
+        "commentId": 8,
+        "reporter": 3232
+      }
+    ],
+    "ArticleReaction": [
+      {
+        "newsArticleId": 965,
+        "actor": "reader1",
+        "articleId": 965,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 966,
+        "actor": "reader1",
+        "articleId": 966,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 966,
+        "actor": "reader2",
+        "articleId": 966,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 967,
+        "actor": "reader1",
+        "articleId": 967,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 967,
+        "actor": "reader2",
+        "articleId": 967,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 967,
+        "actor": "reader3",
+        "articleId": 967,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 968,
+        "actor": "reader1",
+        "articleId": 968,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 968,
+        "actor": "reader2",
+        "articleId": 968,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 968,
+        "actor": "reader3",
+        "articleId": 968,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 968,
+        "actor": "reader4",
+        "articleId": 968,
+        "likeCount": 4,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 969,
+        "actor": "reader1",
+        "articleId": 969,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 970,
+        "actor": "reader1",
+        "articleId": 970,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 970,
+        "actor": "reader2",
+        "articleId": 970,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 971,
+        "actor": "reader1",
+        "articleId": 971,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 971,
+        "actor": "reader2",
+        "articleId": 971,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 971,
+        "actor": "reader3",
+        "articleId": 971,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 972,
+        "actor": "reader1",
+        "articleId": 972,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 972,
+        "actor": "reader2",
+        "articleId": 972,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 972,
+        "actor": "reader3",
+        "articleId": 972,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 972,
+        "actor": "reader4",
+        "articleId": 972,
+        "likeCount": 4,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 973,
+        "actor": "reader1",
+        "articleId": 973,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 974,
+        "actor": "reader1",
+        "articleId": 974,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 974,
+        "actor": "reader2",
+        "articleId": 974,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 975,
+        "actor": "reader1",
+        "articleId": 975,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 975,
+        "actor": "reader2",
+        "articleId": 975,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 975,
+        "actor": "reader3",
+        "articleId": 975,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 976,
+        "actor": "reader1",
+        "articleId": 976,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 976,
+        "actor": "reader2",
+        "articleId": 976,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 976,
+        "actor": "reader3",
+        "articleId": 976,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 976,
+        "actor": "reader4",
+        "articleId": 976,
+        "likeCount": 4,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 977,
+        "actor": "reader1",
+        "articleId": 977,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 978,
+        "actor": "reader1",
+        "articleId": 978,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 978,
+        "actor": "reader2",
+        "articleId": 978,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 979,
+        "actor": "reader1",
+        "articleId": 979,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 979,
+        "actor": "reader2",
+        "articleId": 979,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 979,
+        "actor": "reader3",
+        "articleId": 979,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 980,
+        "actor": "reader1",
+        "articleId": 980,
+        "likeCount": 1,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 980,
+        "actor": "reader2",
+        "articleId": 980,
+        "likeCount": 2,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 980,
+        "actor": "reader3",
+        "articleId": 980,
+        "likeCount": 3,
+        "isLikedByCurrentUser": true
+      },
+      {
+        "newsArticleId": 980,
+        "actor": "reader4",
+        "articleId": 980,
+        "likeCount": 4,
+        "isLikedByCurrentUser": true
+      }
+    ],
+    "Notification": [
+      {
+        "notificationId": 164,
+        "recipientId": 3225,
+        "newsArticleId": 965,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Nguyễn Minh Anh (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Contributor.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:15:33.284452",
+        "recipientKey": "contributor1"
+      },
+      {
+        "notificationId": 165,
+        "recipientId": 3236,
+        "newsArticleId": 966,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Tài khoản demo bị vô hiệu hóa (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Reader.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:16:55.049117",
+        "recipientKey": "inactive"
+      },
+      {
+        "notificationId": 166,
+        "recipientId": 3236,
+        "newsArticleId": 968,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:16:55.0581118",
+        "recipientKey": "inactive"
+      },
+      {
+        "notificationId": 167,
+        "recipientId": 3225,
+        "newsArticleId": 969,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:17.8566655",
+        "recipientKey": "contributor1"
+      },
+      {
+        "notificationId": 168,
+        "recipientId": 3226,
+        "newsArticleId": 969,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Trần Gia Bảo (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Contributor.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:17.8726829",
+        "recipientKey": "contributor2"
+      },
+      {
+        "notificationId": 169,
+        "recipientId": 3226,
+        "newsArticleId": 971,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:17.8796816",
+        "recipientKey": "contributor2"
+      },
+      {
+        "notificationId": 170,
+        "recipientId": 3227,
+        "newsArticleId": 971,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Lê Hoàng Phúc (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Contributor.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:17.8936872",
+        "recipientKey": "contributor3"
+      },
+      {
+        "notificationId": 171,
+        "recipientId": 3227,
+        "newsArticleId": 973,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:17.9046966",
+        "recipientKey": "contributor3"
+      },
+      {
+        "notificationId": 172,
+        "recipientId": 3228,
+        "newsArticleId": 973,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Phạm Thu Hà (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Editor.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:17.9196815",
+        "recipientKey": "editor1"
+      },
+      {
+        "notificationId": 173,
+        "recipientId": 3228,
+        "newsArticleId": 975,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:17.9276812",
+        "recipientKey": "editor1"
+      },
+      {
+        "notificationId": 174,
+        "recipientId": 3229,
+        "newsArticleId": 975,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Võ Khánh Linh (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Editor.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:17.9426951",
+        "recipientKey": "editor2"
+      },
+      {
+        "notificationId": 175,
+        "recipientId": 3229,
+        "newsArticleId": 977,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:17.9468481",
+        "recipientKey": "editor2"
+      },
+      {
+        "notificationId": 176,
+        "recipientId": 3230,
+        "newsArticleId": 977,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Bùi Đức Huy (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Moderator.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:17.9598351",
+        "recipientKey": "moderator1"
+      },
+      {
+        "notificationId": 177,
+        "recipientId": 3230,
+        "newsArticleId": 979,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:17.9664481",
+        "recipientKey": "moderator1"
+      },
+      {
+        "notificationId": 178,
+        "recipientId": 3231,
+        "newsArticleId": 979,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Đặng Ngọc Mai (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Moderator.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:17.9823744",
+        "recipientKey": "moderator2"
+      },
+      {
+        "notificationId": 179,
+        "recipientId": 3231,
+        "newsArticleId": 965,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:17.9903741",
+        "recipientKey": "moderator2"
+      },
+      {
+        "notificationId": 180,
+        "recipientId": 3232,
+        "newsArticleId": 965,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Đỗ Hải Yến (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Reader.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:18.0084721",
+        "recipientKey": "reader1"
+      },
+      {
+        "notificationId": 181,
+        "recipientId": 3232,
+        "newsArticleId": 967,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:18.0214785",
+        "recipientKey": "reader1"
+      },
+      {
+        "notificationId": 182,
+        "recipientId": 3233,
+        "newsArticleId": 967,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Ngô Quốc An — Bạn đọc demo. Đây là thông báo nội bộ giả lập cho tài khoản Reader.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:18.0383745",
+        "recipientKey": "reader2"
+      },
+      {
+        "notificationId": 183,
+        "recipientId": 3233,
+        "newsArticleId": 969,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:18.0450955",
+        "recipientKey": "reader2"
+      },
+      {
+        "notificationId": 184,
+        "recipientId": 3234,
+        "newsArticleId": 969,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Hoàng Bảo Ngọc (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Reader.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:18.0617236",
+        "recipientKey": "reader3"
+      },
+      {
+        "notificationId": 185,
+        "recipientId": 3234,
+        "newsArticleId": 971,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:18.0676831",
+        "recipientKey": "reader3"
+      },
+      {
+        "notificationId": 186,
+        "recipientId": 3235,
+        "newsArticleId": 971,
+        "title": "Chào mừng bạn đến với NMS Demo",
+        "content": "Xin chào Dương Nhật Minh (Demo). Đây là thông báo nội bộ giả lập cho tài khoản Reader.",
+        "isRead": 0,
+        "createdDate": "2026-11-09T07:17:18.0873271",
+        "recipientKey": "reader4"
+      },
+      {
+        "notificationId": 187,
+        "recipientId": 3235,
+        "newsArticleId": 973,
+        "title": "Nhắc lịch trình diễn dự án",
+        "content": "Nhóm chuẩn bị trình diễn các tính năng theo vai trò. Mã dữ liệu: demo-20261109-team-02.",
+        "isRead": 1,
+        "createdDate": "2026-11-09T07:17:18.0943368",
+        "recipientKey": "reader4"
+      }
+    ],
+    "ArticleReviewNote": [
+      {
+        "noteId": 1,
+        "articleId": 987,
+        "editorId": 3229,
+        "editorName": "Võ Khánh Linh (Demo)",
+        "feedbackContent": "Vui lòng bổ sung thời gian, đối tượng tham gia và thông tin liên hệ mô phỏng. Kiểm tra lại tiêu đề trước khi nộp duyệt lần tiếp theo. (demo-20261109-team-02)",
+        "actionType": "CHANGES_REQUESTED",
+        "createdDate": "2026-11-09T07:15:30.7663798"
+      },
+      {
+        "noteId": 2,
+        "articleId": 988,
+        "editorId": 3228,
+        "editorName": "Phạm Thu Hà (Demo)",
+        "feedbackContent": "Vui lòng bổ sung thời gian, đối tượng tham gia và thông tin liên hệ mô phỏng. Kiểm tra lại tiêu đề trước khi nộp duyệt lần tiếp theo. (demo-20261109-team-02)",
+        "actionType": "CHANGES_REQUESTED",
+        "createdDate": "2026-11-09T07:15:30.8003655"
+      }
+    ],
+    "ArticleAuditLog": [
+      {
+        "logId": 11,
+        "newsArticleId": 965,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.0152455"
+      },
+      {
+        "logId": 10,
+        "newsArticleId": 965,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:29.9847144"
+      },
+      {
+        "logId": 9,
+        "newsArticleId": 965,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tạo bài viết mới với trạng thái DRAFT",
+        "createdAt": "2026-11-09T07:15:29.9521913"
+      },
+      {
+        "logId": 14,
+        "newsArticleId": 966,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.061255"
+      },
+      {
+        "logId": 13,
+        "newsArticleId": 966,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.0460965"
+      },
+      {
+        "logId": 12,
+        "newsArticleId": 966,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.0347613"
+      },
+      {
+        "logId": 17,
+        "newsArticleId": 967,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.1042378"
+      },
+      {
+        "logId": 16,
+        "newsArticleId": 967,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.090288"
+      },
+      {
+        "logId": 15,
+        "newsArticleId": 967,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.0792555"
+      },
+      {
+        "logId": 20,
+        "newsArticleId": 968,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.146754"
+      },
+      {
+        "logId": 19,
+        "newsArticleId": 968,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.1337539"
+      },
+      {
+        "logId": 18,
+        "newsArticleId": 968,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.123764"
+      },
+      {
+        "logId": 23,
+        "newsArticleId": 969,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.1859781"
+      },
+      {
+        "logId": 22,
+        "newsArticleId": 969,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.1739846"
+      },
+      {
+        "logId": 21,
+        "newsArticleId": 969,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.1639708"
+      },
+      {
+        "logId": 26,
+        "newsArticleId": 970,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.2229716"
+      },
+      {
+        "logId": 25,
+        "newsArticleId": 970,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.2119706"
+      },
+      {
+        "logId": 24,
+        "newsArticleId": 970,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.2029701"
+      },
+      {
+        "logId": 29,
+        "newsArticleId": 971,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.2670981"
+      },
+      {
+        "logId": 28,
+        "newsArticleId": 971,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.254076"
+      },
+      {
+        "logId": 27,
+        "newsArticleId": 971,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.2440659"
+      },
+      {
+        "logId": 32,
+        "newsArticleId": 972,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.3055638"
+      },
+      {
+        "logId": 31,
+        "newsArticleId": 972,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.2925451"
+      },
+      {
+        "logId": 30,
+        "newsArticleId": 972,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tạo bài viết mới với trạng thái DRAFT",
+        "createdAt": "2026-11-09T07:15:30.2824454"
+      },
+      {
+        "logId": 35,
+        "newsArticleId": 973,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.348903"
+      },
+      {
+        "logId": 34,
+        "newsArticleId": 973,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.3356198"
+      },
+      {
+        "logId": 33,
+        "newsArticleId": 973,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.3245627"
+      },
+      {
+        "logId": 38,
+        "newsArticleId": 974,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.3836442"
+      },
+      {
+        "logId": 37,
+        "newsArticleId": 974,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.3733057"
+      },
+      {
+        "logId": 36,
+        "newsArticleId": 974,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.3633046"
+      },
+      {
+        "logId": 41,
+        "newsArticleId": 975,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.4166555"
+      },
+      {
+        "logId": 40,
+        "newsArticleId": 975,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.406638"
+      },
+      {
+        "logId": 39,
+        "newsArticleId": 975,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.3976363"
+      },
+      {
+        "logId": 44,
+        "newsArticleId": 976,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.4528741"
+      },
+      {
+        "logId": 43,
+        "newsArticleId": 976,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.4407712"
+      },
+      {
+        "logId": 42,
+        "newsArticleId": 976,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.430769"
+      },
+      {
+        "logId": 47,
+        "newsArticleId": 977,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.4858769"
+      },
+      {
+        "logId": 46,
+        "newsArticleId": 977,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.4738791"
+      },
+      {
+        "logId": 45,
+        "newsArticleId": 977,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.4658663"
+      },
+      {
+        "logId": 50,
+        "newsArticleId": 978,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.5474346"
+      },
+      {
+        "logId": 49,
+        "newsArticleId": 978,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.5314346"
+      },
+      {
+        "logId": 48,
+        "newsArticleId": 978,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.5135768"
+      },
+      {
+        "logId": 53,
+        "newsArticleId": 979,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.5878523"
+      },
+      {
+        "logId": 52,
+        "newsArticleId": 979,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.5746395"
+      },
+      {
+        "logId": 51,
+        "newsArticleId": 979,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tạo bài viết mới với trạng thái DRAFT",
+        "createdAt": "2026-11-09T07:15:30.56463"
+      },
+      {
+        "logId": 56,
+        "newsArticleId": 980,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.6259591"
+      },
+      {
+        "logId": 55,
+        "newsArticleId": 980,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.6139582"
+      },
+      {
+        "logId": 54,
+        "newsArticleId": 980,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.6049725"
+      },
+      {
+        "logId": 87,
+        "newsArticleId": 981,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "UPDATE_DRAFT",
+        "fromStatus": "DRAFT",
+        "toStatus": "DRAFT",
+        "notes": "Tác giả cập nhật nội dung bài viết",
+        "createdAt": "2026-11-09T07:15:30.9789212"
+      },
+      {
+        "logId": 57,
+        "newsArticleId": 981,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.6419585"
+      },
+      {
+        "logId": 58,
+        "newsArticleId": 982,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.6539646"
+      },
+      {
+        "logId": 59,
+        "newsArticleId": 983,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.6659648"
+      },
+      {
+        "logId": 61,
+        "newsArticleId": 984,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.685958"
+      },
+      {
+        "logId": 60,
+        "newsArticleId": 984,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.6769672"
+      },
+      {
+        "logId": 63,
+        "newsArticleId": 985,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.7089608"
+      },
+      {
+        "logId": 62,
+        "newsArticleId": 985,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.6999605"
+      },
+      {
+        "logId": 65,
+        "newsArticleId": 986,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.7299582"
+      },
+      {
+        "logId": 64,
+        "newsArticleId": 986,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tạo bài viết mới với trạng thái DRAFT",
+        "createdAt": "2026-11-09T07:15:30.7219596"
+      },
+      {
+        "logId": 68,
+        "newsArticleId": 987,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "REQUEST_CHANGES",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "CHANGES_REQUESTED",
+        "notes": "Vui lòng bổ sung thời gian, đối tượng tham gia và thông tin liên hệ mô phỏng. Kiểm tra lại tiêu đề trước khi nộp duyệt lần tiếp theo. (demo-20261109-team-02)",
+        "createdAt": "2026-11-09T07:15:30.7693651"
+      },
+      {
+        "logId": 67,
+        "newsArticleId": 987,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.7523663"
+      },
+      {
+        "logId": 66,
+        "newsArticleId": 987,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.744369"
+      },
+      {
+        "logId": 71,
+        "newsArticleId": 988,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "REQUEST_CHANGES",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "CHANGES_REQUESTED",
+        "notes": "Vui lòng bổ sung thời gian, đối tượng tham gia và thông tin liên hệ mô phỏng. Kiểm tra lại tiêu đề trước khi nộp duyệt lần tiếp theo. (demo-20261109-team-02)",
+        "createdAt": "2026-11-09T07:15:30.8013748"
+      },
+      {
+        "logId": 70,
+        "newsArticleId": 988,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.7893666"
+      },
+      {
+        "logId": 69,
+        "newsArticleId": 988,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.781373"
+      },
+      {
+        "logId": 74,
+        "newsArticleId": 989,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "SCHEDULE",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "SCHEDULED",
+        "notes": "Đã lên lịch xuất bản tự động vào: 2026-11-10T07:15:30",
+        "createdAt": "2026-11-09T07:15:30.8349192"
+      },
+      {
+        "logId": 73,
+        "newsArticleId": 989,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.8209195"
+      },
+      {
+        "logId": 72,
+        "newsArticleId": 989,
+        "actorId": 3226,
+        "actorName": "Trần Gia Bảo (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.8123727"
+      },
+      {
+        "logId": 77,
+        "newsArticleId": 990,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "SCHEDULE",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "SCHEDULED",
+        "notes": "Đã lên lịch xuất bản tự động vào: 2026-11-11T07:15:30",
+        "createdAt": "2026-11-09T07:15:30.8706936"
+      },
+      {
+        "logId": 76,
+        "newsArticleId": 990,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.8596938"
+      },
+      {
+        "logId": 75,
+        "newsArticleId": 990,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.8499226"
+      },
+      {
+        "logId": 89,
+        "newsArticleId": 991,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "ARCHIVE",
+        "fromStatus": "PUBLISHED",
+        "toStatus": "ARCHIVED",
+        "notes": "Đã gỡ bài viết vào kho lưu trữ",
+        "createdAt": "2026-11-09T07:15:30.9969206"
+      },
+      {
+        "logId": 88,
+        "newsArticleId": 991,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "RESTORE",
+        "fromStatus": "ARCHIVED",
+        "toStatus": "PUBLISHED",
+        "notes": "Khôi phục bài viết xuất bản lại công khai",
+        "createdAt": "2026-11-09T07:15:30.9879145"
+      },
+      {
+        "logId": 81,
+        "newsArticleId": 991,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "ARCHIVE",
+        "fromStatus": "PUBLISHED",
+        "toStatus": "ARCHIVED",
+        "notes": "Đã gỡ bài viết vào kho lưu trữ",
+        "createdAt": "2026-11-09T07:15:30.914794"
+      },
+      {
+        "logId": 80,
+        "newsArticleId": 991,
+        "actorId": 3229,
+        "actorName": "Võ Khánh Linh (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.9038881"
+      },
+      {
+        "logId": 79,
+        "newsArticleId": 991,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.8927225"
+      },
+      {
+        "logId": 78,
+        "newsArticleId": 991,
+        "actorId": 3225,
+        "actorName": "Nguyễn Minh Anh (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.884696"
+      },
+      {
+        "logId": 85,
+        "newsArticleId": 992,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "ARCHIVE",
+        "fromStatus": "PUBLISHED",
+        "toStatus": "ARCHIVED",
+        "notes": "Đã gỡ bài viết vào kho lưu trữ",
+        "createdAt": "2026-11-09T07:15:30.9549201"
+      },
+      {
+        "logId": 84,
+        "newsArticleId": 992,
+        "actorId": 3228,
+        "actorName": "Phạm Thu Hà (Demo)",
+        "action": "PUBLISH",
+        "fromStatus": "PENDING_REVIEW",
+        "toStatus": "PUBLISHED",
+        "notes": "Biên tập viên đã phê duyệt và xuất bản ngay",
+        "createdAt": "2026-11-09T07:15:30.94492"
+      },
+      {
+        "logId": 83,
+        "newsArticleId": 992,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "SUBMIT_REVIEW",
+        "fromStatus": "DRAFT",
+        "toStatus": "PENDING_REVIEW",
+        "notes": "Tác giả đã nộp bài chờ ban biên tập phê duyệt",
+        "createdAt": "2026-11-09T07:15:30.9339212"
+      },
+      {
+        "logId": 82,
+        "newsArticleId": 992,
+        "actorId": 3227,
+        "actorName": "Lê Hoàng Phúc (Demo)",
+        "action": "CREATE_DRAFT",
+        "fromStatus": null,
+        "toStatus": "DRAFT",
+        "notes": "Tác giả tạo mới bản nháp",
+        "createdAt": "2026-11-09T07:15:30.9267917"
+      },
+      {
+        "logId": 86,
+        "newsArticleId": 993,
+        "actorId": 130,
+        "actorName": "System Administrator",
+        "action": "CREATE",
+        "fromStatus": null,
+        "toStatus": "APPROVED",
+        "notes": "Tạo bài viết mới với trạng thái APPROVED",
+        "createdAt": "2026-11-09T07:15:30.9669268"
+      }
+    ]
+  }
+}
