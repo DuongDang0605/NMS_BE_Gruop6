@@ -1,31 +1,58 @@
 package com.mvc.nms_be.service;
 
+import com.mvc.nms_be.entity.SystemSetting;
+import com.mvc.nms_be.repository.SystemSettingRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Cấu hình chế độ kiểm duyệt toàn trang (PRE_MODERATION / POST_MODERATION).
- * <p>
- * Giá trị khởi tạo lấy từ application.properties: app.moderation.pre-moderation=true|false
- * (mặc định false = POST_MODERATION). Admin có thể đổi lúc chạy qua API, nhưng giá trị
- * chỉ nằm trong bộ nhớ nên sẽ quay về giá trị cấu hình khi khởi động lại ứng dụng.
+ * Đọc/ghi chế độ kiểm duyệt qua SystemSetting để thay đổi của Admin còn hiệu lực sau restart.
  */
 @Service
 public class ModerationSettingService {
 
-    private final AtomicBoolean globalPreModeration;
+    private static final String SETTING_KEY = "COMMENT_MODERATION_MODE";
 
-    public ModerationSettingService(@Value("${app.moderation.pre-moderation:false}") boolean initial) {
-        this.globalPreModeration = new AtomicBoolean(initial);
+    private final SystemSettingRepository settingRepository;
+    private final boolean defaultPreModeration;
+
+    public ModerationSettingService(
+            SystemSettingRepository settingRepository,
+            @Value("${app.moderation.pre-moderation:false}") boolean defaultPreModeration) {
+        this.settingRepository = settingRepository;
+        this.defaultPreModeration = defaultPreModeration;
     }
 
+    @Transactional(readOnly = true)
     public boolean isGlobalPreModeration() {
-        return globalPreModeration.get();
+        return settingRepository.findBySettingKey(SETTING_KEY)
+                .map(setting -> parseBoolean(setting.getSettingValue()))
+                .orElse(defaultPreModeration);
     }
 
+    @Transactional
     public void setGlobalPreModeration(boolean enabled) {
-        globalPreModeration.set(enabled);
+        SystemSetting setting = settingRepository.findBySettingKey(SETTING_KEY)
+                .orElseGet(() -> {
+                    SystemSetting created = new SystemSetting();
+                    created.setSettingKey(SETTING_KEY);
+                    created.setDescription("Chế độ kiểm duyệt bình luận: PRE_MODERATION hoặc POST_MODERATION");
+                    return created;
+                });
+        setting.setSettingValue(enabled ? "PRE_MODERATION" : "POST_MODERATION");
+        settingRepository.save(setting);
+    }
+
+    private boolean parseBoolean(String value) {
+        if ("PRE_MODERATION".equalsIgnoreCase(value)) {
+            return true;
+        }
+        if ("POST_MODERATION".equalsIgnoreCase(value)) {
+            return false;
+        }
+        throw new IllegalStateException(
+                "Giá trị cấu hình " + SETTING_KEY
+                        + " phải là PRE_MODERATION hoặc POST_MODERATION");
     }
 }

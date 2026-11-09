@@ -12,6 +12,7 @@ public interface CommentService {
     /** Cây bình luận đa cấp của một bài viết (chỉ bình luận đang hiển thị). */
     List<CommentNodeDto> getArticleComments(Integer articleId);
 
+
     /** Đăng bình luận mới hoặc trả lời bình luận khác (AC-EN-001, AC-EN-002). */
     CommentResponseDto postComment(CreateCommentRequestDto request);
 

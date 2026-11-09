@@ -3,7 +3,7 @@ package com.mvc.nms_be.service.impl;
 import com.mvc.nms_be.dto.response.CommentNodeDto;
 import com.mvc.nms_be.dto.response.CommentResponseDto;
 import com.mvc.nms_be.dto.request.CreateCommentRequestDto;
-import com.mvc.nms_be.ProfanityCheckResult;
+import com.mvc.nms_be.dto.response.ProfanityCheckResult;
 import com.mvc.nms_be.dto.request.ReportCommentRequestDto;
 import com.mvc.nms_be.entity.Comment;
 import com.mvc.nms_be.entity.CommentReport;
@@ -32,9 +32,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
-    /** NewsStatus = 1: bài viết đang hoạt động (giá trị mặc định trong NewsArticle). */
-    private static final String ARTICLE_STATUS_ACTIVE = "STATUS_PUBLISHED";
-
     private final CommentRepository commentRepository;
     private final CommentReportRepository commentReportRepository;
     private final NewsArticleRepository newsArticleRepository;
@@ -48,7 +45,10 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public List<CommentNodeDto> getArticleComments(Integer articleId) {
-        if (!newsArticleRepository.existsById(articleId)) {
+        NewsArticle article = newsArticleRepository.findById(articleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bài viết không tồn tại: " + articleId));
+        if (!isPubliclyPublished(article)) {
+            // Giữ cùng hành vi 404 với public article API, không lộ bình luận của bài đã ẩn.
             throw new ResourceNotFoundException("Bài viết không tồn tại: " + articleId);
         }
 
@@ -78,6 +78,9 @@ public class CommentServiceImpl implements CommentService {
         return roots;
     }
 
+
+
+
     /**
      * Một nút DELETED chỉ được giữ lại khi còn ít nhất một câu trả lời hiển thị bên dưới,
      * để không làm đứt mạch thảo luận. Hàm đồng thời loại các nhánh con không hiển thị.
@@ -87,7 +90,6 @@ public class CommentServiceImpl implements CommentService {
         return !Comment.STATUS_DELETED.equals(node.status()) || !node.replies().isEmpty();
     }
 
-    // ------------------------------------------------------------------ Đăng bình luận
 
     // ------------------------------------------------------------------ Đăng bình luận
 
@@ -101,16 +103,18 @@ public class CommentServiceImpl implements CommentService {
         NewsArticle article = newsArticleRepository.findById(request.newsArticleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bài viết không tồn tại: " + request.newsArticleId()));
 
-        // SỬ DỤNG TRỰC TIẾP NewsArticle.STATUS_PUBLISHED
-        if (article.getNewsStatus() == null || !NewsArticle.STATUS_PUBLISHED.equals(article.getNewsStatus())) {
+        String content = request.content().trim();
+        if (content.length() > 2000) {
+            throw new IllegalArgumentException("Nội dung bình luận tối đa 2000 ký tự");
+        }
+        if (!isPubliclyPublished(article)) {
             throw new IllegalArgumentException("Bài viết hiện không khả dụng để bình luận");
         }
         if (Boolean.FALSE.equals(article.getAllowComments())) {
             throw new IllegalArgumentException("Bài viết này đã tắt tính năng bình luận");
         }
 
-        // 2. Bộ lọc từ cấm tự động
-        String content = request.content().trim();
+        // BLOCK từ chối ngay; FLAG cho phép lưu nhưng bắt buộc moderator duyệt.
         ProfanityCheckResult check = profanityFilterService.checkContent(content);
         if (check.hasBlockedWord()) {
             throw new IllegalArgumentException(
@@ -138,18 +142,29 @@ public class CommentServiceImpl implements CommentService {
         comment.setContent(content);
         comment.setIsFlaggedProfanity(check.hasFlaggedWord());
 
-        // 5. Pre-moderation vs Post-moderation
-        boolean mustModerate = Boolean.FALSE.equals(currentUser.isVerified())
+        // Chỉ tài khoản đã xác minh, nội dung sạch và chế độ POST mới được hiển thị ngay.
+        boolean mustModerate = !Boolean.TRUE.equals(currentUser.isVerified())
                 || check.hasFlaggedWord()
                 || moderationSettingService.isGlobalPreModeration();
-        comment.setStatus(mustModerate ? Comment.STATUS_PENDING_MODERATION : Comment.STATUS_APPROVED);
+        comment.setStatus(mustModerate
+                ? Comment.STATUS_PENDING_MODERATION
+                : Comment.STATUS_APPROVED);
 
         Comment saved = commentRepository.save(comment);
 
+        // commentCount chỉ đếm nội dung công khai, không tính comment đang chờ duyệt.
         if (!mustModerate) {
             commentRepository.adjustArticleCommentCount(article.getNewsArticleId(), 1);
         }
         return commentMapper.toDto(saved);
+    }
+
+    /**
+     * Bài cũ có thể còn trạng thái "1"; public portal cũng coi giá trị này là PUBLISHED.
+     */
+    private boolean isPubliclyPublished(NewsArticle article) {
+        return NewsArticle.STATUS_PUBLISHED.equals(article.getNewsStatus())
+                || "1".equals(article.getNewsStatus());
     }
 
     // ------------------------------------------------------------------ Báo cáo vi phạm

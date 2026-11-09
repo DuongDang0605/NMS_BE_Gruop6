@@ -1,6 +1,6 @@
 package com.mvc.nms_be.service;
 
-import com.mvc.nms_be.ProfanityCheckResult;
+import com.mvc.nms_be.dto.response.ProfanityCheckResult;
 import com.mvc.nms_be.dto.request.BannedKeywordRequestDto;
 import com.mvc.nms_be.dto.response.BannedKeywordResponseDto;
 
@@ -42,7 +42,6 @@ public class ProfanityFilterService {
     private volatile List<CachedKeyword> cache;
 
     // ------------------------------------------------------------------ Kiểm tra nội dung
-
     public ProfanityCheckResult checkContent(String content) {
         String text = normalize(content);
         if (text.isBlank()) {
@@ -53,9 +52,9 @@ public class ProfanityFilterService {
         boolean flagged = false;
         Set<String> detected = new LinkedHashSet<>();
 
+        // Dùng snapshot cache; CRUD từ khóa gọi refreshCache sau khi lưu thành công.
         for (CachedKeyword keyword : getCache()) {
-            // So khớp theo từ nguyên vẹn (có khoảng trắng hai đầu) để tránh bắt nhầm trong từ khác.
-            if (text.contains(" " + keyword.normalized() + " ")) {
+            if (text.contains(keyword.normalized())) {
                 detected.add(keyword.original());
                 if ("BLOCK".equals(keyword.severity())) {
                     blocked = true;
@@ -66,7 +65,6 @@ public class ProfanityFilterService {
         }
         return new ProfanityCheckResult(blocked, flagged, List.copyOf(detected));
     }
-
     // ------------------------------------------------------------------ CRUD từ cấm
 
     public List<BannedKeywordResponseDto> getAllKeywords() {
