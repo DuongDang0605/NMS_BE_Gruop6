@@ -45,7 +45,7 @@ public class SystemAccount {
     private String accountEmail;
 
     @Column(name = "AccountRole", nullable = false)
-    private Integer accountRole = READER_ROLE;
+    private Integer accountRole;
 
     @Column(name = "IsVerified", nullable = false, columnDefinition = "bit default 0")
     private Boolean isVerified = false;

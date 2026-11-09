@@ -41,28 +41,41 @@ export default function ModeratorDashboard() {
 
     const [pending, setPending] = useState([]);
     const [reports, setReports] = useState([]);
+    const [pendingPageInfo, setPendingPageInfo] = useState({ page: 0, totalPages: 0, totalElements: 0 });
+    const [reportsPageInfo, setReportsPageInfo] = useState({ page: 0, totalPages: 0, totalElements: 0 });
     const [keywords, setKeywords] = useState([]);
     const [preModeration, setPreModeration] = useState(false);
     const [error, setError] = useState('');
     const [reloadKey, setReloadKey] = useState(0);
+    const [pendingPage, setPendingPage] = useState(0);
+    const [reportsPage, setReportsPage] = useState(0);
 
     const [newWord, setNewWord] = useState('');
     const [newSeverity, setNewSeverity] = useState('BLOCK');
 
-    // Tải toàn bộ dữ liệu 3 tab (tải lại khi reloadKey đổi)
+    // Mỗi endpoint trả một trang riêng; lọc sau khi nhận trang sẽ làm mất bản ghi ở các trang sau.
     useEffect(() => {
         const controller = new AbortController();
         const options = { signal: controller.signal };
         Promise.all([
-            getPendingComments({ size: 50 }, options),
-            getReports({ status: 'PENDING', size: 50 }, options),
+            getPendingComments({ page: pendingPage, size: 20 }, options),
+            getReports({ status: 'PENDING', page: reportsPage, size: 20 }, options),
             getKeywords(options),
             getModerationSettings(options),
         ])
-            .then(([pendingPage, reportPage, keywordList, settings]) => {
-                // Hàng đợi gồm cả bình luận bị báo cáo, tab 1 chỉ lấy bình luận chờ duyệt
-                setPending(pendingPage.content.filter((c) => c.status === 'PENDING_MODERATION'));
-                setReports(reportPage.content);
+            .then(([pendingResult, reportResult, keywordList, settings]) => {
+                setPending(pendingResult.content);
+                setPendingPageInfo({
+                    page: pendingResult.page,
+                    totalPages: pendingResult.totalPages,
+                    totalElements: pendingResult.totalElements,
+                });
+                setReports(reportResult.content);
+                setReportsPageInfo({
+                    page: reportResult.page,
+                    totalPages: reportResult.totalPages,
+                    totalElements: reportResult.totalElements,
+                });
                 setKeywords(keywordList);
                 setPreModeration(settings.preModeration);
                 setError('');
@@ -73,13 +86,15 @@ export default function ModeratorDashboard() {
                 }
             });
         return () => controller.abort();
-    }, [reloadKey]);
+    }, [pendingPage, reloadKey, reportsPage]);
 
     // Chạy một thao tác rồi tải lại dữ liệu
     const run = async (action, confirmText) => {
         if (confirmText && !window.confirm(confirmText)) return;
         try {
             await action();
+            setPendingPage(0);
+            setReportsPage(0);
             setReloadKey((k) => k + 1);
         } catch (err) {
             setError(err?.response?.data?.message || 'Thao tác thất bại.');
@@ -113,7 +128,7 @@ export default function ModeratorDashboard() {
 
             <Tabs defaultActiveKey="pending" className="mb-3">
                 {/* Tab 1: bình luận chờ duyệt */}
-                <Tab eventKey="pending" title={`Chờ duyệt (${pending.length})`}>
+                <Tab eventKey="pending" title={`Chờ duyệt (${pendingPageInfo.totalElements})`}>
                     <Table bordered hover responsive>
                         <thead>
                         <tr>
@@ -149,10 +164,33 @@ export default function ModeratorDashboard() {
                         ))}
                         </tbody>
                     </Table>
+                    {pendingPageInfo.totalPages > 1 && (
+                        <div className="d-flex align-items-center justify-content-end gap-2 mb-3">
+                            <Button
+                                size="sm"
+                                variant="outline-secondary"
+                                disabled={pendingPageInfo.page === 0}
+                                onClick={() => setPendingPage((page) => page - 1)}
+                            >
+                                Trước
+                            </Button>
+                            <span className="small text-muted">
+                                Trang {pendingPageInfo.page + 1}/{pendingPageInfo.totalPages}
+                            </span>
+                            <Button
+                                size="sm"
+                                variant="outline-secondary"
+                                disabled={pendingPageInfo.page + 1 >= pendingPageInfo.totalPages}
+                                onClick={() => setPendingPage((page) => page + 1)}
+                            >
+                                Sau
+                            </Button>
+                        </div>
+                    )}
                 </Tab>
 
                 {/* Tab 2: bình luận bị báo cáo */}
-                <Tab eventKey="reports" title={`Bị báo cáo (${reportedComments.length})`}>
+                <Tab eventKey="reports" title={`Phiếu báo cáo (${reportsPageInfo.totalElements})`}>
                     <Table bordered hover responsive>
                         <thead>
                         <tr>
@@ -185,6 +223,29 @@ export default function ModeratorDashboard() {
                         ))}
                         </tbody>
                     </Table>
+                    {reportsPageInfo.totalPages > 1 && (
+                        <div className="d-flex align-items-center justify-content-end gap-2 mb-3">
+                            <Button
+                                size="sm"
+                                variant="outline-secondary"
+                                disabled={reportsPageInfo.page === 0}
+                                onClick={() => setReportsPage((page) => page - 1)}
+                            >
+                                Trước
+                            </Button>
+                            <span className="small text-muted">
+                                Trang {reportsPageInfo.page + 1}/{reportsPageInfo.totalPages}
+                            </span>
+                            <Button
+                                size="sm"
+                                variant="outline-secondary"
+                                disabled={reportsPageInfo.page + 1 >= reportsPageInfo.totalPages}
+                                onClick={() => setReportsPage((page) => page + 1)}
+                            >
+                                Sau
+                            </Button>
+                        </div>
+                    )}
                 </Tab>
 
                 {/* Tab 3: từ điển từ cấm */}

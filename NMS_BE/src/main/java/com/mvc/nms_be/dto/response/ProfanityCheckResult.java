@@ -1,4 +1,4 @@
-package com.mvc.nms_be;
+package com.mvc.nms_be.dto.response;
  
 import java.util.List;
  

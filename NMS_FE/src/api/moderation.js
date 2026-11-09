@@ -3,7 +3,7 @@ import api from '../services/api';
 // Toàn bộ API ở đây yêu cầu role MODERATOR (4) hoặc ADMIN (1).
 
 /**
- * Hàng đợi kiểm duyệt: bình luận chờ duyệt hoặc đang bị báo cáo (bị báo cáo nhiều xếp trước)
+ * Danh sách bình luận PENDING_MODERATION; report được lấy riêng bằng getReports.
  * @param {{ page?: number, size?: number }} params
  * @returns {Promise<Object>} { content: [...], totalElements, totalPages, page, size, first, last }
  */

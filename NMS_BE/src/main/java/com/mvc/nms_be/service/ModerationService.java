@@ -69,6 +69,7 @@ public class ModerationService {
 
         changeStatus(comment, Comment.STATUS_APPROVED);
         commentRepository.adjustArticleCommentCount(comment.getNewsArticleId(), 1);
+        closePendingReports(commentId, CommentReport.STATUS_RESOLVED);
     }
 
     @Transactional
@@ -106,11 +107,10 @@ public class ModerationService {
         closePendingReports(commentId, CommentReport.STATUS_RESOLVED);
     }
 
-    /** "Giữ lại": bác bỏ các báo cáo, giữ nguyên bình luận và đưa nó ra khỏi hàng đợi. */
+    /** "Giữ lại": bác bỏ các báo cáo, giữ nguyên bình luận và lịch sử số lượt báo cáo. */
     @Transactional
     public void keepComment(Integer commentId) {
         Comment comment = loadComment(commentId);
-        comment.setReportCount(0);
         comment.setUpdatedDate(LocalDateTime.now());
         commentRepository.save(comment);
         closePendingReports(commentId, CommentReport.STATUS_DISMISSED);

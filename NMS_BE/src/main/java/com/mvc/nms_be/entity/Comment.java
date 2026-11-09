@@ -45,6 +45,7 @@ public class Comment {
     @OrderBy("createdDate ASC")
     private List<Comment> replies = new ArrayList<>();
 
+    // Cùng giới hạn 2000 ký tự với CreateCommentRequestDto và textarea frontend.
     @Column(name = "Content", nullable = false, columnDefinition = "nvarchar(max)")
     private String content;
 
