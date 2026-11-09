@@ -22,7 +22,7 @@ Luồng quên mật khẩu/mở khóa dùng chung cho cả tài khoản đang ho
 
 OTP hết hạn sau 5 phút, chỉ dùng một lần; sai 5 lần sẽ vô hiệu mã hiện tại. Mỗi tài khoản chỉ gửi lại sau 60 giây. Gửi lại sẽ thay mã cũ và vô hiệu quyền đổi mật khẩu đã cấp. OTP và reset token chỉ lưu dạng hash; API không trả OTP. Request gửi OTP trả thông báo chung, không tiết lộ email có tồn tại hay trạng thái khóa. Nếu gửi email thất bại, challenge được rollback để có thể thử lại.
 
-Spring Boot tự chạy các migration `001`–`006` trước Hibernate mỗi lần khởi động, bao gồm migration khóa tài khoản và OTP. Cơ chế này áp dụng cả khi chạy IntelliJ, Maven và JAR. Thời điểm hết hạn được lưu theo UTC.
+Spring Boot tự chạy các migration `001`–`007` trước Hibernate mỗi lần khởi động, bao gồm migration khóa tài khoản, OTP và trạng thái active/inactive. Cơ chế này áp dụng cả khi chạy IntelliJ, Maven và JAR. Thời điểm hết hạn được lưu theo UTC.
 
 ### Cấu hình email OTP
 
@@ -81,7 +81,7 @@ Hibernate dùng `ddl-auto=update` để tạo/cập nhật bảng và giữ dữ
 
 ## Chạy thủ công hoặc bằng IDE
 
-Chỉ cần database đích đã tồn tại và tài khoản kết nối có quyền chạy migration. Khi khởi động, Spring Boot tự chạy lại các script trong `database/migrations` theo thứ tự `001` đến `006`, trước khi Hibernate khởi tạo schema. Các script được đóng gói trong JAR tại `db/migrations`, nên không phụ thuộc working directory. Khi mở dự án bằng IntelliJ, reload Maven để nhận cấu hình resource mới.
+Chỉ cần database đích đã tồn tại và tài khoản kết nối có quyền chạy migration. Khi khởi động, Spring Boot tự chạy lại các script trong `database/migrations` theo thứ tự `001` đến `007`, trước khi Hibernate khởi tạo schema. Các script được đóng gói trong JAR tại `db/migrations`, nên không phụ thuộc working directory. Khi mở dự án bằng IntelliJ, reload Maven để nhận cấu hình resource mới.
 
 `006-article-editorial-workflow.sql` gỡ ràng buộc trạng thái `0/1` cũ, đổi `NewsStatus` sang `varchar(30)`, chuyển `1` thành `PUBLISHED`, `0` thành `ARCHIVED` và bổ sung thời điểm xuất bản. Các migration có thể chạy lại và giữ dữ liệu hiện có, không đặt lại password, trạng thái khóa/Verify hoặc bộ đếm tương tác đã tồn tại. Migration lỗi sẽ dừng khởi động, không bị bỏ qua.
 

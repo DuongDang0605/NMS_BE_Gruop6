@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Modal, Button, Form, Alert, Spinner } from 'react-bootstrap';
 import { editorialApi } from '../../api/editorial';
+
+const formatLocalIso = (date) => {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 const ScheduleModal = ({ show, onHide, article, onSuccess }) => {
   const [scheduledDate, setScheduledDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Lấy thời điểm tối thiểu là hiện tại + 2 phút theo chuẩn YYYY-MM-DDTHH:mm
-  const getMinDateTime = () => {
+  // Lấy thời điểm tối thiểu là hiện tại + 2 phút theo giờ địa phương chuẩn YYYY-MM-DDTHH:mm
+  const minDateTime = useMemo(() => {
     const d = new Date(Date.now() + 2 * 60 * 1000);
-    d.setSeconds(0, 0);
-    return d.toISOString().slice(0, 16);
-  };
+    return formatLocalIso(d);
+  }, [show]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +25,8 @@ const ScheduleModal = ({ show, onHide, article, onSuccess }) => {
       return;
     }
 
-    const selectedTime = new Date(scheduledDate).getTime();
+    const selectedDate = new Date(scheduledDate);
+    const selectedTime = selectedDate.getTime();
     const minTime = Date.now() + 60 * 1000;
     if (selectedTime < minTime) {
       setError('Thời gian hẹn giờ phải ở tương lai ít nhất 1 phút');
@@ -31,9 +36,9 @@ const ScheduleModal = ({ show, onHide, article, onSuccess }) => {
     setLoading(true);
     setError('');
     try {
-      // Backend chấp nhận định dạng ISO LocalDateTime (e.g. 2026-11-01T21:30:00)
-      const formattedDate = scheduledDate.length === 16 ? `${scheduledDate}:00` : scheduledDate;
-      await editorialApi.schedulePublication(article.newsArticleId, formattedDate);
+      // Chuyển đổi thời gian địa phương đã chọn sang UTC (YYYY-MM-DDTHH:mm:ss) để backend xử lý đồng bộ
+      const utcFormattedDate = selectedDate.toISOString().slice(0, 19);
+      await editorialApi.schedulePublication(article.newsArticleId, utcFormattedDate);
       if (onSuccess) onSuccess();
       onHide();
     } catch (err) {
@@ -69,7 +74,7 @@ const ScheduleModal = ({ show, onHide, article, onSuccess }) => {
             </Form.Label>
             <Form.Control
               type="datetime-local"
-              min={getMinDateTime()}
+              min={minDateTime}
               value={scheduledDate}
               onChange={(e) => setScheduledDate(e.target.value)}
               required

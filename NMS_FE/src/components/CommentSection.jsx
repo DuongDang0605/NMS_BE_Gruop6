@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Alert, Button, Form, Modal } from 'react-bootstrap';
 import { getArticleComments, postComment, reportComment } from '../api/comment';
 import { getSession } from '../services/session';
-
+import MessageModal from './MessageModal';
 const REASONS = [
     { value: 'SPAM', label: 'Spam' },
     { value: 'HARASSMENT', label: 'Quấy rối' },
@@ -21,17 +21,25 @@ function CommentForm({ onSubmit, placeholder, submitLabel, onCancel }) {
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const [error, setError] = useState('');
+    const [modalMessage, setModalMessage] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!text.trim()) return;
         setSending(true);
         setError('');
+        setModalMessage('');
         try {
             await onSubmit(text.trim());
             setText('');
         } catch (err) {
-            setError(errorMessage(err, 'Không thể gửi bình luận.'));
+            const backendMessage = err?.response?.data?.message;
+
+            if (backendMessage) {
+                setModalMessage(backendMessage);
+            } else {
+                setError('Không thể gửi bình luận.');
+            }
         } finally {
             setSending(false);
         }
@@ -56,6 +64,11 @@ function CommentForm({ onSubmit, placeholder, submitLabel, onCancel }) {
                     <Button variant="outline-secondary" size="sm" onClick={onCancel}>Hủy</Button>
                 )}
             </div>
+            <MessageModal
+                show={Boolean(modalMessage)}
+                title="Không thể gửi bình luận"
+                message={modalMessage}
+                onClose={() => setModalMessage('')} />
         </Form>
     );
 }
@@ -117,6 +130,34 @@ function CommentItem({ comment, session, replyingTo, setReplyingTo, onReply, onR
         </div>
     );
 }
+function getCommentsByAuthor(comments, accountId) {
+    const result = [];
+
+    function visit(items) {
+        items.forEach((comment) => {
+            if (String(comment.accountId) === accountId) {
+                result.push({ ...comment, replies: [] });
+            }
+
+            visit(comment.replies ?? []);
+        });
+    }
+
+    visit(comments);
+    return result;
+}
+
+function getCommentAuthors(comments, authors = new Map()) {
+    comments.forEach((comment) => {
+        if (comment.accountId != null) {
+            authors.set(comment.accountId, comment.authorName);
+        }
+        getCommentAuthors(comment.replies ?? [], authors);
+    });
+
+    return [...authors.entries()];
+}
+
 
 export default function CommentSection({ articleId }) {
     const session = getSession();
@@ -126,13 +167,17 @@ export default function CommentSection({ articleId }) {
     const [notice, setNotice] = useState('');
     const [reloadKey, setReloadKey] = useState(0);
     const [replyingTo, setReplyingTo] = useState(null);
-
     const [reportTarget, setReportTarget] = useState(null);
     const [reason, setReason] = useState('SPAM');
     const [note, setNote] = useState('');
     const [reportError, setReportError] = useState('');
     const [reporting, setReporting] = useState(false);
+    const [selectedAccountId, setSelectedAccountId] = useState('');
 
+    const authors = getCommentAuthors(comments);
+    const visibleComments = selectedAccountId
+        ? getCommentsByAuthor(comments, selectedAccountId)
+        : comments;
     // Tải cây bình luận (tải lại khi reloadKey đổi)
     useEffect(() => {
         const controller = new AbortController();
@@ -181,6 +226,7 @@ export default function CommentSection({ articleId }) {
     };
 
     return (
+
         <section className="bg-white border rounded-4 shadow-sm p-4 mt-4">
             <h5 className="fw-bold mb-3">
                 <i className="bi bi-chat-dots me-2"></i>Bình luận
@@ -200,10 +246,21 @@ export default function CommentSection({ articleId }) {
 
             {notice && <Alert variant="info" dismissible onClose={() => setNotice('')}>{notice}</Alert>}
             {error && <Alert variant="danger">{error}</Alert>}
-
             {!error && comments.length === 0 && <div className="text-muted">Chưa có bình luận nào.</div>}
-
-            {comments.map((comment) => (
+            <Form.Select
+                className="mb-3"
+                aria-label="Lọc bình luận theo người viết"
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+            >
+                <option value="">Tất cả người bình luận</option>
+                {authors.map(([accountId, authorName]) => (
+                    <option key={accountId} value={String(accountId)}>
+                        {authorName}
+                    </option>
+                ))}
+            </Form.Select>
+            {visibleComments.map((comment) => (
                 <CommentItem
                     key={comment.commentId}
                     comment={comment}

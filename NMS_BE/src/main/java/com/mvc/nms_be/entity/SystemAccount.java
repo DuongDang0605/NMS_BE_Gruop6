@@ -45,10 +45,13 @@ public class SystemAccount {
     private String accountEmail;
 
     @Column(name = "AccountRole", nullable = false)
-    private Integer accountRole = READER_ROLE;
+    private Integer accountRole;
 
     @Column(name = "IsVerified", nullable = false, columnDefinition = "bit default 0")
     private Boolean isVerified = false;
+
+    @Column(name = "IsActive", nullable = false, columnDefinition = "bit default 1")
+    private boolean active = true;
 
     // BCrypt hash; raw passwords are never returned by the API.
     @Column(name = "AccountPassword", nullable = false, length = 255)

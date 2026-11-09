@@ -34,7 +34,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleUnauthorized(UnauthorizedException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
                 .body(body(HttpStatus.UNAUTHORIZED, ex.getMessage(),
-                        ex instanceof AccountLockedException ? Map.of("account", "ACCOUNT_LOCKED") : Map.of(), request));
+                        ex instanceof AccountInactiveException ? Map.of("account", "ACCOUNT_INACTIVE")
+                                : ex instanceof AccountLockedException ? Map.of("account", "ACCOUNT_LOCKED") : Map.of(), request));
     }
 
     @ExceptionHandler(ForbiddenException.class)
@@ -127,6 +128,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException ex, WebRequest request) {
         return error(HttpStatus.CONFLICT, "Data conflicts with an existing record or a database constraint",
                 Map.of(), request);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalState(IllegalStateException ex, WebRequest request) {
+        return error(HttpStatus.CONFLICT, ex.getMessage(), Map.of(), request);
     }
 
     @Override

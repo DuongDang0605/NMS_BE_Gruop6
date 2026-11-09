@@ -2,7 +2,7 @@ export const emptyUser = () => ({
   accountId: '', accountName: '', accountEmail: '', accountRole: 2, accountPassword: '',
 });
 
-export function validateUser(user) {
+export function validateUser(user, originalUser = null) {
   const errors = {};
   if (!user.accountName.trim()) errors.accountName = 'Name is required.';
   else if (user.accountName.trim().length > 100) errors.accountName = 'Name must contain at most 100 characters.';
@@ -10,7 +10,12 @@ export function validateUser(user) {
   else if (user.accountEmail.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.accountEmail.trim())) {
     errors.accountEmail = 'Enter a valid email address (at most 254 characters).';
   }
-  if (![1, 2, 3, 4, 5].includes(Number(user.accountRole))) errors.accountRole = 'Select a valid role.';
+  const isExistingAdmin = !!originalUser?.accountId && Number(originalUser.accountRole) === 1;
+  if (isExistingAdmin) {
+    if (Number(user.accountRole) !== 1) errors.accountRole = 'The role of an Admin account cannot be changed.';
+  } else if (![2, 3, 4, 5].includes(Number(user.accountRole))) {
+    errors.accountRole = 'Select Contributor, Editor, Moderator or Reader. Admin cannot be assigned.';
+  }
   const password = user.accountPassword;
   if (!user.accountId || password !== '') {
     if (!password.trim()) errors.accountPassword = 'Password is required.';

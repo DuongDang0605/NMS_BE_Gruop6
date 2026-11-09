@@ -80,4 +80,9 @@ public class UserController {
         systemAccountService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/activate")
+    public SystemAccountResponseDto activate(@PathVariable @Positive Integer id) {
+        return systemAccountService.activate(id);
+    }
 }

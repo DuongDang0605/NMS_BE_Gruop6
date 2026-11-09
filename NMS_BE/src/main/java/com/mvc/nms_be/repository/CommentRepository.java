@@ -31,21 +31,18 @@ public interface CommentRepository extends JpaRepository<Comment, Integer> {
                                  @Param("statuses") Collection<String> statuses);
 
     /**
-     * Hàng đợi kiểm duyệt: bình luận chờ duyệt hoặc đã bị báo cáo.
-     * Ưu tiên bình luận bị báo cáo nhiều nhất lên đầu (AC-EN-003).
-     * Truyền Pageable không có sort vì thứ tự đã nằm trong câu truy vấn.
+     * Tab chờ duyệt chỉ lấy comment PENDING; phiếu báo cáo được phân trang riêng
+     * bằng CommentReportRepository để không lọc hụt dữ liệu sau khi phân trang.
      */
     @Query(value = """
             SELECT c FROM Comment c
             JOIN FETCH c.account
             WHERE c.status = 'PENDING_MODERATION'
-               OR (c.reportCount > 0 AND c.status <> 'DELETED')
-            ORDER BY c.reportCount DESC, c.createdDate ASC
+            ORDER BY c.createdDate ASC
             """,
             countQuery = """
             SELECT COUNT(c) FROM Comment c
             WHERE c.status = 'PENDING_MODERATION'
-               OR (c.reportCount > 0 AND c.status <> 'DELETED')
             """)
     Page<Comment> findModerationQueue(Pageable pageable);
 

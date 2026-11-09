@@ -1,6 +1,7 @@
 package com.mvc.nms_be.service.impl;
 
 import com.mvc.nms_be.dto.request.NewsArticleRequestDto;
+import com.mvc.nms_be.dto.response.ArticleAuditLogResponseDto;
 import com.mvc.nms_be.dto.response.ArticleReviewNoteResponseDto;
 import com.mvc.nms_be.dto.response.NewsArticleResponseDto;
 import com.mvc.nms_be.entity.Category;
@@ -146,6 +147,8 @@ public class AuthorArticleServiceImpl implements AuthorArticleService {
         }
 
         newsArticleMapper.updateEntity(article, request, category, updatedBy, tags);
+        // Bảo toàn trạng thái hiện tại (DRAFT hoặc CHANGES_REQUESTED), không cho phép tác giả tự duyệt/xuất bản
+        article.setNewsStatus(currentStatus);
         article.setModifiedDate(LocalDateTime.now(ZoneOffset.UTC));
         NewsArticle updated = newsArticleRepository.save(article);
 
@@ -216,6 +219,15 @@ public class AuthorArticleServiceImpl implements AuthorArticleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ArticleAuditLogResponseDto> getArticleAuditTrail(Integer articleId) {
+        NewsArticle article = newsArticleRepository.findById(articleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết: " + articleId));
+        validateOwnership(article);
+        return auditLogService.getAuditTrail(articleId);
+    }
+
+    @Override
     @Transactional
     public void deleteDraft(Integer articleId) {
         NewsArticle article = newsArticleRepository.findById(articleId)
@@ -241,4 +253,3 @@ public class AuthorArticleServiceImpl implements AuthorArticleService {
         }
     }
 }
-

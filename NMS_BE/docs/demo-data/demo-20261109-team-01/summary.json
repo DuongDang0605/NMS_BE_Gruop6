@@ -1,0 +1,148 @@
+{
+  "runId": "demo-20261109-team-01",
+  "baseUrl": "http://localhost:8080",
+  "generatedAt": "2026-11-09T07:14:20.297Z",
+  "fatal": "Admin authentication is unavailable; private API inserts require an Admin.",
+  "requests": 2,
+  "passed": 0,
+  "failures": 2,
+  "skipped": 0,
+  "tables": [
+    {
+      "table": "SystemAccount",
+      "before": null,
+      "after": 5,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "Category",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "Tag",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "SystemSetting",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "BannedKeyword",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "NewsArticle",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "NewsTag",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "Comment",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "CommentReport",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "ArticleReaction",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "Notification",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "ArticleReviewNote",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    },
+    {
+      "table": "ArticleAuditLog",
+      "before": null,
+      "after": 0,
+      "inserted": null,
+      "observedDemoRecords": 0
+    }
+  ],
+  "checks": [],
+  "failedEndpoints": [
+    {
+      "at": "2026-11-09T07:14:20.028Z",
+      "method": "GET",
+      "path": "/v3/api-docs",
+      "actor": "anonymous",
+      "label": "Read live API specification",
+      "outcome": "FAILED",
+      "status": 0,
+      "elapsedMs": 42,
+      "response": "fetch failed"
+    },
+    {
+      "at": "2026-11-09T07:14:20.071Z",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "actor": "anonymous",
+      "label": "Login admin",
+      "request": {
+        "accountEmail": "admin@fu.edu.vn",
+        "accountPassword": "[REDACTED]"
+      },
+      "outcome": "FAILED",
+      "status": 0,
+      "elapsedMs": 4,
+      "response": "fetch failed"
+    }
+  ],
+  "inventory": [],
+  "records": {
+    "SystemAccount": [],
+    "Category": [],
+    "Tag": [],
+    "SystemSetting": [],
+    "BannedKeyword": [],
+    "NewsArticle": [],
+    "NewsTag": [],
+    "Comment": [],
+    "CommentReport": [],
+    "ArticleReaction": [],
+    "Notification": [],
+    "ArticleReviewNote": [],
+    "ArticleAuditLog": []
+  }
+}

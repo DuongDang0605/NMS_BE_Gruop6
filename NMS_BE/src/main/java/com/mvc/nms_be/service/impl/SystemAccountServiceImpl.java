@@ -43,6 +43,10 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     public SystemAccountResponseDto toggleVerify(Integer id) {
         SecurityUtils.requireAdmin();
         SystemAccount account = findAccountForUpdate(id);
+        if (Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(account.getAccountRole())
+                && Boolean.TRUE.equals(account.getIsVerified())) {
+            throw new ResourceConflictException("Admin accounts cannot be unverified", "isVerified");
+        }
         account.setIsVerified(!Boolean.TRUE.equals(account.getIsVerified()));
         return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
@@ -107,6 +111,9 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     @Transactional
     public SystemAccountResponseDto create(SystemAccountRequestDto request) {
         SecurityUtils.requireAdmin();
+        if (Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(request.getAccountRole())) {
+            throw new ResourceConflictException("Admin accounts cannot be created", "accountRole");
+        }
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCase(email)) {
             throw duplicateEmail();
@@ -121,6 +128,13 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     public SystemAccountResponseDto update(Integer id, SystemAccountUpdateRequestDto request) {
         SecurityUtils.requireAdmin();
         SystemAccount account = findAccountForUpdate(id);
+        boolean isAdmin = Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(account.getAccountRole());
+        boolean requestsAdmin = Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(request.getAccountRole());
+        if (isAdmin != requestsAdmin) {
+            throw new ResourceConflictException(isAdmin
+                    ? "The role of an Admin account cannot be changed"
+                    : "Accounts cannot be changed to the Admin role", "accountRole");
+        }
         String email = normalizeEmail(request.getAccountEmail());
         if (accountRepository.existsByAccountEmailIgnoreCaseAndAccountIdNot(email, id)) {
             throw duplicateEmail();
@@ -139,9 +153,21 @@ public class SystemAccountServiceImpl implements SystemAccountService {
     public void delete(Integer id) {
         SecurityUtils.requireAdmin();
         SystemAccount account = findAccountForUpdate(id);
-        accountRepository.delete(account);
-        // Flush inside the request so FK conflicts can be returned as HTTP 409.
-        accountRepository.flush();
+        if (Integer.valueOf(SystemAccount.ADMIN_ROLE).equals(account.getAccountRole())) {
+            throw new ResourceConflictException("Admin accounts cannot be deactivated");
+        }
+        account.setActive(false);
+        account.clearUnlockChallenge();
+        accountRepository.saveAndFlush(account);
+    }
+
+    @Override
+    @Transactional
+    public SystemAccountResponseDto activate(Integer id) {
+        SecurityUtils.requireAdmin();
+        SystemAccount account = findAccountForUpdate(id);
+        account.setActive(true);
+        return accountMapper.toResponseDto(accountRepository.saveAndFlush(account));
     }
 
     private SystemAccount findAccount(Integer id) {

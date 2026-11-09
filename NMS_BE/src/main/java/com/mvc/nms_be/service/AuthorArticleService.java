@@ -1,6 +1,7 @@
 package com.mvc.nms_be.service;
 
 import com.mvc.nms_be.dto.request.NewsArticleRequestDto;
+import com.mvc.nms_be.dto.response.ArticleAuditLogResponseDto;
 import com.mvc.nms_be.dto.response.ArticleReviewNoteResponseDto;
 import com.mvc.nms_be.dto.response.NewsArticleResponseDto;
 import java.util.List;
@@ -20,6 +21,8 @@ public interface AuthorArticleService {
     NewsArticleResponseDto submitForReview(Integer articleId);
 
     List<ArticleReviewNoteResponseDto> getFeedbackNotes(Integer articleId);
+
+    List<ArticleAuditLogResponseDto> getArticleAuditTrail(Integer articleId);
 
     void deleteDraft(Integer articleId);
 }

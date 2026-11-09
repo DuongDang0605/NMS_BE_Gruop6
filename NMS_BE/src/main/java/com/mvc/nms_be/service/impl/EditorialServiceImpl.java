@@ -20,8 +20,10 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -226,6 +228,16 @@ public class EditorialServiceImpl implements EditorialService {
     @Override
     @Transactional(readOnly = true)
     public List<ArticleAuditLogResponseDto> getArticleAuditTrail(Integer articleId) {
+        NewsArticle article = newsArticleRepository.findById(articleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bài viết không tồn tại: " + articleId));
+
+        if (SecurityUtils.hasRole("CONTRIBUTOR") && !SecurityUtils.isAdmin() && !SecurityUtils.hasRole("EDITOR")) {
+            Integer currentUserId = SecurityUtils.getCurrentAccountId();
+            if (article.getCreatedBy() == null || !article.getCreatedBy().getAccountId().equals(currentUserId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xem lịch sử kiểm toán của bài viết này");
+            }
+        }
+
         return auditLogService.getAuditTrail(articleId);
     }
 }

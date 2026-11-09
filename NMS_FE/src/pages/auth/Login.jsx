@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Form, Button, Container, Card, Alert } from 'react-bootstrap';
+import { Form, Button, Container, Card, Alert, Modal } from 'react-bootstrap';
 import logo from '../../assets/fpt-university-logo.png';
 import { login } from '../../api/auth';
 import { saveSession } from '../../services/session';
@@ -15,6 +15,7 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false);
   const [locked, setLocked] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [success, setSuccess] = useState(location.state?.passwordChanged
     ? 'Password changed. Sign in with your new password.'
     : location.state?.registered ? 'Account created. Sign in to continue.' : '');
@@ -26,6 +27,8 @@ const Login = () => {
     setSubmitting(true);
     setError('');
     setSuccess('');
+    setLocked(false);
+    setShowInactive(false);
     try {
       const data = await login({
         accountEmail: email.trim(),
@@ -34,6 +37,10 @@ const Login = () => {
       saveSession(data);
       navigate(homeForRole(data.accountRole), { replace: true });
     } catch (error) {
+      if (error.response?.data?.errors?.account === 'ACCOUNT_INACTIVE') {
+        setShowInactive(true);
+        return;
+      }
       setLocked(error.response?.data?.errors?.account === 'ACCOUNT_LOCKED');
       setError(error.response?.data?.message || 'Cannot connect to the server. Please try again.');
     } finally {
@@ -88,10 +95,28 @@ const Login = () => {
             onClick={() => setShowUnlock(true)}>
             {locked ? 'Request account unlock' : 'Unlock Account/Forgot password'}
           </Button>
-          <div className="text-center mt-3"><Link to="/register">Create a Reader account</Link> · <Link to="/portal">Read campus news</Link></div>
+          <div className="d-flex flex-column flex-sm-row gap-2 mt-3">
+            <Button as={Link} to="/register" variant="outline-primary" className="w-100 py-2">
+              <i className="bi bi-person-plus me-2" aria-hidden="true" />Register
+            </Button>
+            <Button as={Link} to="/portal" variant="outline-secondary" className="w-100 py-2">
+              <i className="bi bi-newspaper me-2" aria-hidden="true" />Explore News
+            </Button>
+          </div>
           </Card.Body>
         </Card>
       </Container>
+      <Modal show={showInactive} onHide={() => setShowInactive(false)} centered aria-labelledby="inactive-account-title">
+        <Modal.Header closeButton>
+          <Modal.Title id="inactive-account-title">Tài khoản đã bị vô hiệu hóa</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ Admin để biết thêm chi tiết.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={() => setShowInactive(false)}>Đóng</Button>
+        </Modal.Footer>
+      </Modal>
       {showUnlock && <UnlockAccountModal initialEmail={email} onClose={() => setShowUnlock(false)}
         onUnlocked={(accountEmail, message) => {
           setEmail(accountEmail); setPassword(''); setLocked(false); setError(''); setSuccess(message); setShowUnlock(false);
