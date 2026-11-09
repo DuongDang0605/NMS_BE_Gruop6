@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Alert, Badge, Button, Form, Tab, Table, Tabs } from 'react-bootstrap';
+import { Alert, Badge, Button, Form, Modal, Tab, Table, Tabs } from 'react-bootstrap';
 import {
     approveComment,
     createKeyword,
@@ -52,6 +52,8 @@ export default function ModeratorDashboard() {
 
     const [newWord, setNewWord] = useState('');
     const [newSeverity, setNewSeverity] = useState('BLOCK');
+    const [confirmation, setConfirmation] = useState(null);
+    const [confirming, setConfirming] = useState(false);
 
     // Mỗi endpoint trả một trang riêng; lọc sau khi nhận trang sẽ làm mất bản ghi ở các trang sau.
     useEffect(() => {
@@ -89,8 +91,7 @@ export default function ModeratorDashboard() {
     }, [pendingPage, reloadKey, reportsPage]);
 
     // Chạy một thao tác rồi tải lại dữ liệu
-    const run = async (action, confirmText) => {
-        if (confirmText && !window.confirm(confirmText)) return;
+    const run = async (action) => {
         try {
             await action();
             setPendingPage(0);
@@ -99,6 +100,18 @@ export default function ModeratorDashboard() {
         } catch (err) {
             setError(err?.response?.data?.message || 'Thao tác thất bại.');
         }
+    };
+
+    const requestConfirmation = (action, message, confirmLabel = 'Xác nhận') => {
+        setConfirmation({ action, message, confirmLabel });
+    };
+
+    const handleConfirm = async () => {
+        if (!confirmation || confirming) return;
+        setConfirming(true);
+        await run(confirmation.action);
+        setConfirming(false);
+        setConfirmation(null);
     };
 
     const handleAddKeyword = (e) => {
@@ -110,13 +123,21 @@ export default function ModeratorDashboard() {
         });
     };
 
-    const handleTogglePreModeration = async () => {
-        try {
+    const handleTogglePreModeration = () => {
+        const updateSetting = async () => {
             const result = await updateModerationSettings(!preModeration);
             setPreModeration(result.preModeration);
-        } catch (err) {
-            setError(err?.response?.data?.message || 'Không thể đổi chế độ kiểm duyệt.');
+        };
+
+        if (preModeration) {
+            requestConfirmation(
+                updateSetting,
+                'Bạn có chắc chắn muốn tắt chế độ kiểm duyệt trước toàn trang không?',
+                'Tắt kiểm duyệt',
+            );
+            return;
         }
+        run(updateSetting);
     };
 
     const reportedComments = groupReports(reports);
@@ -156,7 +177,11 @@ export default function ModeratorDashboard() {
                                         Duyệt
                                     </Button>
                                     <Button size="sm" variant="outline-danger"
-                                            onClick={() => run(() => rejectComment(c.commentId))}>
+                                            onClick={() => requestConfirmation(
+                                                () => rejectComment(c.commentId),
+                                                'Bạn có chắc chắn muốn từ chối bình luận này không?',
+                                                'Từ chối',
+                                            )}>
                                         Từ chối
                                     </Button>
                                 </td>
@@ -215,7 +240,11 @@ export default function ModeratorDashboard() {
                                         Giữ lại
                                     </Button>
                                     <Button size="sm" variant="danger"
-                                            onClick={() => run(() => deleteComment(c.commentId), 'Xóa bình luận vi phạm này?')}>
+                                            onClick={() => requestConfirmation(
+                                                () => deleteComment(c.commentId),
+                                                'Bạn có chắc chắn muốn xóa bình luận vi phạm này không?',
+                                                'Xóa bình luận',
+                                            )}>
                                         Xóa
                                     </Button>
                                 </td>
@@ -294,13 +323,28 @@ export default function ModeratorDashboard() {
                                 <td>{k.isActive ? 'Đang bật' : 'Đang tắt'}</td>
                                 <td>
                                     <Button size="sm" variant="outline-secondary" className="me-2"
-                                            onClick={() => run(() => updateKeyword(k.keywordId, {
-                                                word: k.word, severity: k.severity, isActive: !k.isActive,
-                                            }))}>
+                                            onClick={() => {
+                                                const update = () => updateKeyword(k.keywordId, {
+                                                    word: k.word, severity: k.severity, isActive: !k.isActive,
+                                                });
+                                                if (k.isActive) {
+                                                    requestConfirmation(
+                                                        update,
+                                                        `Bạn có chắc chắn muốn tắt từ khóa "${k.word}" không?`,
+                                                        'Tắt từ khóa',
+                                                    );
+                                                    return;
+                                                }
+                                                run(update);
+                                            }}>
                                         {k.isActive ? 'Tắt' : 'Bật'}
                                     </Button>
                                     <Button size="sm" variant="outline-danger"
-                                            onClick={() => run(() => deleteKeyword(k.keywordId), `Xóa từ khóa "${k.word}"?`)}>
+                                            onClick={() => requestConfirmation(
+                                                () => deleteKeyword(k.keywordId),
+                                                `Bạn có chắc chắn muốn xóa từ khóa "${k.word}" không?`,
+                                                'Xóa từ khóa',
+                                            )}>
                                         Xóa
                                     </Button>
                                 </td>
@@ -310,6 +354,32 @@ export default function ModeratorDashboard() {
                     </Table>
                 </Tab>
             </Tabs>
+            <Modal
+                show={confirmation !== null}
+                onHide={() => {
+                    if (!confirming) setConfirmation(null);
+                }}
+                centered
+                backdrop={confirming ? 'static' : true}
+                keyboard={!confirming}
+            >
+                <Modal.Header closeButton={!confirming}>
+                    <Modal.Title>Xác nhận thao tác</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>{confirmation?.message}</Modal.Body>
+                <Modal.Footer>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setConfirmation(null)}
+                        disabled={confirming}
+                    >
+                        Hủy
+                    </Button>
+                    <Button variant="danger" onClick={handleConfirm} disabled={confirming}>
+                        {confirming ? 'Đang xử lý...' : confirmation?.confirmLabel}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }
